@@ -1,0 +1,43 @@
+# =============================================================================
+# ArgoCD Application - Dev Environment
+# =============================================================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: marketplace-backend-dev
+  namespace: argocd
+  labels:
+    app: marketplace
+    env: dev
+spec:
+  project: marketplace
+
+  source:
+    repoURL: https://github.com/your-org/marketplace-gitops.git
+    targetRevision: main
+    path: clusters/dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: marketplace-dev
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

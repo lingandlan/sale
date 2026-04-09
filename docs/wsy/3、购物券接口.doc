@@ -1,0 +1,377 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+    xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:w="urn:schemas-microsoft-com:office:word"
+    xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta http-equiv=Content-Type content="text/html; charset=utf-8">
+    <style type="text/css">
+        table  
+        {  
+            border-collapse: collapse;
+            border: none;  
+            width: 100%;  
+        }  
+        td,tr  
+        {  
+            border: solid #CCC 1px;
+            padding:3px;
+            font-size:9pt;
+        } 
+        .codestyle{
+            word-break: break-all;
+            mso-highlight:rgb(252, 252, 252);
+            padding-left: 5px; background-color: rgb(252, 252, 252); border: 1px solid rgb(225, 225, 232);
+        }
+        img {
+            width:100;
+        }
+    </style>
+    <meta name=ProgId content=Word.Document>
+    <meta name=Generator content="Microsoft Word 11">
+    <meta name=Originator content="Microsoft Word 11">
+    <xml><w:WordDocument><w:View>Print</w:View></xml></head>
+    <body><h1>1、查询余额</h1><div style="margin-left:20px;"><p><strong>简要描述：</strong> </p>
+<p><strong> 1) 请求地址</strong></p>
+<ul>
+<li>点击 <a href="https://showdoc.wsy010.cn/web/#/58?page_id=1640" title="接口公共内容">接口公共内容</a> 查看</li>
+</ul>
+<p><strong> 2) 调用方式：HTTP post</strong></p>
+<p><strong> 3) 接口描述：</strong></p>
+<ul>
+<li>查询用户可用购物币余额</li>
+</ul>
+<p><strong> 4) 请求参数:</strong></p>
+<p><strong> POST参数:</strong></p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th>字段名称</th>
+<th style="text-align: center;">字段说明</th>
+<th style="text-align: center;">类型</th>
+<th style="text-align: center;">必填</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>公共参数</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">参考接口公共内容</td>
+</tr>
+<tr>
+<td>act</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">接口标识 值固定为: <strong>10000_currency_select_user_currency_num</strong></td>
+</tr>
+<tr>
+<td>user_id</td>
+<td style="text-align: center;">用户编号</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+</tr>
+</tbody>
+</table>
+<p><strong> 5) 请求返回结果:</strong></p>
+<table width='100%' class='codestyle'><pre><code>{
+    "errcode":0,
+    "errmsg":"获取成功",
+    "data":{
+        "currency_num":"2240.00"
+    }
+}</code></pre></table>
+<p><strong>返回参数说明</strong> </p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th style="text-align: left;">参数名</th>
+<th style="text-align: left;">类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">currency_num</td>
+<td style="text-align: left;">decimal</td>
+<td>购物币余额</td>
+</tr>
+</tbody>
+</table></div><h1>2、增加购物币</h1><div style="margin-left:20px;"><p><strong>简要描述：</strong> </p>
+<ul>
+<li>增加购物币 且插入明细</li>
+</ul>
+<p><strong>请求URL：</strong> </p>
+<ul>
+<li>点击 <a href="https://showdoc.wsy010.cn/web/#/58?page_id=1640" title="接口公共内容">接口公共内容</a> 查看</li>
+</ul>
+<p><strong>请求方式：</strong></p>
+<ul>
+<li>POST </li>
+</ul>
+<p><strong>参数：</strong> </p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th>字段名称</th>
+<th style="text-align: center;">类型</th>
+<th style="text-align: center;">必填</th>
+<th style="text-align: left;">备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>公共参数</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: left;">参考接口公共内容</td>
+</tr>
+<tr>
+<td>act</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: left;">接口标识 值固定为: <strong>10000_currency_add</strong></td>
+</tr>
+<tr>
+<td>user_id</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: left;">用户编号</td>
+</tr>
+<tr>
+<td>batchcode</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: left;">交易订单号/支付订单号 订单号规则：最大为30位，前10位必须为时间戳</td>
+</tr>
+<tr>
+<td>currency</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: left;">购物币数量</td>
+</tr>
+<tr>
+<td>change_type</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: left;">变动类型<br>后台充值：recharge<br>消费赠送：give<br>  消费收益：consumer_reward<br>提现赠送：present<br>  提现返还：return<br>     消费退款：refund<br>  消费释放：unfreeze<br> 消费提成：consumer_give<br> 评分赠送：rating_gift (V1.6.1)<br>  比例转换：proportional_conversion<br> 购物币赠送：currency_give<br> 其他：other <br> 购物币提成：currency_reward</td>
+</tr>
+<tr>
+<td>remark</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">N</td>
+<td style="text-align: left;">备注</td>
+</tr>
+<tr>
+<td>union_id</td>
+<td style="text-align: center;">varchar(32)</td>
+<td style="text-align: center;">N</td>
+<td style="text-align: left;">(V1.8.6)唯一编号,有这个参数会判断表里是否有重复订单,有重复errcode返回100100</td>
+</tr>
+</tbody>
+</table>
+<h3>5) 请求返回结果:</h3>
+<table width='100%' class='codestyle'><pre><code>{
+    "errcode":0,
+    "errmsg":"success",
+    "before_currency":"2217.0000",
+    "after_currency":"2240.00"
+}</code></pre></table>
+<p><strong>返回参数说明</strong> </p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th style="text-align: left;">参数名</th>
+<th style="text-align: left;">类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">before_currency</td>
+<td style="text-align: left;">decimal</td>
+<td>改变前购物币数</td>
+</tr>
+<tr>
+<td style="text-align: left;">after_currency</td>
+<td style="text-align: left;">decimal</td>
+<td>改变后购物币数</td>
+</tr>
+</tbody>
+</table></div><h1>3、扣除购物币</h1><div style="margin-left:20px;"><h2>接口名称</h2>
+<h3>1) 请求地址</h3>
+<p><strong>请求URL：</strong> </p>
+<ul>
+<li>点击 <a href="https://showdoc.wsy010.cn/web/#/58?page_id=1640" title="接口公共内容">接口公共内容</a> 查看</li>
+</ul>
+<h3>2) 调用方式：HTTP post</h3>
+<h3>3) 接口描述：</h3>
+<ul>
+<li>扣除用户购物币数量</li>
+</ul>
+<h3>4) 请求参数:</h3>
+<h4>POST参数:</h4>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th>字段名称</th>
+<th style="text-align: center;">字段说明</th>
+<th style="text-align: center;">类型</th>
+<th style="text-align: center;">必填</th>
+<th style="text-align: left;">备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>公共参数</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">参考接口公共内容</td>
+</tr>
+<tr>
+<td>act</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">接口标识 值固定为: <strong>10000_currency_deduct</strong></td>
+</tr>
+<tr>
+<td>user_id</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">用户编号</td>
+</tr>
+<tr>
+<td>batchcode</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">交易订单号/支付订单号 订单号规则：最大为30位，前10位必须为时间戳</td>
+</tr>
+<tr>
+<td>currency</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">购物币数量</td>
+</tr>
+<tr>
+<td>change_type</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">变动类型 recharge后台充值<br/> deduction消费抵扣<br/> change_recharge 零钱充值(V1.8.5)<br/> withdrawal用户提现<br/> currency_pay消费支付<br/> freeze消费冻结<br/> other 其他</td>
+</tr>
+<tr>
+<td>union_id</td>
+<td style="text-align: center;">varchar(32)</td>
+<td style="text-align: center;">N</td>
+<td style="text-align: center;">(V1.8.6)唯一编号,有这个参数会判断表里是否有重复订单,有重复errcode返回100100</td>
+</tr>
+<tr>
+<td>remark</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">N</td>
+<td style="text-align: center;">备注</td>
+</tr>
+</tbody>
+</table>
+<h3>5) 请求返回结果:</h3>
+<table width='100%' class='codestyle'><pre><code>{
+    "errcode":0,
+    "errmsg":"success",
+    "before_currency":"2240.0000",
+    "after_currency":"2217.00"
+}</code></pre></table>
+<p><strong>返回参数说明</strong> </p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th style="text-align: left;">参数名</th>
+<th style="text-align: left;">类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">before_currency</td>
+<td style="text-align: left;">decimal</td>
+<td>改变前购物币数</td>
+</tr>
+<tr>
+<td style="text-align: left;">after_currency</td>
+<td style="text-align: left;">decimal</td>
+<td>改变后购物币数</td>
+</tr>
+</tbody>
+</table></div><h1>4、查询购物币设置</h1><div style="margin-left:20px;"><p><strong>简要描述：</strong> </p>
+<p><strong> 1) 请求地址</strong></p>
+<ul>
+<li>点击 <a href="https://showdoc.wsy010.cn/web/#/58?page_id=1640" title="接口公共内容">接口公共内容</a> 查看</li>
+</ul>
+<p><strong> 2) 调用方式：HTTP post</strong></p>
+<p><strong> 3) 接口描述：</strong></p>
+<ul>
+<li>查询购物币设置(V1.10.4.1)</li>
+</ul>
+<p><strong> 4) 请求参数:</strong></p>
+<p><strong> POST参数:</strong></p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th>字段名称</th>
+<th style="text-align: center;">字段说明</th>
+<th style="text-align: center;">类型</th>
+<th style="text-align: center;">必填</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>公共参数</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">/</td>
+<td style="text-align: center;">参考接口公共内容</td>
+</tr>
+<tr>
+<td>act</td>
+<td style="text-align: center;">是</td>
+<td style="text-align: center;">string</td>
+<td style="text-align: center;">接口标识 值固定为: <strong>10000_select_currency_set</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong> 5) 请求返回结果:</strong></p>
+<table width='100%' class='codestyle'><pre><code>{
+    "errcode":0,
+    "errmsg":"success",
+    "result":{
+        "diy_name":"购物币1",
+        "is_deduction":"1",
+        "is_given":"1",
+        "given_rate":"2.0000",
+        "given_comment":"摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘下星星送给你摘"
+    }
+}</code></pre></table>
+<p><strong>返回参数说明</strong> </p>
+<table>
+<thead><tr style='background-color: rgb(0, 136, 204); color: rgb(255, 255, 255);'>
+<th style="text-align: left;">参数名</th>
+<th style="text-align: left;">类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">diy_name</td>
+<td style="text-align: left;">string</td>
+<td>购物币自定义名称</td>
+</tr>
+<tr>
+<td style="text-align: left;">is_deduction</td>
+<td style="text-align: left;">bit</td>
+<td>是否开启抵扣 0.关 1.开</td>
+</tr>
+<tr>
+<td style="text-align: left;">is_given</td>
+<td style="text-align: left;">bit</td>
+<td>是否开启购物币转赠 0.关 1.开</td>
+</tr>
+<tr>
+<td style="text-align: left;">given_rate</td>
+<td style="text-align: left;">decimal</td>
+<td>转赠后不得少于的金额数量</td>
+</tr>
+<tr>
+<td style="text-align: left;">given_comment</td>
+<td style="text-align: left;">decimal</td>
+<td>转赠说明</td>
+</tr>
+</tbody>
+</table></div></body></html>

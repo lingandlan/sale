@@ -1,0 +1,129 @@
+# =============================================================================
+# Backend Deployment - K8s Manifest
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketplace-api
+  namespace: marketplace
+  labels:
+    app: marketplace-api
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: marketplace-api
+  template:
+    metadata:
+      labels:
+        app: marketplace-api
+        tier: backend
+    spec:
+      containers:
+        - name: api
+          image: registry.cn-hangzhou.aliyuncs.com/marketplace/backend:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: APP_SERVER_PORT
+              value: "8080"
+            - name: APP_SERVER_MODE
+              value: "release"
+            - name: APP_DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-secrets
+                  key: DB_HOST
+            - name: APP_DATABASE_PORT
+              value: "3306"
+            - name: APP_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-secrets
+                  key: DB_USER
+            - name: APP_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-secrets
+                  key: DB_PASSWORD
+            - name: APP_DATABASE_NAME
+              value: "marketplace"
+            - name: APP_DATABASE_TLS
+              value: "true"
+            - name: APP_REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-secrets
+                  key: REDIS_HOST
+            - name: APP_REDIS_PORT
+              value: "6379"
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: marketplace-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketplace-api-svc
+  namespace: marketplace
+spec:
+  selector:
+    app: marketplace-api
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: marketplace-api-ingress
+  namespace: marketplace
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  tls:
+    - hosts:
+        - api.marketplace.example.com
+      secretName: marketplace-api-tls
+  rules:
+    - host: api.marketplace.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: marketplace-api-svc
+                port:
+                  number: 80

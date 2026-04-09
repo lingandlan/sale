@@ -1,0 +1,991 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "type": "frame",
+      "id": "lQFg5",
+      "x": 0,
+      "y": 0,
+      "name": "门店卡发放",
+      "width": 1200,
+      "fill": "#F5F5F5",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "mcvo1",
+          "name": "页面头部",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "#FFFFFF",
+          "stroke": {
+            "thickness": 1,
+            "fill": "#E5E5E5"
+          },
+          "padding": [
+            16,
+            24
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "VP5sC",
+              "name": "headerTitle",
+              "fill": "#262626",
+              "content": "门店卡发放",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "elNbs",
+          "name": "内容区域",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "dMWvB",
+              "name": "用户查询卡片",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "zFq97",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bNfvP",
+                      "name": "userQueryTitle",
+                      "fill": "#262626",
+                      "content": "👤 用户信息查询",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "An5p6",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "5Ps5p",
+                  "name": "查询行",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FCVuP",
+                      "name": "phoneLabel",
+                      "fill": "#595959",
+                      "content": "手机号/用户ID",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BBjyU",
+                      "name": "手机号输入",
+                      "width": "fill_container",
+                      "height": 40,
+                      "cornerRadius": 4,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D9D9D9"
+                      },
+                      "padding": [
+                        12,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "inrOF",
+                          "name": "phonePlaceholder",
+                          "fill": "#BFBFBF",
+                          "content": "请输入手机号或用户ID",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NXPgx",
+                      "name": "查询用户按钮",
+                      "width": 80,
+                      "height": 40,
+                      "fill": "#C00000",
+                      "cornerRadius": 4,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lex6U",
+                          "name": "queryUserBtnText",
+                          "fill": "#FFFFFF",
+                          "content": "查询",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "3RSuk",
+              "name": "用户信息卡片",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "iNOOg",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "J68Cu",
+                      "name": "userInfoTitle",
+                      "fill": "#262626",
+                      "content": "📋 用户资格信息",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "Sj2J9",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "znSxj",
+                  "name": "用户信息内容",
+                  "width": "fill_container",
+                  "fill": "#F9F9F9",
+                  "cornerRadius": 4,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "h4HzX",
+                      "name": "用户名行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "z4B5r",
+                          "name": "userNameLabel",
+                          "fill": "#595959",
+                          "content": "用户姓名",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "20G5O",
+                          "name": "userNameValue",
+                          "fill": "#262626",
+                          "content": "张三",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KRYA5",
+                      "name": "手机号行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "W2Xhh",
+                          "name": "userPhoneLabel",
+                          "fill": "#595959",
+                          "content": "手机号",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QZI2R",
+                          "name": "userPhoneValue",
+                          "fill": "#262626",
+                          "content": "138****5678",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Ytb5d",
+                      "name": "套餐包行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Epmgc",
+                          "name": "packageLabel",
+                          "fill": "#595959",
+                          "content": "是否购买套餐包",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "h8i0k",
+                          "name": "是标签",
+                          "fill": "#F6FFED",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#B7EB8F"
+                          },
+                          "padding": [
+                            4,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "B9Bfx",
+                              "name": "packageValueText",
+                              "fill": "#52C41A",
+                              "content": "✓ 是",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "69Z8b",
+                      "name": "推荐数量行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "raZhW",
+                          "name": "referralLabel",
+                          "fill": "#595959",
+                          "content": "推荐他人购买数量",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "B4FeC",
+                          "name": "referralValue",
+                          "fill": "#262626",
+                          "content": "3人",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Uf88G",
+                      "name": "可发放数量行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vvaYQ",
+                          "name": "availableLabel",
+                          "fill": "#595959",
+                          "content": "可发放卡数量",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fgbk3",
+                          "name": "availableValue",
+                          "fill": "#C00000",
+                          "content": "4张",
+                          "fontFamily": "Inter",
+                          "fontSize": 18,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hjwK9",
+                      "name": "已发放数量行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ckXT7",
+                          "name": "issuedLabel",
+                          "fill": "#595959",
+                          "content": "历史已发放卡数量",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "CXkFz",
+                          "name": "issuedValue",
+                          "fill": "#262626",
+                          "content": "2张",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "A8U9e",
+                      "name": "上月消费行",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "1C7se",
+                          "name": "lastConsumptionLabel",
+                          "fill": "#595959",
+                          "content": "上月消耗金额",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "g2y3O",
+                          "name": "lastConsumptionValue",
+                          "fill": "#262626",
+                          "content": "¥12,500.00",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Lzpft",
+              "name": "卡发放卡片",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "y9Cox",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "aDBq2",
+                      "name": "cardIssueTitle",
+                      "fill": "#262626",
+                      "content": "💳 发放门店卡",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "eXULI",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "La1ZE",
+                  "name": "卡选择行",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hAZBd",
+                      "name": "cardSelectLabel",
+                      "fill": "#262626",
+                      "content": "选择卡号",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fiV9B",
+                      "name": "卡号输入",
+                      "width": "fill_container",
+                      "height": 40,
+                      "cornerRadius": 4,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#D9D9D9"
+                      },
+                      "padding": [
+                        12,
+                        16
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mrfsM",
+                          "name": "cardSelectValue",
+                          "fill": "#262626",
+                          "content": "TJ20240100005",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "G5GwD",
+                          "name": "cardSelectHint",
+                          "fill": "#8C8C8C",
+                          "content": "从库存中自动分配",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "uJnUN",
+                  "name": "卡信息行",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hnCyU",
+                      "name": "cardInfoLabel",
+                      "fill": "#262626",
+                      "content": "卡信息",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "g4ByV",
+                      "name": "卡信息内容",
+                      "width": "fill_container",
+                      "fill": "#F0F9FF",
+                      "cornerRadius": 4,
+                      "gap": 16,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "HnkC6",
+                          "name": "卡类型列",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QDbIL",
+                              "name": "cardTypeLabel",
+                              "fill": "#8C8C8C",
+                              "content": "卡类型",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cWB7k",
+                              "name": "cardTypeValue",
+                              "fill": "#262626",
+                              "content": "储值卡",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JANLh",
+                          "name": "卡金额列",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "6pdfe",
+                              "name": "cardAmountLabel",
+                              "fill": "#8C8C8C",
+                              "content": "卡面金额",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "84BMy",
+                              "name": "cardAmountValue",
+                              "fill": "#C00000",
+                              "content": "¥5,000.00",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "HqBrI",
+                          "name": "卡状态列",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bbICz",
+                              "name": "cardStatusLabel",
+                              "fill": "#8C8C8C",
+                              "content": "卡状态",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "UY9aZ",
+                              "name": "已入库标签",
+                              "fill": "#F5F5F5",
+                              "cornerRadius": 4,
+                              "padding": [
+                                4,
+                                12
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "dq6ep",
+                                  "name": "cardStatusValueText",
+                                  "fill": "#8C8C8C",
+                                  "content": "已入库",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zvOS5",
+                  "name": "发放原因行",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GBIVL",
+                      "name": "reasonLabel",
+                      "fill": "#262626",
+                      "content": "发放原因",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cPcWJ",
+                      "name": "发放原因选项",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Bpik7",
+                          "name": "选项1",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#D9D9D9"
+                          },
+                          "gap": 8,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "xSI0x",
+                              "name": "单选按钮1",
+                              "width": 16,
+                              "height": 16,
+                              "stroke": {
+                                "thickness": 2,
+                                "fill": "#C00000"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZJdNV",
+                              "name": "reasonText1",
+                              "fill": "#262626",
+                              "content": "购买套餐包",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "wRKz2",
+                          "name": "选项2",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "thickness": 2,
+                            "fill": "#C00000"
+                          },
+                          "gap": 8,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "0lGoQ",
+                              "name": "单选按钮2",
+                              "fill": "#C00000",
+                              "width": 16,
+                              "height": 16,
+                              "stroke": {
+                                "thickness": 2,
+                                "fill": "#C00000"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "id": "7Z87I",
+                              "name": "reasonText2",
+                              "fill": "#262626",
+                              "content": "推荐奖励",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gA8Me",
+                          "name": "选项3",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#D9D9D9"
+                          },
+                          "gap": 8,
+                          "padding": [
+                            8,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "2tywd",
+                              "name": "单选按钮3",
+                              "width": 16,
+                              "height": 16,
+                              "stroke": {
+                                "thickness": 2,
+                                "fill": "#C00000"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "id": "Itlrj",
+                              "name": "reasonText3",
+                              "fill": "#262626",
+                              "content": "其他",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "seVzh",
+              "name": "备注卡片",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ods4S",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "X8GDb",
+                      "name": "remarkTitle",
+                      "fill": "#262626",
+                      "content": "📝 备注（可选）",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "lhrPM",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "cUrlb",
+                  "name": "备注输入",
+                  "width": "fill_container",
+                  "height": 80,
+                  "cornerRadius": 4,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#D9D9D9"
+                  },
+                  "padding": [
+                    12,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "t9yrg",
+                      "name": "remarkPlaceholder",
+                      "fill": "#BFBFBF",
+                      "content": "请输入备注信息（可选）",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "CfXMM",
+          "name": "操作栏",
+          "width": "fill_container",
+          "height": 80,
+          "fill": "#FFFFFF",
+          "cornerRadius": 8,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#E5E5E5"
+          },
+          "gap": 12,
+          "padding": 24,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "V0rpi",
+              "name": "取消按钮",
+              "width": 140,
+              "height": 48,
+              "fill": "#FFFFFF",
+              "cornerRadius": 4,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#D9D9D9"
+              },
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "JfMO4",
+                  "name": "cancelText",
+                  "fill": "#262626",
+                  "content": "取消",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wAO84",
+              "name": "确认发放按钮",
+              "width": 160,
+              "height": 48,
+              "fill": "#C00000",
+              "cornerRadius": 4,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#C00000"
+              },
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ewPBH",
+                  "name": "confirmIcon",
+                  "content": "💳",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "anWJI",
+                  "name": "confirmText",
+                  "fill": "#FFFFFF",
+                  "content": "确认发放",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+# =============================================================================
+# Marketplace API - golangci-lint configuration
+# =============================================================================
+
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+# Linters to enable
+linters:
+  default: none
+  enable:
+    # Core
+    - errcheck       # Check error handling
+    - gosimple       # Simplify code
+    - staticcheck    # Static analysis
+    - unused         # Unused variables/functions
+    - govet          # Suspicious code
+    - gofmt         # Formatting
+    - goimports     # Import organization
+
+    # Style & Performance
+    - revive         # Go code style
+    - gocritic       # Code criticism
+    - misspell       # Spelling
+    - bodyclose      # HTTP response must be closed
+    - noctx          # HTTP handlers without context
+    - unconvert      # Unnecessary type conversions
+    - unparam        # Unused function parameters
+    - whitespace     # Extra whitespace
+
+    # Security
+    - gosec          # Security vulnerabilities
+
+    # Complexity
+    - gocyclo        # Cyclomatic complexity
+    - goconst        # Repeated constants
+    - nestif         # Deeply nested if statements
+
+# Linter settings
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  govet:
+    enable-all: true
+
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+      - name: exported
+        severity: warning
+      - name: error-return
+        severity: warning
+      - name: error-strings
+        severity: warning
+
+  gocyclo:
+    min-complexity: 15
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+
+  gosec:
+    excludes:
+      - G104  # Audit errors not checked
+
+  misspell:
+    locale: US
+
+  nestif:
+    min-complexity: 5
+
+# Issues
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 50
+  max-same-issues: 10
+
+# Exclusions for generated code
+exclusions:
+  generated:
+    patterns:
+      - "**/*.pb.go"
+      - "**/*.swagger.json"

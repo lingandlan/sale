@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(gh search:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/main/Makefile\")",
+      "Bash(curl:*)",
+      "Bash(chmod +x:*)",
+      "Bash(unzip -l \"太积堂充值与门店管理系统 - PRD v1.0.docx\")",
+      "Skill(update-config)",
+      "Bash(npx skills:*)",
+      "Bash(unzip -p \"太积堂充值与门店管理系统 - PRD v1.0.docx\" word/document.xml)",
+      "Bash(grep -v '^$')",
+      "Bash(unzip -p \"docs/太积堂充值与门店管理系统 - PRD v1.0.docx\" word/document.xml)",
+      "Bash(sed -i.bak '1259s/4次/5次/' \"PRD-太积堂充值与门店管理系统-v1.2.md\")",
+      "Bash(sed -n '1259p' \"PRD-太积堂充值与门店管理系统-v1.2.md\")",
+      "Bash(sed -i.bak '1260s/4次后仍失败/5次后仍失败/' \"PRD-太积堂充值与门店管理系统-v1.2.md\")",
+      "Bash(sed -n '1260p' \"PRD-太积堂充值与门店管理系统-v1.2.md\")",
+      "Bash(mv:*)",
+      "Bash(ls:*)",
+      "Bash(mv FoyHo.png 01-登录页.png)",
+      "Bash(mv MLq5D.png 02-B端充值申请.png)"
+    ]
+  }
+}
