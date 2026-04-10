@@ -27,8 +27,8 @@ func (m *MockUserService) GetByID(ctx context.Context, id int64) (*model.User, e
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
-func (m *MockUserService) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	args := m.Called(ctx, username)
+func (m *MockUserService) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	args := m.Called(ctx, phone)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -51,9 +51,37 @@ func (m *MockUserService) Update(ctx context.Context, id int64, req *model.Updat
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+func (m *MockUserService) UpdateStatus(ctx context.Context, id int64, req *model.UpdateUserStatusRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockUserService) Delete(ctx context.Context, id int64) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockUserService) ResetPassword(ctx context.Context, id int64, req *model.ResetPasswordRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockUserService) UpdatePassword(ctx context.Context, id int64, hashedPassword string) error {
+	args := m.Called(ctx, id, hashedPassword)
+	return args.Error(0)
+}
+
 func (m *MockUserService) List(ctx context.Context, page, pageSize int) ([]*model.User, int64, error) {
 	args := m.Called(ctx, page, pageSize)
 	return args.Get(0).([]*model.User), args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockUserService) ListWithFilters(ctx context.Context, req *model.ListUsersRequest) (*model.ListUsersResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.ListUsersResponse), args.Error(1)
 }
 
 func setupUserRouter(h *UserHandler) *gin.Engine {
@@ -79,7 +107,7 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		expectedUser := &model.User{ID: 1, Username: "testuser"}
+		expectedUser := &model.User{ID: 1, Phone: "13800138000", Name: "Test User", Role: model.RoleOperator}
 		mockSvc.On("GetByID", ctx, int64(1)).Return(expectedUser, nil).Once()
 
 		req, _ := http.NewRequest("GET", "/user/1", nil)
@@ -100,13 +128,13 @@ func TestUserHandler_UpdateUserInfo(t *testing.T) {
 	h := NewUserHandler(mockSvc)
 	router := setupUserRouter(h)
 	ctx := context.Background()
-	newNickname := "New Nickname"
+	newName := "New Name"
 
 	t.Run("success", func(t *testing.T) {
-		updatedUser := &model.User{ID: 1, Username: "testuser", Nickname: newNickname}
+		updatedUser := &model.User{ID: 1, Phone: "13800138000", Name: newName, Role: model.RoleOperator}
 		mockSvc.On("Update", ctx, int64(1), mock.AnythingOfType("*model.UpdateUserRequest")).Return(updatedUser, nil).Once()
 
-		body := map[string]interface{}{"nickname": newNickname}
+		body := map[string]interface{}{"name": newName}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("PUT", "/user/info", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -127,8 +155,8 @@ func TestUserHandler_ListUsers(t *testing.T) {
 
 	t.Run("success with pagination", func(t *testing.T) {
 		users := []*model.User{
-			{ID: 1, Username: "user1"},
-			{ID: 2, Username: "user2"},
+			{ID: 1, Phone: "13800138000", Name: "User 1", Role: model.RoleOperator},
+			{ID: 2, Phone: "13800138001", Name: "User 2", Role: model.RoleAdmin},
 		}
 		mockSvc.On("List", ctx, 1, 20).Return(users, int64(2), nil).Once()
 
