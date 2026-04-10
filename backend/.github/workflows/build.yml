@@ -97,6 +97,60 @@ jobs:
           echo "Coverage report: coverage.html artifact" >> $GITHUB_STEP_SUMMARY
 
   # ===========================================================================
+  # Job: Integration Tests
+  # ===========================================================================
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Start MySQL for integration tests
+        uses: isbang/compose-action@v1
+        with:
+          compose-file: './tests/integration/docker-compose.yml'
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            if docker exec sale-mysql-test mysqladmin ping -h localhost -uroot -proot123 &>/dev/null; then
+              echo "MySQL is ready"
+              exit 0
+            fi
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+          echo "MySQL failed to start"
+          exit 1
+
+      - name: Create test database
+        run: |
+          docker exec sale-mysql-test mysql -uroot -proot123 -e "CREATE DATABASE IF NOT EXISTS test_db;"
+
+      - name: Run migrations
+        run: |
+          cd backend
+          go install github.com/pressly/goose/v3/cmd/goose@latest
+          goose -dir migrations mysql "root:root123@tcp(sale-mysql-test:3306)/test_db?parseTime=true" up
+
+      - name: Run integration tests
+        env:
+          TEST_DSN: root:root123@tcp(sale-mysql-test:3306)/test_db?parseTime=true&charset=utf8mb4
+        run: |
+          cd backend
+          go test -v -tags=integration ./tests/integration/...
+
+      - name: Cleanup
+        if: always()
+        run: docker-compose -f tests/integration/docker-compose.yml down
+
+  # ===========================================================================
   # Job 2: Build and Push Docker Image
   # ===========================================================================
   build-and-push:

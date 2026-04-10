@@ -1,5 +1,5 @@
 # =============================================================================
-# Marketplace API - Makefile
+# 太积堂充值与门店管理系统 - Makefile
 # =============================================================================
 
 .PHONY: help
@@ -52,8 +52,11 @@ fix: ## Auto-fix code style issues
 # Coverage threshold (percentage)
 COVERAGE_MIN ?= 50
 
-test: ## Run unit tests
-	go test -v -race -coverprofile=coverage.txt ./...
+test: ## Run unit tests (skip integration tests)
+	go test -v -race -short ./...
+
+test-all: ## Run all tests including integration tests
+	go test -v -race -short=false ./...
 
 test-coverage: test ## Run tests with coverage report
 	@echo "Coverage report:"
@@ -70,9 +73,27 @@ test-threshold: ## Run tests with coverage threshold check
 		exit 1; \
 	fi
 
-integration-test: compose-up ## Run integration tests (requires docker-compose)
-	go clean -testcache
-	go test -v ./tests/integration/...
+# =============================================================================
+# Integration Tests
+# =============================================================================
+
+TEST_DSN ?= root:root123@tcp(localhost:3307)/test_db?parseTime=true&charset=utf8mb4
+
+integration-test-up: ## Start integration test database
+	cd tests/integration && docker-compose up -d
+
+integration-test-down: ## Stop integration test database
+	cd tests/integration && docker-compose down
+
+integration-test: integration-test-up ## Run integration tests
+	@echo "Waiting for database to be ready..."
+	@sleep 10
+	TEST_DSN=$(TEST_DSN) go test -v -tags=integration ./tests/integration/...
+	@echo "Stopping test database..."
+	cd tests/integration && docker-compose down
+
+integration-test-clean: ## Clean integration test database
+	docker exec sale-mysql-test mysql -uroot -proot123 -e "DROP DATABASE IF EXISTS test_db; CREATE DATABASE test_db;"
 
 # =============================================================================
 # Database Migration
@@ -111,10 +132,10 @@ compose-logs: ## View docker-compose logs
 	docker-compose logs -f
 
 docker-build: ## Build Docker image
-	docker build -t marketplace-api:latest .
+	docker build -t sale-backend:latest .
 
 docker-run: ## Run Docker container
-	docker run -p 8080:8080 --env-file .env marketplace-api:latest
+	docker run -p 8080:8080 --env-file .env sale-backend:latest
 
 # =============================================================================
 # CI/CD
@@ -164,6 +185,6 @@ swag: ## Generate Swagger docs
 	swag init -g cmd/server/main.go -o docs/swagger
 
 license: ## Add license header to files
-	addlicense -c "Marketplace" -y $$(date +%Y) .
+	addlicense -c "太积堂" -y $$(date +%Y) .
 
 .DEFAULT_GOAL := help
