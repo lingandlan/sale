@@ -177,7 +177,7 @@ func TestClaims_Type(t *testing.T) {
 		RefreshExpireHours: 24,
 	}
 	svc := NewAuthService(cfg, nil, nil)
-	user := &model.User{ID: 1, Phone: "13800138000", Name: "Admin", Role: model.RoleAdmin}
+	user := &model.User{ID: 1, Phone: "13800138000", Name: "Admin", Role: model.RoleHQAdmin}
 
 	token, err := svc.GenerateToken(user)
 	require.NoError(t, err)
@@ -187,7 +187,7 @@ func TestClaims_Type(t *testing.T) {
 
 	assert.Equal(t, int64(1), claims.UserID)
 	assert.Equal(t, "13800138000", claims.Phone)
-	assert.Equal(t, model.RoleAdmin, claims.Role)
+	assert.Equal(t, model.RoleHQAdmin, claims.Role)
 
 	_, ok := interface{}(claims).(jwt.Claims)
 	assert.True(t, ok)

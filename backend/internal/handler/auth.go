@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
 	"marketplace/backend/internal/middleware"
@@ -32,11 +34,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	result, err := h.authSvc.Login(c.Request.Context(), req.Username, req.Password)
+	result, err := h.authSvc.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
+		fmt.Printf("登录失败: phone=%s, error=%v\n", req.Phone, err)
 		switch err {
 		case apperrors.ErrNotFound:
-			response.Unauthorized(c, "用户名或密码错误")
+			response.Unauthorized(c, "手机号或密码错误")
+		case apperrors.ErrPasswordIncorrect:
+			response.Unauthorized(c, "手机号或密码错误")
 		case apperrors.ErrUserDisabled:
 			response.Forbidden(c, "用户已被禁用")
 		default:

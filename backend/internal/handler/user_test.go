@@ -156,7 +156,7 @@ func TestUserHandler_ListUsers(t *testing.T) {
 	t.Run("success with pagination", func(t *testing.T) {
 		users := []*model.User{
 			{ID: 1, Phone: "13800138000", Name: "User 1", Role: model.RoleOperator},
-			{ID: 2, Phone: "13800138001", Name: "User 2", Role: model.RoleAdmin},
+			{ID: 2, Phone: "13800138001", Name: "User 2", Role: model.RoleHQAdmin},
 		}
 		mockSvc.On("List", ctx, 1, 20).Return(users, int64(2), nil).Once()
 

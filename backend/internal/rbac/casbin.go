@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v3"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/jmoiron/sqlx"
 	"gorm.io/driver/mysql"

@@ -35,9 +35,9 @@ func (m *RBACMiddleware) Auth() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		method := c.Request.Method
 
-		// 管理员拥有所有权限
+		// 超级管理员拥有所有权限
 		role, _ := c.Get("role")
-		if role.(int) == 2 { // admin role
+		if role.(string) == "super_admin" {
 			c.Next()
 			return
 		}
@@ -91,7 +91,7 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 		}
 
 		for _, r := range roles {
-			if userRole.(int) == stringToRole(r) {
+			if userRole.(string) == r {
 				c.Next()
 				return
 			}

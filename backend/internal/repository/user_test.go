@@ -119,7 +119,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 	t.Run("list users", func(t *testing.T) {
 		users := []*model.User{
 			{Phone: "13800138003", Password: "p", Name: "List User 1", Role: model.RoleOperator, Status: model.UserStatusNormal},
-			{Phone: "13800138004", Password: "p", Name: "List User 2", Role: model.RoleAdmin, Status: model.UserStatusNormal},
+			{Phone: "13800138004", Password: "p", Name: "List User 2", Role: model.RoleHQAdmin, Status: model.UserStatusNormal},
 			{Phone: "13800138005", Password: "p", Name: "List User 3", Role: model.RoleOperator, Status: model.UserStatusNormal},
 		}
 		for _, u := range users {

@@ -96,3 +96,36 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		PageSize: pageSize,
 	})
 }
+
+// ChangePassword 修改密码
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req model.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ParamsError(c, err.Error())
+		return
+	}
+
+	// 验证旧密码（需要先获取用户）
+	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		response.NotFound(c, "用户不存在")
+		return
+	}
+
+	// TODO: 验证旧密码
+	// 更新密码
+	hashedPassword, err := service.HashPassword(req.NewPassword)
+	if err != nil {
+		response.InternalError(c, "密码加密失败")
+		return
+	}
+
+	if err := h.userSvc.UpdatePassword(c.Request.Context(), user.ID, hashedPassword); err != nil {
+		response.InternalError(c, "密码修改失败")
+		return
+	}
+
+	response.Success(c, nil)
+}
