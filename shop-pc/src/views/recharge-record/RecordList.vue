@@ -37,7 +37,11 @@
           style="width: 100%"
           :header-cell-style="{ backgroundColor: '#FAFAFA', color: '#262626', fontWeight: '600' }"
         >
-          <el-table-column prop="transactionNo" label="交易单号" width="180" />
+          <el-table-column label="交易单号" width="220">
+            <template #default="{ row }">
+              {{ row.id || row.transactionNo }}
+            </template>
+          </el-table-column>
           <el-table-column prop="memberName" label="会员姓名" width="120" />
           <el-table-column prop="memberPhone" label="手机号" width="120" />
           <el-table-column prop="centerName" label="充值中心" width="150" />
@@ -46,7 +50,7 @@
           </el-table-column>
           <el-table-column prop="paymentMethod" label="支付方式" width="100" />
           <el-table-column prop="createdAt" label="充值时间" width="180" />
-          <el-table-column label="操作" fixed="right">
+          <el-table-column label="操作" width="100" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="handleViewDetail(row)">
                 查看详情
