@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"marketplace/backend/internal/service"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -32,11 +33,11 @@ func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
 
 	app, err := h.rechargeService.CreateBRechargeApplication(req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("recharge.apply_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "申请提交成功", gin.H{
+	response.SuccessWithMessage(c, errmsg.Get("recharge.apply_success"), gin.H{
 		"id":     app.ID,
 		"status": app.Status,
 	})
@@ -49,7 +50,7 @@ func (h *RechargeHandler) GetRechargeApplicationList(c *gin.Context) {
 
 	result, err := h.rechargeService.GetRechargeApplicationList(status, page, pageSize)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("recharge.list_failed"))
 		return
 	}
 
@@ -61,7 +62,7 @@ func (h *RechargeHandler) GetRechargeApplicationDetail(c *gin.Context) {
 
 	result, err := h.rechargeService.GetRechargeApplicationDetail(id)
 	if err != nil {
-		response.NotFound(c, err.Error())
+		response.NotFound(c, errmsg.Get("recharge.not_found"))
 		return
 	}
 
@@ -83,7 +84,7 @@ func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
 	approvedBy := "admin"
 
 	if err := h.rechargeService.ApproveRechargeApplication(id, action, approvedBy, remark); err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("recharge.approval_failed"))
 		return
 	}
 
@@ -105,11 +106,11 @@ func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
 
 	recharge, err := h.rechargeService.CreateCRecharge(req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("recharge.c_create_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "充值成功", gin.H{
+	response.SuccessWithMessage(c, errmsg.Get("recharge.c_create_success"), gin.H{
 		"id":            recharge.ID,
 		"transactionNo": recharge.ID,
 	})
@@ -123,7 +124,7 @@ func (h *RechargeHandler) GetCRechargeList(c *gin.Context) {
 
 	result, err := h.rechargeService.GetCRechargeList(memberPhone, centerID, page, pageSize)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("recharge.c_list_failed"))
 		return
 	}
 
@@ -135,7 +136,7 @@ func (h *RechargeHandler) GetCRechargeDetail(c *gin.Context) {
 
 	result, err := h.rechargeService.GetCRechargeDetail(id)
 	if err != nil {
-		response.NotFound(c, err.Error())
+		response.NotFound(c, errmsg.Get("recharge.c_not_found"))
 		return
 	}
 
@@ -156,11 +157,11 @@ func (h *RechargeHandler) IssueCard(c *gin.Context) {
 
 	card, err := h.rechargeService.IssueCard(req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("card.issue_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "发放成功", gin.H{
+	response.SuccessWithMessage(c, errmsg.Get("card.issue_success"), gin.H{
 		"id":     card.ID,
 		"cardNo": card.CardNo,
 	})
@@ -171,7 +172,7 @@ func (h *RechargeHandler) VerifyCard(c *gin.Context) {
 
 	result, err := h.rechargeService.VerifyCard(cardNo)
 	if err != nil {
-		response.NotFound(c, err.Error())
+		response.NotFound(c, errmsg.Get("card.verify_not_found"))
 		return
 	}
 
@@ -187,12 +188,12 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 
 	cardNo, ok := req["cardNo"].(string)
 	if !ok {
-		response.ParamsError(c, "cardNo is required")
+		response.ParamsError(c, errmsg.Get("card.consume_no_card"))
 		return
 	}
 	amount, ok := req["amount"].(float64)
 	if !ok {
-		response.ParamsError(c, "amount is required")
+		response.ParamsError(c, errmsg.Get("card.consume_no_amount"))
 		return
 	}
 	remark := ""
@@ -204,11 +205,11 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 	operatorID := "op123"
 
 	if err := h.rechargeService.ConsumeCard(cardNo, amount, remark, operatorID); err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("card.consume_failed")+":"+err.Error())
 		return
 	}
 
-	response.SuccessWithMessage(c, "核销成功", gin.H{"success": true})
+	response.SuccessWithMessage(c, errmsg.Get("card.consume_success"), gin.H{"success": true})
 }
 
 func (h *RechargeHandler) UpdateCardStatus(c *gin.Context) {
@@ -221,12 +222,12 @@ func (h *RechargeHandler) UpdateCardStatus(c *gin.Context) {
 
 	status, ok := req["status"].(string)
 	if !ok {
-		response.ParamsError(c, "status is required")
+		response.ParamsError(c, errmsg.Get("card.status_no_param"))
 		return
 	}
 
 	if err := h.rechargeService.UpdateCardStatus(cardNo, status); err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("card.status_failed"))
 		return
 	}
 
@@ -242,7 +243,7 @@ func (h *RechargeHandler) GetCardList(c *gin.Context) {
 
 	result, err := h.rechargeService.GetCardList(status, cardNo, holderPhone, page, pageSize)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("card.list_failed"))
 		return
 	}
 
@@ -254,7 +255,7 @@ func (h *RechargeHandler) GetCardDetail(c *gin.Context) {
 
 	result, err := h.rechargeService.GetCardDetail(cardNo)
 	if err != nil {
-		response.NotFound(c, err.Error())
+		response.NotFound(c, errmsg.Get("card.detail_not_found"))
 		return
 	}
 
@@ -264,7 +265,7 @@ func (h *RechargeHandler) GetCardDetail(c *gin.Context) {
 func (h *RechargeHandler) GetCardStats(c *gin.Context) {
 	result, err := h.rechargeService.GetCardStats()
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("card.stats_failed"))
 		return
 	}
 	response.Success(c, result)
@@ -275,7 +276,7 @@ func (h *RechargeHandler) GetCardStats(c *gin.Context) {
 func (h *RechargeHandler) GetCenters(c *gin.Context) {
 	result, err := h.rechargeService.GetCenters()
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("center.list_failed"))
 		return
 	}
 	response.Success(c, result)
@@ -290,11 +291,11 @@ func (h *RechargeHandler) CreateCenter(c *gin.Context) {
 
 	result, err := h.rechargeService.CreateCenter(req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("center.create_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "创建成功", result)
+	response.SuccessWithMessage(c, errmsg.Get("center.create_success"), result)
 }
 
 func (h *RechargeHandler) UpdateCenter(c *gin.Context) {
@@ -307,22 +308,22 @@ func (h *RechargeHandler) UpdateCenter(c *gin.Context) {
 
 	result, err := h.rechargeService.UpdateCenter(id, req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("center.update_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "更新成功", result)
+	response.SuccessWithMessage(c, errmsg.Get("center.update_success"), result)
 }
 
 func (h *RechargeHandler) DeleteCenter(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := h.rechargeService.DeleteCenter(id); err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("center.delete_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "删除成功", gin.H{"success": true})
+	response.SuccessWithMessage(c, errmsg.Get("center.delete_success"), gin.H{"success": true})
 }
 
 // ========== 操作员 ==========
@@ -330,7 +331,7 @@ func (h *RechargeHandler) DeleteCenter(c *gin.Context) {
 func (h *RechargeHandler) GetOperators(c *gin.Context) {
 	result, err := h.rechargeService.GetOperators()
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("operator.list_failed"))
 		return
 	}
 	response.Success(c, result)
@@ -345,11 +346,11 @@ func (h *RechargeHandler) CreateOperator(c *gin.Context) {
 
 	result, err := h.rechargeService.CreateOperator(req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("operator.create_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "创建成功", result)
+	response.SuccessWithMessage(c, errmsg.Get("operator.create_success"), result)
 }
 
 func (h *RechargeHandler) UpdateOperator(c *gin.Context) {
@@ -362,22 +363,22 @@ func (h *RechargeHandler) UpdateOperator(c *gin.Context) {
 
 	result, err := h.rechargeService.UpdateOperator(id, req)
 	if err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("operator.update_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "更新成功", result)
+	response.SuccessWithMessage(c, errmsg.Get("operator.update_success"), result)
 }
 
 func (h *RechargeHandler) DeleteOperator(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := h.rechargeService.DeleteOperator(id); err != nil {
-		response.InternalError(c, err.Error())
+		response.InternalError(c, errmsg.Get("operator.delete_failed"))
 		return
 	}
 
-	response.SuccessWithMessage(c, "删除成功", gin.H{"success": true})
+	response.SuccessWithMessage(c, errmsg.Get("operator.delete_success"), gin.H{"success": true})
 }
 
 // ========== Dashboard ==========

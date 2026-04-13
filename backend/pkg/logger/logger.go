@@ -43,7 +43,7 @@ func Init(cfg *Config) error {
 
 	// 添加文件轮转
 	fileWriter := &lumberjack.Logger{
-		Filename:   "/var/log/marketplace/app.log",
+		Filename:   "logs/app.log",
 		MaxSize:    100, // MB
 		MaxBackups: 24,
 		MaxAge:     7, // 天

@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"marketplace/backend/internal/service"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -26,7 +27,7 @@ func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 		// 获取 Authorization Header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.Unauthorized(c, "missing token")
+			response.Unauthorized(c, errmsg.Get("auth.token_missing"))
 			c.Abort()
 			return
 		}
@@ -34,7 +35,7 @@ func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 		// 解析 Bearer Token
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			response.Unauthorized(c, "invalid token format")
+			response.Unauthorized(c, errmsg.Get("auth.token_format_error"))
 			c.Abort()
 			return
 		}
@@ -48,7 +49,7 @@ func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			response.Unauthorized(c, "invalid token")
+			response.Unauthorized(c, errmsg.Get("auth.token_invalid"))
 			c.Abort()
 			return
 		}
@@ -67,7 +68,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roleVal, exists := c.Get("role")
 		if !exists {
-			response.Forbidden(c, "forbidden")
+			response.Forbidden(c, errmsg.Get("common.forbidden"))
 			c.Abort()
 			return
 		}
@@ -80,7 +81,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 			}
 		}
 
-		response.Forbidden(c, "insufficient permission")
+		response.Forbidden(c, errmsg.Get("common.forbidden"))
 		c.Abort()
 	}
 }

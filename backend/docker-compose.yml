@@ -1,19 +1,19 @@
 version: '3.8'
 
 # =============================================================================
-# Marketplace Local Development Environment
+# 太积堂充值与门店管理系统 - 本地开发环境
 # =============================================================================
 
 services:
   mysql:
-    container_name: marketplace-mysql
-    image: mysql:5.7
+    container_name: sale-mysql
+    image: registry.cn-shenzhen.aliyuncs.com/wsy_dev/mysql:5.6.01
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-marketplace}
-      MYSQL_USER: ${MYSQL_USER:-marketplace}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-marketplace123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sale_dev}
+      MYSQL_USER: ${MYSQL_USER:-sale}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sale123}
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
@@ -32,8 +32,8 @@ services:
       start_period: 30s
 
   redis:
-    container_name: marketplace-redis
-    image: redis:7-alpine
+    container_name: sale-redis
+    image: redis:latest
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -48,7 +48,7 @@ services:
 
   # 可选：MailHog 用于开发环境测试邮件
   mailhog:
-    container_name: marketplace-mailhog
+    container_name: sale-mailhog
     image: mailhog/mailhog:latest
     restart: unless-stopped
     ports:
@@ -57,10 +57,10 @@ services:
 
 networks:
   default:
-    name: marketplace-network
+    name: sale-network
 
 volumes:
   mysql_data:
-    name: marketplace-mysql-data
+    name: sale-mysql-data
   redis_data:
-    name: marketplace-redis-data
+    name: sale-redis-data

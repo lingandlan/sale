@@ -90,15 +90,14 @@ instance.interceptors.response.use(
 async function handleUnauthorized() {
   try {
     const newToken = await refreshToken()
-    if (newToken) {
-      // 重试当前请求
-      return instance.request(error.config!)
+    if (!newToken) {
+      throw new Error('Token refresh failed')
     }
   } catch {
     // 刷新失败，跳转登录
     uni.removeStorageSync('token')
     uni.removeStorageSync('refresh_token')
-    uni.reLaunch({ url: '/pages/login/login' })
+    uni.reLaunch({ url: '/pages/login/index' })
   }
 }
 

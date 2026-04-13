@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"marketplace/backend/internal/service"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -96,7 +97,7 @@ func TestAuthMiddleware_MissingAuthorizationHeader(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 401, body.Code)
-	assert.Equal(t, "missing token", body.Message)
+	assert.Equal(t, errmsg.Get("auth.token_missing"), body.Message)
 }
 
 func TestAuthMiddleware_InvalidFormat_NoBearerPrefix(t *testing.T) {
@@ -122,7 +123,7 @@ func TestAuthMiddleware_InvalidFormat_NoBearerPrefix(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 401, body.Code)
-	assert.Equal(t, "invalid token format", body.Message)
+	assert.Equal(t, errmsg.Get("auth.token_format_error"), body.Message)
 }
 
 func TestAuthMiddleware_InvalidFormat_WrongScheme(t *testing.T) {
@@ -148,7 +149,7 @@ func TestAuthMiddleware_InvalidFormat_WrongScheme(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 401, body.Code)
-	assert.Equal(t, "invalid token format", body.Message)
+	assert.Equal(t, errmsg.Get("auth.token_format_error"), body.Message)
 }
 
 func TestAuthMiddleware_InvalidToken(t *testing.T) {
@@ -174,7 +175,7 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 401, body.Code)
-	assert.Equal(t, "invalid token", body.Message)
+	assert.Equal(t, errmsg.Get("auth.token_invalid"), body.Message)
 }
 
 func TestAuthMiddleware_ExpiredToken(t *testing.T) {
@@ -201,7 +202,7 @@ func TestAuthMiddleware_ExpiredToken(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 401, body.Code)
-	assert.Equal(t, "invalid token", body.Message)
+	assert.Equal(t, errmsg.Get("auth.token_invalid"), body.Message)
 }
 
 func TestAuthMiddleware_WrongSecret(t *testing.T) {
@@ -228,7 +229,7 @@ func TestAuthMiddleware_WrongSecret(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 401, body.Code)
-	assert.Equal(t, "invalid token", body.Message)
+	assert.Equal(t, errmsg.Get("auth.token_invalid"), body.Message)
 }
 
 func TestRequireRole_AllowedRole(t *testing.T) {
@@ -280,7 +281,7 @@ func TestRequireRole_DeniedRole(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 403, body.Code)
-	assert.Equal(t, "insufficient permission", body.Message)
+	assert.Equal(t, errmsg.Get("common.forbidden"), body.Message)
 }
 
 func TestRequireRole_NoRoleInContext(t *testing.T) {
@@ -303,7 +304,7 @@ func TestRequireRole_NoRoleInContext(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &body)
 	require.NoError(t, err)
 	assert.Equal(t, 403, body.Code)
-	assert.Equal(t, "forbidden", body.Message)
+	assert.Equal(t, errmsg.Get("common.forbidden"), body.Message)
 }
 
 func TestGetUserID(t *testing.T) {

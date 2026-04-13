@@ -19,27 +19,55 @@ CREATE TABLE IF NOT EXISTS `casbin_rule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Casbin 权限策略表';
 
 -- =============================================================================
--- 初始数据：系统默认角色权限
+-- 初始数据：太积堂系统默认角色权限
 -- =============================================================================
 
--- 管理员角色：拥有所有权限
+-- 超级管理员角色：拥有所有权限
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES
-('p', 'admin', '/api/v1/admin/*', '*');
+('p', 'super_admin', '/api/v1/*', '*');
 
--- 商家角色：商家相关权限
+-- 总部管理员角色：充值中心、门店、操作员管理
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES
-('p', 'merchant', '/api/v1/merchant/*', '*'),
-('p', 'merchant', '/api/v1/products/*', '*'),
-('p', 'merchant', '/api/v1/orders/*', '*');
+('p', 'admin', '/api/v1/recharge-centers/*', '*'),
+('p', 'admin', '/api/v1/stores/*', '*'),
+('p', 'admin', '/api/v1/operators/*', '*'),
+('p', 'admin', '/api/v1/recharge-applications/*', '*'),
+('p', 'admin', '/api/v1/dashboard/*', 'GET');
 
--- 普通用户角色：基础权限
+-- 充值中心财务/运营角色：充值申请、审批
 INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES
-('p', 'user', '/api/v1/user/info', 'GET'),
-('p', 'user', '/api/v1/user/info', 'PUT'),
-('p', 'user', '/api/v1/products', 'GET'),
-('p', 'user', '/api/v1/products/:id', 'GET'),
-('p', 'user', '/api/v1/cart/*', '*'),
-('p', 'user', '/api/v1/orders/*', '*');
+('p', 'center_finance', '/api/v1/recharge-applications', 'POST'),
+('p', 'center_finance', '/api/v1/recharge-applications/*', 'GET'),
+('p', 'center_finance', '/api/v1/recharge-centers/*', 'GET'),
+('p', 'center_finance', '/api/v1/dashboard/*', 'GET');
+
+-- 充值中心操作员角色：C端充值录入
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES
+('p', 'operator', '/api/v1/recharge-records', 'POST'),
+('p', 'operator', '/api/v1/recharge-records/*', 'GET'),
+('p', 'operator', '/api/v1/member-cards/*', 'GET'),
+('p', 'operator', '/api/v1/member-cards/consume', 'POST'),
+('p', 'operator', '/api/v1/mall/members/*', 'GET'),
+('p', 'operator', '/api/v1/recharge-centers/*', 'GET');
+
+-- 门店操作员角色：会员卡核销
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES
+('p', 'store_operator', '/api/v1/member-cards/*', 'GET'),
+('p', 'store_operator', '/api/v1/member-cards/consume', 'POST'),
+('p', 'store_operator', '/api/v1/stores/*', 'GET');
+
+-- 通用权限：所有角色都有
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES
+('p', 'super_admin', '/api/v1/auth/login', 'POST'),
+('p', 'admin', '/api/v1/auth/login', 'POST'),
+('p', 'center_finance', '/api/v1/auth/login', 'POST'),
+('p', 'operator', '/api/v1/auth/login', 'POST'),
+('p', 'store_operator', '/api/v1/auth/login', 'POST'),
+('p', 'super_admin', '/api/v1/auth/refresh', 'POST'),
+('p', 'admin', '/api/v1/auth/refresh', 'POST'),
+('p', 'center_finance', '/api/v1/auth/refresh', 'POST'),
+('p', 'operator', '/api/v1/auth/refresh', 'POST'),
+('p', 'store_operator', '/api/v1/auth/refresh', 'POST');
 
 -- =============================================================================
 -- 回滚语句

@@ -96,24 +96,21 @@ integration-test-clean: ## Clean integration test database
 	docker exec sale-mysql-test mysql -uroot -proot123 -e "DROP DATABASE IF EXISTS test_db; CREATE DATABASE test_db;"
 
 # =============================================================================
-# Database Migration
+# Database Migration (GORM AutoMigrate)
 # =============================================================================
 
-migrate-create: ## Create a new migration: make migrate-create name=create_users
-	@if [ -z "$(name)" ]; then \
-		echo "Usage: make migrate-create name=your_migration_name"; \
-		exit 1; \
-	fi
-	goose -dir migrations mysql "$(MYSQL_DSN)" create $(name) sql
+migrate: ## Run GORM AutoMigrate (creates/updates all tables)
+	go run ./migrations/
 
-migrate-up: ## Run migrations
-	goose -dir migrations mysql "$(MYSQL_DSN)" up
+migrate-seed: ## Run migration with seed data (same as migrate, seed is included)
+	go run ./migrations/
 
-migrate-down: ## Rollback last migration
-	goose -dir migrations mysql "$(MYSQL_DSN)" down
-
-migrate-status: ## Show migration status
-	goose -dir migrations mysql "$(MYSQL_DSN)" status
+migrate-reset: ## Reset database: drop old tables and re-migrate
+	@echo "Dropping all application tables..."
+	@docker-compose exec -T mysql mysql -u$(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) -e "\
+		DROP TABLE IF EXISTS card_transactions, store_cards, c_recharges, recharge_applications, \
+		recharge_operators, recharge_centers, users, casbin_rule;"
+	go run ./migrations/
 
 # =============================================================================
 # Docker
@@ -160,7 +157,6 @@ ci-lint: ## CI lint step
 tools: ## Install required tools
 	@echo "Installing tools..."
 	go install github.com/cosmtrek/air@latest
-	go install github.com/pressly/goose/v3/cmd/goose@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/google/addlicense@latest
 	go install github.com/swaggo/swag/cmd/swag@latest

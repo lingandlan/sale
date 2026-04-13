@@ -8,6 +8,7 @@ import (
 	"marketplace/backend/internal/middleware"
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/service"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -27,7 +28,7 @@ func (h *UserHandler) GetUserInfo(c *gin.Context) {
 
 	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		response.NotFound(c, "用户不存在")
+		response.NotFound(c, errmsg.Get("user.not_found"))
 		return
 	}
 
@@ -46,7 +47,7 @@ func (h *UserHandler) UpdateUserInfo(c *gin.Context) {
 
 	user, err := h.userSvc.Update(c.Request.Context(), userID, &req)
 	if err != nil {
-		response.InternalError(c, "更新失败")
+		response.InternalError(c, errmsg.Get("user.update_failed"))
 		return
 	}
 
@@ -58,13 +59,13 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.ParamsError(c, "invalid user id")
+		response.ParamsError(c, errmsg.Get("user.id_format_error"))
 		return
 	}
 
 	user, err := h.userSvc.GetByID(c.Request.Context(), id)
 	if err != nil {
-		response.NotFound(c, "用户不存在")
+		response.NotFound(c, errmsg.Get("user.not_found"))
 		return
 	}
 
@@ -85,7 +86,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 	users, total, err := h.userSvc.List(c.Request.Context(), page, pageSize)
 	if err != nil {
-		response.InternalError(c, "获取列表失败")
+		response.InternalError(c, errmsg.Get("user.list_failed"))
 		return
 	}
 
@@ -110,7 +111,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	// 验证旧密码（需要先获取用户）
 	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		response.NotFound(c, "用户不存在")
+		response.NotFound(c, errmsg.Get("user.not_found"))
 		return
 	}
 
@@ -118,12 +119,12 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	// 更新密码
 	hashedPassword, err := service.HashPassword(req.NewPassword)
 	if err != nil {
-		response.InternalError(c, "密码加密失败")
+		response.InternalError(c, errmsg.Get("user.password_encrypt"))
 		return
 	}
 
 	if err := h.userSvc.UpdatePassword(c.Request.Context(), user.ID, hashedPassword); err != nil {
-		response.InternalError(c, "密码修改失败")
+		response.InternalError(c, errmsg.Get("user.password_change"))
 		return
 	}
 

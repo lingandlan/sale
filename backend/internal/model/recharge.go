@@ -99,3 +99,11 @@ type RechargeOperator struct {
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
+
+// TableName 显式指定表名
+func (RechargeApplication) TableName() string { return "recharge_applications" }
+func (CRecharge) TableName() string           { return "c_recharges" }
+func (StoreCard) TableName() string           { return "store_cards" }
+func (CardTransaction) TableName() string     { return "card_transactions" }
+func (RechargeCenter) TableName() string      { return "recharge_centers" }
+func (RechargeOperator) TableName() string    { return "recharge_operators" }

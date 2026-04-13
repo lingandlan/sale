@@ -1,0 +1,180 @@
+import request from '@/utils/request'
+
+// B端充值申请
+export interface BRechargeApplyData {
+  centerId: string
+  centerName: string
+  amount: number
+  lastMonthConsumption: number
+  transactionNo: string
+  screenshot: string
+  remark: string
+}
+
+export interface BRechargeApplyResponse {
+  id: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+}
+
+// 充值审批列表
+export interface BRechargeApprovalItem {
+  id: string
+  centerName: string
+  amount: number
+  points: number
+  applicant: string
+  createdAt: string
+  status: 'pending' | 'approved' | 'rejected'
+  transactionNo?: string
+  screenshot?: string
+}
+
+export interface BRechargeApprovalListResponse {
+  list: BRechargeApprovalItem[]
+  total: number
+}
+
+export interface BRechargeApprovalListParams {
+  status?: string
+  page: number
+  pageSize: number
+}
+
+// 充值审批详情
+export interface BRechargeApprovalDetail {
+  id: string
+  centerName: string
+  centerId: string
+  amount: number
+  points: {
+    base: number
+    rebate: number
+    rebateRate: number
+    total: number
+  }
+  applicant: {
+    id: string
+    name: string
+    phone: string
+  }
+  transactionNo?: string
+  screenshot?: string
+  status: 'pending' | 'approved' | 'rejected'
+  remark?: string
+  createdAt: string
+  updatedAt?: string
+  approvedBy?: string
+  approvedAt?: string
+}
+
+// 充值审批操作
+export interface ApprovalActionData {
+  id: string
+  action: 'approve' | 'reject'
+  remark?: string
+}
+
+// C端充值录入
+export interface CRechargeEntryData {
+  memberId: string
+  memberName: string
+  memberPhone: string
+  centerId: string
+  centerName: string
+  amount: number
+  paymentMethod: 'cash' | 'wechat' | 'alipay' | 'card'
+  remark: string
+}
+
+export interface CRechargeEntryResponse {
+  id: string
+  transactionNo: string
+  balanceBefore: number
+  balanceAfter: number
+  createdAt: string
+}
+
+// 充值记录列表
+export interface RechargeRecordItem {
+  id: string
+  transactionNo: string
+  memberName: string
+  memberPhone: string
+  centerName: string
+  amount: number
+  paymentMethod: string
+  createdAt: string
+}
+
+export interface RechargeRecordListParams {
+  memberPhone?: string
+  centerId?: string
+  startDate?: string
+  endDate?: string
+  page: number
+  pageSize: number
+}
+
+export interface RechargeRecordListResponse {
+  list: RechargeRecordItem[]
+  total: number
+}
+
+// 充值记录详情
+export interface RechargeRecordDetail {
+  id: string
+  transactionNo: string
+  member: {
+    id: string
+    name: string
+    phone: string
+  }
+  center: {
+    id: string
+    name: string
+  }
+  amount: number
+  points: number
+  paymentMethod: string
+  operator: string
+  remark?: string
+  balanceBefore: number
+  balanceAfter: number
+  createdAt: string
+}
+
+// 提交B端充值申请
+export function submitBRechargeApply(data: BRechargeApplyData) {
+  return request.post<{ data: BRechargeApplyResponse }>('/recharge/b-apply', data)
+}
+
+// 获取充值审批列表
+export function getBRechargeApprovalList(params: BRechargeApprovalListParams) {
+  return request.get<{ data: BRechargeApprovalListResponse }>('/recharge/b-approval', { params })
+}
+
+// 获取充值审批详情
+export function getBRechargeApprovalDetail(id: string) {
+  return request.get<{ data: BRechargeApprovalDetail }>(`/recharge/b-approval/${id}`)
+}
+
+// 审批操作
+export function approvalAction(data: ApprovalActionData) {
+  return request.post<{ data: { success: boolean } }>('/recharge/b-approval/action', data)
+}
+
+// C端充值录入
+export function submitCRechargeEntry(data: CRechargeEntryData) {
+  return request.post<{ data: CRechargeEntryResponse }>('/recharge/c-entry', data)
+}
+
+// 获取充值记录列表
+export function getRechargeRecordList(params: RechargeRecordListParams) {
+  return request.get<{ data: RechargeRecordListResponse }>('/recharge/records', { params })
+}
+
+// 获取充值记录详情
+export function getRechargeRecordDetail(id: string) {
+  return request.get<{ data: RechargeRecordDetail }>(`/recharge/records/${id}`)
+}

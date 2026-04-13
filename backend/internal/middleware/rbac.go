@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"marketplace/backend/internal/rbac"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -26,7 +27,7 @@ func (m *RBACMiddleware) Auth() gin.HandlerFunc {
 		// 获取当前用户 ID 和角色
 		userID, exists := c.Get("user_id")
 		if !exists {
-			response.Unauthorized(c, "未登录")
+			response.Unauthorized(c, errmsg.Get("common.unauthorized"))
 			c.Abort()
 			return
 		}
@@ -45,14 +46,14 @@ func (m *RBACMiddleware) Auth() gin.HandlerFunc {
 		// 获取用户角色列表
 		roles, err := m.casbinSvc.GetRolesForUser(formatUserID(userID))
 		if err != nil {
-			response.InternalError(c, "权限检查失败")
+			response.InternalError(c, errmsg.Get("rbac.check_failed"))
 			c.Abort()
 			return
 		}
 
 		// 检查是否拥有有效角色
 		if len(roles) == 0 {
-			response.Forbidden(c, "无有效角色")
+			response.Forbidden(c, errmsg.Get("rbac.no_role"))
 			c.Abort()
 			return
 		}
@@ -71,7 +72,7 @@ func (m *RBACMiddleware) Auth() gin.HandlerFunc {
 		}
 
 		if !hasPermission {
-			response.Forbidden(c, "无权限访问")
+			response.Forbidden(c, errmsg.Get("rbac.no_permission"))
 			c.Abort()
 			return
 		}
@@ -85,7 +86,7 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("role")
 		if !exists {
-			response.Unauthorized(c, "未登录")
+			response.Unauthorized(c, errmsg.Get("common.unauthorized"))
 			c.Abort()
 			return
 		}
@@ -97,7 +98,7 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 			}
 		}
 
-		response.Forbidden(c, "角色不匹配")
+		response.Forbidden(c, errmsg.Get("rbac.role_mismatch"))
 		c.Abort()
 		return
 	}

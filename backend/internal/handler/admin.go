@@ -8,6 +8,7 @@ import (
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/service"
 	apperrors "marketplace/backend/pkg/errors"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -24,16 +25,6 @@ func NewAdminHandler(userSvc service.UserServiceInterface) *AdminHandler {
 }
 
 // ListUsers 获取用户列表（管理员）
-// @Summary 获取用户列表（管理员）
-// @Tags 用户管理
-// @Produce json
-// @Param page query int false "页码" default(1)
-// @Param page_size query int false "每页数量" default(20)
-// @Param keyword query string false "搜索关键词"
-// @Param role query string false "角色筛选"
-// @Param status query int false "状态筛选"
-// @Success 200 {object} response.Response{data=model.ListUsersResponse}
-// @Router /api/v1/admin/users [get]
 func (h *AdminHandler) ListUsers(c *gin.Context) {
 	var req model.ListUsersRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -43,7 +34,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 	result, err := h.userSvc.ListWithFilters(c.Request.Context(), &req)
 	if err != nil {
-		response.InternalError(c, "获取用户列表失败")
+		response.InternalError(c, errmsg.Get("admin.user_list_failed"))
 		return
 	}
 
@@ -51,19 +42,11 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 }
 
 // ResetPassword 重置用户密码（管理员）
-// @Summary 重置用户密码（管理员）
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Param id path int true "用户ID"
-// @Param request body model.ResetPasswordRequest true "请求体"
-// @Success 200 {object} response.Response
-// @Router /api/v1/admin/users/{id}/reset-password [post]
 func (h *AdminHandler) ResetPassword(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.ParamsError(c, "用户ID格式错误")
+		response.ParamsError(c, errmsg.Get("user.id_format_error"))
 		return
 	}
 
@@ -75,9 +58,9 @@ func (h *AdminHandler) ResetPassword(c *gin.Context) {
 
 	if err := h.userSvc.ResetPassword(c.Request.Context(), id, &req); err != nil {
 		if err == apperrors.ErrNotFound {
-			response.NotFound(c, "用户不存在")
+			response.NotFound(c, errmsg.Get("admin.user_not_found"))
 		} else {
-			response.InternalError(c, "重置密码失败")
+			response.InternalError(c, errmsg.Get("admin.reset_password"))
 		}
 		return
 	}
@@ -86,19 +69,11 @@ func (h *AdminHandler) ResetPassword(c *gin.Context) {
 }
 
 // UpdateUserStatus 启用/禁用用户（管理员）
-// @Summary 启用/禁用用户（管理员）
-// @Tags 用户管理
-// @Accept json
-// @Produce json
-// @Param id path int true "用户ID"
-// @Param request body model.UpdateUserStatusRequest true "请求体"
-// @Success 200 {object} response.Response{data=model.User}
-// @Router /api/v1/admin/users/{id}/status [put]
 func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.ParamsError(c, "用户ID格式错误")
+		response.ParamsError(c, errmsg.Get("user.id_format_error"))
 		return
 	}
 
@@ -110,9 +85,9 @@ func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
 
 	if err := h.userSvc.UpdateStatus(c.Request.Context(), id, &req); err != nil {
 		if err == apperrors.ErrNotFound {
-			response.NotFound(c, "用户不存在")
+			response.NotFound(c, errmsg.Get("admin.user_not_found"))
 		} else {
-			response.InternalError(c, "更新用户状态失败")
+			response.InternalError(c, errmsg.Get("admin.update_status"))
 		}
 		return
 	}
@@ -120,7 +95,7 @@ func (h *AdminHandler) UpdateUserStatus(c *gin.Context) {
 	// 获取更新后的用户信息
 	user, err := h.userSvc.GetByID(c.Request.Context(), id)
 	if err != nil {
-		response.InternalError(c, "获取用户信息失败")
+		response.InternalError(c, errmsg.Get("admin.get_user_failed"))
 		return
 	}
 
@@ -137,7 +112,7 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 
 	user, err := h.userSvc.Create(c.Request.Context(), &req)
 	if err != nil {
-		response.InternalError(c, "创建用户失败")
+		response.InternalError(c, errmsg.Get("admin.create_user_failed"))
 		return
 	}
 
@@ -149,7 +124,7 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.ParamsError(c, "用户ID格式错误")
+		response.ParamsError(c, errmsg.Get("user.id_format_error"))
 		return
 	}
 
@@ -162,9 +137,9 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	user, err := h.userSvc.Update(c.Request.Context(), id, &req)
 	if err != nil {
 		if err == apperrors.ErrNotFound {
-			response.NotFound(c, "用户不存在")
+			response.NotFound(c, errmsg.Get("admin.user_not_found"))
 		} else {
-			response.InternalError(c, "更新用户失败")
+			response.InternalError(c, errmsg.Get("admin.update_user_failed"))
 		}
 		return
 	}
@@ -173,25 +148,19 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser 删除用户（管理员）
-// @Summary 删除用户（管理员）
-// @Tags 用户管理
-// @Produce json
-// @Param id path int true "用户ID"
-// @Success 200 {object} response.Response
-// @Router /api/v1/admin/users/{id} [delete]
 func (h *AdminHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.ParamsError(c, "用户ID格式错误")
+		response.ParamsError(c, errmsg.Get("user.id_format_error"))
 		return
 	}
 
 	if err := h.userSvc.Delete(c.Request.Context(), id); err != nil {
 		if err == apperrors.ErrNotFound {
-			response.NotFound(c, "用户不存在")
+			response.NotFound(c, errmsg.Get("admin.user_not_found"))
 		} else {
-			response.InternalError(c, "删除用户失败")
+			response.InternalError(c, errmsg.Get("admin.delete_user_failed"))
 		}
 		return
 	}

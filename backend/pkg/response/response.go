@@ -30,14 +30,32 @@ type ListResponse struct {
 
 // 业务错误码
 const (
-	CodeSuccess         = 0
-	CodeParamsError     = 400
-	CodeUnauthorized    = 401
-	CodeForbidden       = 403
-	CodeNotFound        = 404
-	CodeConflict        = 409
-	CodeInternalError   = 500
+	CodeSuccess       = 0
+	CodeParamsError   = 400
+	CodeUnauthorized  = 401
+	CodeForbidden     = 403
+	CodeNotFound      = 404
+	CodeConflict      = 409
+	CodeInternalError = 500
 )
+
+// errorMessages 错误码 → 默认中文提示
+var errorMessages = map[int]string{
+	CodeParamsError:   "请求参数有误",
+	CodeUnauthorized:  "请先登录",
+	CodeForbidden:     "无权限访问",
+	CodeNotFound:      "请求的资源不存在",
+	CodeConflict:      "数据冲突，请刷新后重试",
+	CodeInternalError: "服务器内部错误",
+}
+
+// ErrorMessage 根据错误码返回默认中文提示
+func ErrorMessage(code int) string {
+	if msg, ok := errorMessages[code]; ok {
+		return msg
+	}
+	return "未知错误"
+}
 
 // Success 返回成功响应
 func Success(c *gin.Context, data interface{}) {

@@ -3,29 +3,36 @@
  */
 import api from './request'
 
-// 用户类型
+// 用户类型（太积堂系统）
 export interface User {
   id: number
-  username: string
-  nickname: string
-  email: string
-  avatar?: string
-  role: number
-  status: number
+  phone: string
+  name: string
+  role: string  // super_admin, admin, operator
+  center_id?: number
+  center_name?: string
+  status: number  // 0=禁用, 1=启用
+  last_login_at?: string
   created_at: string
 }
 
-// 登录参数
+// 登录参数（太积堂系统）
 export interface LoginParams {
-  username: string
+  phone: string
   password: string
 }
 
-// 登录响应
+// 登录响应（太积堂系统）
 export interface LoginResponse {
   access_token: string
   refresh_token: string
-  user: User
+  expires_in: number
+}
+
+// 修改密码参数
+export interface ChangePasswordParams {
+  old_password: string
+  new_password: string
 }
 
 // 获取用户信息
@@ -45,8 +52,13 @@ export function refreshTokenApi(refreshToken: string) {
   })
 }
 
+// 修改密码
+export function changePassword(params: ChangePasswordParams) {
+  return api.post('/user/change-password', params)
+}
+
 // 更新用户信息
-export function updateUser(data: Partial<User>) {
+export function updateUser(data: { name?: string }) {
   return api.put('/user/info', data)
 }
 

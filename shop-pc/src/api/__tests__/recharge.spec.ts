@@ -13,7 +13,7 @@ describe('Recharge API', () => {
     const mockResponse = { code: 0, data: { id: '1', status: 'pending' } }
     vi.mocked(request).post!.mockResolvedValue(mockResponse)
 
-    const data = { centerId: '1', amount: 10000 }
+    const data = { centerId: '1', centerName: '北京', amount: 10000, lastMonthConsumption: 0, transactionNo: '', screenshot: '', remark: '' }
     const result = await submitBRechargeApply(data)
     expect(request.post).toHaveBeenCalledWith('/recharge/b-apply', data)
     expect(result).toEqual(mockResponse)
@@ -51,7 +51,7 @@ describe('Recharge API', () => {
     const mockResponse = { code: 0, data: { id: '1', transactionNo: 'TX001' } }
     vi.mocked(request).post!.mockResolvedValue(mockResponse)
 
-    const data = { memberId: '1', memberName: '张三', memberPhone: '13800001111', amount: 5000, paymentMethod: 'cash' as const }
+    const data = { memberId: '1', memberName: '张三', memberPhone: '13800001111', centerId: '1', centerName: '北京朝阳中心', amount: 5000, paymentMethod: 'cash' as const, remark: '' }
     const result = await submitCRechargeEntry(data)
     expect(request.post).toHaveBeenCalledWith('/recharge/c-entry', data)
     expect(result).toEqual(mockResponse)
@@ -78,6 +78,6 @@ describe('Recharge API', () => {
   it('API调用失败时应该抛出错误', async () => {
     vi.mocked(request).post!.mockRejectedValue(new Error('服务器错误'))
 
-    await expect(submitBRechargeApply({ centerId: '1', amount: 100 })).rejects.toThrow('服务器错误')
+    await expect(submitBRechargeApply({ centerId: '1', centerName: '北京', amount: 100, lastMonthConsumption: 0, transactionNo: '', screenshot: '', remark: '' })).rejects.toThrow('服务器错误')
   })
 })
