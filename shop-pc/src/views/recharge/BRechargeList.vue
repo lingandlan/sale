@@ -69,27 +69,31 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="60" align="center" />
-        <el-table-column prop="centerName" label="充值中心" width="200" align="center" />
-        <el-table-column label="充值金额" width="150" align="center">
+        <el-table-column prop="centerName" label="充值中心" min-width="140" />
+        <el-table-column label="充值金额" min-width="120" align="right">
           <template #default="{ row }">
-            ¥{{ row.amount.toLocaleString() }}
+            ¥{{ (row.amount ?? 0).toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column label="预计积分" width="150" align="center">
+        <el-table-column label="预计积分" min-width="120" align="right">
           <template #default="{ row }">
-            {{ row.points.toLocaleString() }}
+            {{ (row.points ?? 0).toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column prop="applicant" label="申请人" width="120" align="center" />
-        <el-table-column prop="createdAt" label="申请时间" width="180" align="center" />
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column prop="applicantName" label="申请人" width="100" align="center" />
+        <el-table-column label="申请时间" min-width="170" align="center">
+          <template #default="{ row }">
+            {{ formatTime(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" width="160" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button
@@ -199,6 +203,13 @@ const getStatusText = (status: string) => {
     default:
       return '未知'
   }
+}
+
+const formatTime = (iso: string) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 const loadData = async () => {

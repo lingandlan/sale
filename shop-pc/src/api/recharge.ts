@@ -23,7 +23,7 @@ export interface BRechargeApprovalItem {
   centerName: string
   amount: number
   points: number
-  applicant: string
+  applicantName: string
   createdAt: string
   status: 'pending' | 'approved' | 'rejected'
   transactionNo?: string

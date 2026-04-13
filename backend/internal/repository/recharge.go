@@ -2,6 +2,7 @@ package repository
 
 import (
 	"marketplace/backend/internal/model"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -58,7 +59,8 @@ func (r *RechargeRepository) GetRechargeApplications(status string, page, pageSi
 
 	query := r.db.Model(&model.RechargeApplication{})
 	if status != "" {
-		query = query.Where("status = ?", status)
+		statuses := strings.Split(status, ",")
+		query = query.Where("status IN ?", statuses)
 	}
 
 	query.Count(&total)
