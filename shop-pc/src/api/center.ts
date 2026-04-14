@@ -6,7 +6,11 @@ export interface CenterItem {
   id: string
   name: string
   code: string
+  province: string
+  city: string
+  district: string
   address: string
+  managerId: string
   phone: string
   status: string
   created_at?: string
