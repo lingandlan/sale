@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useUserStore } from '../stores/user'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -159,16 +160,28 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('access_token')
 
   if (to.meta?.requiresAuth !== false && !token) {
-    // 需要认证但没有token，跳转到登录页
     next('/login')
   } else if (to.path === '/login' && token) {
-    // 已登录用户访问登录页，跳转到首页
     next('/dashboard')
   } else {
+    // 有 token 但还没加载用户信息时，先加载
+    if (token) {
+      const userStore = useUserStore()
+      if (!userStore.userInfo) {
+        try {
+          await userStore.fetchUserInfo()
+        } catch {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          next('/login')
+          return
+        }
+      }
+    }
     next()
   }
 })

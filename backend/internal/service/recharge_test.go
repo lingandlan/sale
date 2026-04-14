@@ -112,7 +112,7 @@ func (m *MockRechargeRepo) CreateCenter(center *model.RechargeCenter) error {
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) UpdateCenter(center *model.RechargeCenter) error {
+func (m *MockRechargeRepo) UpdateCenter(id string, updates map[string]interface{}) error {
 	args := m.Called(center)
 	return args.Error(0)
 }

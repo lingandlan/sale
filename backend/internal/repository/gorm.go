@@ -33,5 +33,8 @@ func NewGormDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("ping database failed: %w", err)
 	}
 
+	// 确保连接使用 utf8mb4，MySQL 5.6 默认 latin1 会导致中文乱码
+	sqlDB.Exec("SET NAMES utf8mb4")
+
 	return db, nil
 }

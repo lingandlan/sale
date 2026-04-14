@@ -536,9 +536,7 @@ func TestRechargeRepository_Center(t *testing.T) {
 		err := repo.CreateCenter(center)
 		require.NoError(t, err)
 
-		center.Name = "New Name"
-		center.Address = "新地址"
-		err = repo.UpdateCenter(center)
+		err = repo.UpdateCenter(center.ID, map[string]interface{}{"name": "New Name", "address": "新地址"})
 		require.NoError(t, err)
 
 		// Verify update via raw query since GetCenters only returns active

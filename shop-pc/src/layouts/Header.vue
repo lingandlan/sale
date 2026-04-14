@@ -31,6 +31,7 @@
 import { ref, computed } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { User, Expand, Fold } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
 
 interface Props {
   collapsed?: boolean
@@ -41,9 +42,9 @@ const emit = defineEmits<{
   'toggle': []
 }>()
 
-// 从localStorage获取用户信息（暂时用Mock数据）
+const userStore = useUserStore()
 const userName = computed(() => {
-  return '管理员：张三'
+  return userStore.displayName || '未登录'
 })
 
 const handleToggle = () => {
@@ -59,6 +60,7 @@ const handleCommand = (command: string) => {
     }).then(() => {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      userStore.clear()
       window.location.href = '/login'
     }).catch(() => {
       // 取消操作

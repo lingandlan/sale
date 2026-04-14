@@ -1,7 +1,7 @@
 # Marketplace API Configuration
 
 server:
-  port: 8081
+  port: 8080
   mode: debug  # debug / release
 
 database:

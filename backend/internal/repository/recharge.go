@@ -33,7 +33,7 @@ type RechargeRepoInterface interface {
 	GetCenterTotalConsumed(centerID string) float64
 	GetCenters() ([]model.RechargeCenter, error)
 	CreateCenter(center *model.RechargeCenter) error
-	UpdateCenter(center *model.RechargeCenter) error
+	UpdateCenter(id string, updates map[string]interface{}) error
 	DeleteCenter(id string) error
 	GetOperators() ([]model.RechargeOperator, error)
 	CreateOperator(operator *model.RechargeOperator) error
@@ -280,7 +280,7 @@ func (r *RechargeRepository) DeductCenterBalance(id string, amount float64) (flo
 // GetCenters 获取充值中心列表
 func (r *RechargeRepository) GetCenters() ([]model.RechargeCenter, error) {
 	var list []model.RechargeCenter
-	err := r.db.Where("status = ?", "active").Find(&list).Error
+	err := r.db.Find(&list).Error
 	return list, err
 }
 
@@ -310,8 +310,8 @@ func (r *RechargeRepository) CreateCenter(center *model.RechargeCenter) error {
 }
 
 // UpdateCenter 更新充值中心
-func (r *RechargeRepository) UpdateCenter(center *model.RechargeCenter) error {
-	return r.db.Save(center).Error
+func (r *RechargeRepository) UpdateCenter(id string, updates map[string]interface{}) error {
+	return r.db.Model(&model.RechargeCenter{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // DeleteCenter 删除充值中心

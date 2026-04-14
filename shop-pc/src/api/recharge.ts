@@ -171,7 +171,7 @@ export function submitCRechargeEntry(data: CRechargeEntryData) {
 
 // 获取充值中心详情（含余额）
 export function getCenterDetail(id: string) {
-  return request.get<{ data: { id: string; name: string; balance: number } }>(`/recharge/centers/${id}`)
+  return request.get<{ data: { id: string; name: string; balance: number } }>(`/center/${id}`)
 }
 
 // 获取充值记录列表

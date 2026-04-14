@@ -18,3 +18,17 @@ export const login = (data: LoginParams) => {
     data
   })
 }
+
+export interface UserInfo {
+  id: number
+  phone: string
+  name: string
+  role: string
+  center_id?: number | null
+  center_name?: string | null
+  status: number
+}
+
+export const getUserInfo = () => {
+  return request.get<{ data: UserInfo }>('/user/info')
+}

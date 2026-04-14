@@ -80,8 +80,10 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const phone = ref('')
 const password = ref('')
@@ -108,6 +110,7 @@ const handleLogin = async () => {
     })
     localStorage.setItem('access_token', res.data.access_token)
     localStorage.setItem('refresh_token', res.data.refresh_token)
+    await userStore.fetchUserInfo()
     ElMessage.success('登录成功')
     router.push('/dashboard')
   } catch (error) {

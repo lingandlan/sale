@@ -109,14 +109,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StatCard from '../components/StatCard.vue'
 import QuickAction from '../components/QuickAction.vue'
 import RechargeChart from '../components/RechargeChart.vue'
 import { getStatistics, getTodos, getRechargeTrends } from '../api/dashboard'
 import type { Statistics as StatisticsType, Todos, RechargeTrend } from '../types/dashboard'
+import { useUserStore } from '@/stores/user'
 
-const userName = ref('管理员：张三')
+const userStore = useUserStore()
+const userName = computed(() => {
+  const name = userStore.displayName
+  const roleMap: Record<string, string> = {
+    super_admin: '超级管理员',
+    hq_admin: '总部管理员',
+    finance: '财务运营',
+    center_admin: '中心管理员',
+    operator: '操作员'
+  }
+  const role = roleMap[userStore.userInfo?.role || ''] || ''
+  return role ? `${role}：${name}` : name || ''
+})
 const currentTime = ref('')
 let isUnmounted = false
 

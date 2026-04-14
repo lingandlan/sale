@@ -5,6 +5,32 @@
     </div>
 
     <div class="content-area">
+      <!-- 充值中心选择 -->
+      <div class="info-card">
+        <div class="card-header">
+          <span class="header-icon">🏢</span>
+          <h3 class="header-title">充值中心</h3>
+        </div>
+        <el-divider />
+        <div class="center-select-row">
+          <span class="search-label">选择充值中心</span>
+          <el-select
+            v-model="selectedCenterId"
+            placeholder="请选择充值中心"
+            style="flex: 1"
+            :disabled="!userStore.canSelectAllCenters"
+            @change="handleCenterChange"
+          >
+            <el-option
+              v-for="center in centerOptions"
+              :key="center.id"
+              :label="center.name"
+              :value="center.id"
+            />
+          </el-select>
+        </div>
+      </div>
+
       <!-- 会员查询卡片 -->
       <div class="info-card">
         <div class="card-header">
@@ -18,7 +44,7 @@
             <el-input
               v-model="searchQuery"
               placeholder="请输入手机号或会员卡号"
-              style="width: 400px"
+              style="flex: 1"
               @keyup.enter="handleSearch"
             />
           </div>
@@ -138,10 +164,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { submitCRechargeEntry, getCenterDetail } from '@/api/recharge'
+import { getCenterList } from '@/api/center'
+import { useUserStore } from '@/stores/user'
 
 interface MemberInfo {
   id: string
@@ -151,25 +179,74 @@ interface MemberInfo {
   level: string
 }
 
+interface CenterOption {
+  id: string
+  name: string
+}
+
 const router = useRouter()
+const userStore = useUserStore()
 
 const searchQuery = ref('')
 const memberInfo = ref<MemberInfo | null>(null)
 const rechargeAmount = ref<number>(0)
 const remark = ref('')
 const storeBalance = ref(0)
+const selectedCenterId = ref('')
+const selectedCenterName = ref('')
+const centerOptions = ref<CenterOption[]>([])
 
+// 加载充值中心列表
+const loadCenterOptions = async () => {
+  if (userStore.canSelectAllCenters) {
+    try {
+      const res = await getCenterList()
+      centerOptions.value = (res.data || []).map(c => ({ id: c.id, name: c.name }))
+    } catch {
+      centerOptions.value = []
+    }
+  } else {
+    // 操作员/中心管理员 — 只有自己所属的中心
+    const cid = userStore.userCenterId
+    const cname = userStore.userCenterName
+    if (cid) {
+      centerOptions.value = [{ id: String(cid), name: cname || '' }]
+      selectedCenterId.value = String(cid)
+      selectedCenterName.value = cname || ''
+      loadStoreBalance()
+    }
+  }
+}
+
+// 选择充值中心后加载余额
+const handleCenterChange = (id: string) => {
+  const center = centerOptions.value.find(c => c.id === id)
+  selectedCenterName.value = center?.name || ''
+  loadStoreBalance()
+}
+
+// 获取选中中心的余额
 const loadStoreBalance = async () => {
+  if (!selectedCenterId.value) {
+    storeBalance.value = 0
+    return
+  }
   try {
-    const res = await getCenterDetail('1')
-    storeBalance.value = res.data.data.balance ?? 0
+    const res = await getCenterDetail(selectedCenterId.value)
+    storeBalance.value = res.data.balance ?? 0
   } catch {
     storeBalance.value = 0
   }
 }
 
-// 页面加载时获取门店余额
-loadStoreBalance()
+onMounted(() => {
+  // 如果还没加载过用户信息（刷新页面场景），先加载
+  if (!userStore.userInfo) {
+    userStore.fetchUserInfo().then(() => loadCenterOptions())
+  } else {
+    loadCenterOptions()
+  }
+})
 
 const quickAmounts = [100, 500, 1000, 5000]
 
@@ -181,7 +258,7 @@ const afterRechargeBalance = computed(() => {
 })
 
 const canSubmit = computed(() => {
-  return memberInfo.value && rechargeAmount.value > 0
+  return memberInfo.value && rechargeAmount.value > 0 && selectedCenterId.value
 })
 
 const handleSearch = () => {
@@ -242,8 +319,8 @@ const handleSubmit = async () => {
       memberId: memberInfo.value!.id,
       memberName: memberInfo.value!.name,
       memberPhone: memberInfo.value!.phone,
-      centerId: '1',
-      centerName: '北京朝阳中心',
+      centerId: selectedCenterId.value,
+      centerName: selectedCenterName.value,
       amount: rechargeAmount.value,
       paymentMethod: 'cash',
       remark: remark.value || ''
@@ -322,6 +399,14 @@ const resetForm = () => {
   margin: 0;
 }
 
+/* 充值中心选择行 */
+.center-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 搜索行 */
 .search-row {
   display: flex;
   gap: 12px;
@@ -338,7 +423,7 @@ const resetForm = () => {
 .search-label {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #262626;
+  color: #595959;
   white-space: nowrap;
 }
 
@@ -346,7 +431,7 @@ const resetForm = () => {
   background-color: #C00000;
   border-color: #C00000;
   border-radius: 4px;
-  height: 48px;
+  height: 40px;
 }
 
 .member-info-box {
@@ -432,7 +517,7 @@ const resetForm = () => {
 }
 
 .quick-amount-btn {
-  width: 80px;
+  flex: 1;
   height: 36px;
   border-radius: 4px;
   border: 1px solid #D9D9D9;
@@ -453,6 +538,7 @@ const resetForm = () => {
   background-color: #FFF7E6;
   border-radius: 4px;
   padding: 12px;
+  margin-top: 16px;
 }
 
 .ratio-icon {
@@ -472,6 +558,7 @@ const resetForm = () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 16px;
 }
 
 .calc-row {
@@ -499,6 +586,7 @@ const resetForm = () => {
   align-items: center;
   padding-top: 12px;
   border-top: 1px solid #E5E5E5;
+  margin-top: 16px;
 }
 
 .store-label {
@@ -523,7 +611,7 @@ const resetForm = () => {
   border-radius: 8px;
   border: 1px solid #E5E5E5;
   padding: 24px;
-  margin: 0 24px 24px 24px;
+  margin: 0 24px;
 }
 
 .cancel-btn {

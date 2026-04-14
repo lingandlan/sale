@@ -11,11 +11,11 @@
       <!-- 筛选栏 -->
       <div class="filter-card">
         <el-input v-model="filters.keyword" placeholder="搜索中心名称" style="width: 240px" clearable />
-        <el-select v-model="filters.level" placeholder="级别" style="width: 180px" clearable>
+        <el-select v-model="filters.level" placeholder="级别" style="width: 180px" clearable @change="handleSearch">
           <el-option label="子公司合伙人" value="1" />
           <el-option label="服务中心合伙人" value="2" />
         </el-select>
-        <el-select v-model="filters.status" placeholder="状态" style="width: 120px" clearable>
+        <el-select v-model="filters.status" placeholder="状态" style="width: 120px" clearable @change="handleSearch">
           <el-option label="正常" value="normal" />
           <el-option label="冻结" value="frozen" />
         </el-select>
@@ -210,12 +210,30 @@ const loadData = async () => {
     const res = await getCenterList()
     if (res?.data) {
       let list: CenterItem[] = res.data || []
-      if (filters.keyword) {
-        list = list.filter((c: CenterItem) => c.name.includes(filters.keyword))
+
+      // 关键字过滤
+      const keyword = (filters.keyword || '').trim()
+      if (keyword) {
+        list = list.filter((c: CenterItem) => c.name.includes(keyword))
       }
-      if (filters.status) {
-        list = list.filter((c: CenterItem) => c.status === filters.status)
+
+      // 级别过滤：基于显示文本匹配
+      const levelVal = filters.level || ''
+      if (levelVal) {
+        list = list.filter((c: CenterItem) => {
+          const displayLevel = c.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人'
+          const targetLevel = levelVal === '1' ? '子公司合伙人' : '服务中心合伙人'
+          return displayLevel === targetLevel
+        })
       }
+
+      // 状态过滤：API 用 active/frozen，前端用 normal/frozen
+      const statusVal = filters.status || ''
+      if (statusVal) {
+        const apiStatus = statusVal === 'normal' ? 'active' : statusVal
+        list = list.filter((c: CenterItem) => c.status === apiStatus)
+      }
+
       tableData.value = list.map((c: CenterItem) => {
         const managerOp = operatorList.value.find(op => op.id === c.managerId)
         return {

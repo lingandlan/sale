@@ -441,41 +441,10 @@ func (s *RechargeService) CreateCenter(data map[string]interface{}) (*model.Rech
 
 // UpdateCenter 更新充值中心
 func (s *RechargeService) UpdateCenter(id string, data map[string]interface{}) (*model.RechargeCenter, error) {
-	center := &model.RechargeCenter{
-		ID:     id,
-		Status: data["status"].(string),
-	}
-
-	if v, ok := data["name"].(string); ok {
-		center.Name = v
-	}
-	if v, ok := data["code"].(string); ok {
-		center.Code = v
-	}
-	if v, ok := data["province"].(string); ok {
-		center.Province = v
-	}
-	if v, ok := data["city"].(string); ok {
-		center.City = v
-	}
-	if v, ok := data["district"].(string); ok {
-		center.District = v
-	}
-	if v, ok := data["address"].(string); ok {
-		center.Address = v
-	}
-	if v, ok := data["phone"].(string); ok {
-		center.Phone = v
-	}
-	if v, ok := data["managerId"].(string); ok {
-		center.ManagerID = v
-	}
-
-	if err := s.rechargeRepo.UpdateCenter(center); err != nil {
+	if err := s.rechargeRepo.UpdateCenter(id, data); err != nil {
 		return nil, err
 	}
-
-	return center, nil
+	return s.rechargeRepo.GetCenterByID(id)
 }
 
 // DeleteCenter 删除充值中心
