@@ -96,19 +96,54 @@
           </el-select>
         </el-form-item>
         <el-form-item label="省份" required>
-          <el-input v-model="formData.province" placeholder="请输入省份" />
+          <el-select
+            v-model="formData.province"
+            placeholder="请选择省份"
+            style="width: 100%"
+            @change="handleProvinceChange"
+          >
+            <el-option v-for="p in regionData" :key="p.value" :label="p.label" :value="p.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="城市" required>
-          <el-input v-model="formData.city" placeholder="请输入城市" />
+          <el-select
+            v-model="formData.city"
+            placeholder="请选择城市"
+            style="width: 100%"
+            :disabled="!formData.province"
+            @change="handleCityChange"
+          >
+            <el-option v-for="c in cityOptions" :key="c.value" :label="c.label" :value="c.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="区县" required>
-          <el-input v-model="formData.district" placeholder="请输入区县" />
+          <el-select
+            v-model="formData.district"
+            placeholder="请选择区县"
+            style="width: 100%"
+            :disabled="!formData.city"
+          >
+            <el-option v-for="d in districtOptions" :key="d.value" :label="d.label" :value="d.value" />
+          </el-select>
         </el-form-item>
         <el-form-item label="具体位置" required>
           <el-input v-model="formData.address" placeholder="请输入具体位置" />
         </el-form-item>
         <el-form-item label="管理员">
-          <el-input v-model="formData.manager" placeholder="选择已有操作员账号" />
+          <el-select
+            v-model="formData.managerId"
+            placeholder="搜索操作员姓名或手机号"
+            style="width: 100%"
+            filterable
+            clearable
+          >
+            <el-option
+              v-for="op in operatorList"
+              :key="op.id"
+              :label="`${op.name}（${op.phone}）`"
+              :value="op.id"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -120,9 +155,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCenterList, createCenter, updateCenter, deleteCenter, type CenterItem } from '@/api/center'
+import { getCenterList, createCenter, updateCenter, type CenterItem } from '@/api/center'
+import { getOperatorList, type OperatorItem } from '@/api/operator'
+import { regionData, getCities, getDistricts } from '@/utils/regionData'
 
 const filters = reactive({ keyword: '', level: '', status: '' })
 const pagination = reactive({ page: 1, size: 10, total: 0 })
@@ -138,10 +175,35 @@ const formData = reactive({
   city: '',
   district: '',
   address: '',
-  manager: ''
+  managerId: ''
 })
 
 const tableData = ref<any[]>([])
+const operatorList = ref<OperatorItem[]>([])
+
+// 级联地区选项
+const cityOptions = computed(() => getCities(formData.province))
+const districtOptions = computed(() => getDistricts(formData.province, formData.city))
+
+const handleProvinceChange = () => {
+  formData.city = ''
+  formData.district = ''
+}
+
+const handleCityChange = () => {
+  formData.district = ''
+}
+
+const loadOperators = async () => {
+  try {
+    const res = await getOperatorList()
+    if (res?.data) {
+      operatorList.value = res.data
+    }
+  } catch {
+    // fallback to empty
+  }
+}
 
 const loadData = async () => {
   try {
@@ -154,17 +216,20 @@ const loadData = async () => {
       if (filters.status) {
         list = list.filter((c: CenterItem) => c.status === filters.status)
       }
-      tableData.value = list.map((c: CenterItem) => ({
-        id: c.id,
-        name: c.name,
-        region: c.address || '-',
-        level: c.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人',
-        manager: c.phone || '-',
-        balance: 0,
-        totalIn: 0,
-        totalOut: 0,
-        status: c.status === 'active' ? 'normal' : 'frozen'
-      }))
+      tableData.value = list.map((c: CenterItem) => {
+        const managerOp = operatorList.value.find(op => op.id === c.managerId)
+        return {
+          id: c.id,
+          name: c.name,
+          region: [c.province, c.city, c.district].filter(Boolean).join('/') || c.address || '-',
+          level: c.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人',
+          manager: managerOp ? `${managerOp.name}（${managerOp.phone}）` : '-',
+          balance: 0,
+          totalIn: 0,
+          totalOut: 0,
+          status: c.status === 'active' ? 'normal' : 'frozen'
+        }
+      })
       pagination.total = tableData.value.length
     }
   } catch (error) {
@@ -177,23 +242,41 @@ const handleResetFilter = () => { filters.keyword = ''; filters.level = ''; filt
 
 const handleAdd = () => {
   dialogTitle.value = '新建充值中心'
-  Object.assign(formData, { id: '', name: '', level: '', province: '', city: '', district: '', address: '', manager: '' })
+  Object.assign(formData, { id: '', name: '', level: '', province: '', city: '', district: '', address: '', managerId: '' })
   dialogVisible.value = true
 }
 
 const handleEdit = (row: any) => {
   dialogTitle.value = '编辑充值中心'
-  Object.assign(formData, { id: row.id, name: row.name, level: row.level, province: '', city: '', district: '', address: row.region, manager: row.manager })
+  // 从 region 字段解析出省/市/区
+  const regionParts = (row.region || '').split('/')
+  Object.assign(formData, {
+    id: row.id,
+    name: row.name,
+    level: row.level,
+    province: regionParts[0] || '',
+    city: regionParts[1] || '',
+    district: regionParts[2] || '',
+    address: row.address || '',
+    managerId: row.managerId || ''
+  })
   dialogVisible.value = true
 }
 
 const handleSaveCenter = async () => {
+  if (!formData.name || !formData.province || !formData.city || !formData.district) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
   try {
     const payload: any = {
       name: formData.name,
       code: formData.level || '子公司合伙人',
-      address: [formData.province, formData.city, formData.district, formData.address].filter(Boolean).join('/'),
-      phone: formData.manager
+      province: formData.province,
+      city: formData.city,
+      district: formData.district,
+      address: formData.address,
+      managerId: formData.managerId,
     }
     if (formData.id) {
       await updateCenter(formData.id, { ...payload, status: 'active' })
@@ -228,6 +311,7 @@ const handleDetail = (row: any) => {
 }
 
 onMounted(() => {
+  loadOperators()
   loadData()
 })
 </script>

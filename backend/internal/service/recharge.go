@@ -342,9 +342,26 @@ func (s *RechargeService) CreateCenter(data map[string]interface{}) (*model.Rech
 		ID:      uuid.New().String(),
 		Name:    data["name"].(string),
 		Code:    data["code"].(string),
-		Address: data["address"].(string),
-		Phone:   data["phone"].(string),
 		Status:  "active",
+	}
+
+	if v, ok := data["province"].(string); ok {
+		center.Province = v
+	}
+	if v, ok := data["city"].(string); ok {
+		center.City = v
+	}
+	if v, ok := data["district"].(string); ok {
+		center.District = v
+	}
+	if v, ok := data["address"].(string); ok {
+		center.Address = v
+	}
+	if v, ok := data["phone"].(string); ok {
+		center.Phone = v
+	}
+	if v, ok := data["managerId"].(string); ok {
+		center.ManagerID = v
 	}
 
 	if err := s.rechargeRepo.CreateCenter(center); err != nil {
@@ -357,12 +374,33 @@ func (s *RechargeService) CreateCenter(data map[string]interface{}) (*model.Rech
 // UpdateCenter 更新充值中心
 func (s *RechargeService) UpdateCenter(id string, data map[string]interface{}) (*model.RechargeCenter, error) {
 	center := &model.RechargeCenter{
-		ID:      id,
-		Name:    data["name"].(string),
-		Code:    data["code"].(string),
-		Address: data["address"].(string),
-		Phone:   data["phone"].(string),
-		Status:  data["status"].(string),
+		ID:     id,
+		Status: data["status"].(string),
+	}
+
+	if v, ok := data["name"].(string); ok {
+		center.Name = v
+	}
+	if v, ok := data["code"].(string); ok {
+		center.Code = v
+	}
+	if v, ok := data["province"].(string); ok {
+		center.Province = v
+	}
+	if v, ok := data["city"].(string); ok {
+		center.City = v
+	}
+	if v, ok := data["district"].(string); ok {
+		center.District = v
+	}
+	if v, ok := data["address"].(string); ok {
+		center.Address = v
+	}
+	if v, ok := data["phone"].(string); ok {
+		center.Phone = v
+	}
+	if v, ok := data["managerId"].(string); ok {
+		center.ManagerID = v
 	}
 
 	if err := s.rechargeRepo.UpdateCenter(center); err != nil {

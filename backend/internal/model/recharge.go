@@ -80,7 +80,11 @@ type RechargeCenter struct {
 	ID        string    `json:"id" gorm:"primaryKey;size:64"`
 	Name      string    `json:"name" gorm:"uniqueIndex;size:128"`   // 中心名称
 	Code      string    `json:"code" gorm:"uniqueIndex;size:64"`    // 中心编码
-	Address   string    `json:"address"`                            // 地址
+	Province  string    `json:"province" gorm:"size:32"`            // 省
+	City      string    `json:"city" gorm:"size:32"`                // 市
+	District  string    `json:"district" gorm:"size:32"`            // 区/县
+	Address   string    `json:"address"`                            // 具体位置
+	ManagerID string    `json:"managerId" gorm:"index;size:64"`     // 管理员(操作员)ID
 	Phone     string    `json:"phone"`                              // 联系电话
 	Status    string    `json:"status" gorm:"default:'active';size:32"` // active/inactive
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
