@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"marketplace/backend/internal/model"
 	"strings"
 	"time"
@@ -26,7 +27,10 @@ type RechargeRepoInterface interface {
 	GetCardTransactions(cardNo string) ([]model.CardTransaction, error)
 	GetCardStats() (map[string]int64, error)
 	GetCenterByID(id string) (*model.RechargeCenter, error)
+	AddCenterBalance(id string, amount float64) error
 	DeductCenterBalance(id string, amount float64) (float64, error)
+	GetCenterTotalRecharge(centerID string) int64
+	GetCenterTotalConsumed(centerID string) float64
 	GetCenters() ([]model.RechargeCenter, error)
 	CreateCenter(center *model.RechargeCenter) error
 	UpdateCenter(center *model.RechargeCenter) error
@@ -236,20 +240,41 @@ func (r *RechargeRepository) GetCenterByID(id string) (*model.RechargeCenter, er
 	return &center, err
 }
 
-// DeductCenterBalance 扣减充值中心余额，返回扣减后余额
+// AddCenterBalance 增加充值中心余额（原子操作）
+func (r *RechargeRepository) AddCenterBalance(id string, amount float64) error {
+	result := r.db.Model(&model.RechargeCenter{}).
+		Where("id = ?", id).
+		Update("balance", gorm.Expr("balance + ?", amount))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// DeductCenterBalance 扣减充值中心余额（原子操作），返回扣减后余额
 func (r *RechargeRepository) DeductCenterBalance(id string, amount float64) (float64, error) {
+	result := r.db.Model(&model.RechargeCenter{}).
+		Where("id = ? AND balance >= ?", id, amount).
+		Update("balance", gorm.Expr("balance - ?", amount))
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	if result.RowsAffected == 0 {
+		// 区分：center 不存在 还是 余额不足
+		var exists int64
+		r.db.Model(&model.RechargeCenter{}).Where("id = ?", id).Count(&exists)
+		if exists == 0 {
+			return 0, gorm.ErrRecordNotFound
+		}
+		return 0, errors.New("充值中心余额不足")
+	}
+	// 查询扣减后余额
 	var center model.RechargeCenter
-	if err := r.db.Where("id = ?", id).First(&center).Error; err != nil {
-		return 0, err
-	}
-	if center.Balance < amount {
-		return 0, gorm.ErrRecordNotFound // 余额不足
-	}
-	newBalance := center.Balance - amount
-	if err := r.db.Model(&model.RechargeCenter{}).Where("id = ?", id).Update("balance", newBalance).Error; err != nil {
-		return 0, err
-	}
-	return newBalance, nil
+	r.db.Where("id = ?", id).First(&center)
+	return center.Balance, nil
 }
 
 // GetCenters 获取充值中心列表
@@ -257,6 +282,26 @@ func (r *RechargeRepository) GetCenters() ([]model.RechargeCenter, error) {
 	var list []model.RechargeCenter
 	err := r.db.Where("status = ?", "active").Find(&list).Error
 	return list, err
+}
+
+// GetCenterTotalRecharge 获取中心累计充值（approved 的申请 points 总和）
+func (r *RechargeRepository) GetCenterTotalRecharge(centerID string) int64 {
+	var total int64
+	r.db.Model(&model.RechargeApplication{}).
+		Where("center_id = ? AND status = ?", centerID, "approved").
+		Select("COALESCE(SUM(points), 0)").
+		Scan(&total)
+	return total
+}
+
+// GetCenterTotalConsumed 获取中心已消耗（c_recharges 的 amount 总和）
+func (r *RechargeRepository) GetCenterTotalConsumed(centerID string) float64 {
+	var total float64
+	r.db.Table("c_recharges").
+		Where("center_id = ?", centerID).
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&total)
+	return total
 }
 
 // CreateCenter 创建充值中心

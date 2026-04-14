@@ -49,7 +49,7 @@ type RechargeServiceInterface interface {
 	GetCardList(status, cardNo, holderPhone string, page, pageSize int) (map[string]interface{}, error)
 	GetCardDetail(cardNo string) (map[string]interface{}, error)
 	GetCardStats() (map[string]interface{}, error)
-	GetCenters() ([]model.RechargeCenter, error)
+	GetCenters() ([]map[string]interface{}, error)
 	GetCenterDetail(id string) (*model.RechargeCenter, error)
 	CreateCenter(data map[string]interface{}) (*model.RechargeCenter, error)
 	UpdateCenter(id string, data map[string]interface{}) (*model.RechargeCenter, error)

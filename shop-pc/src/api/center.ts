@@ -11,7 +11,12 @@ export interface CenterItem {
   district: string
   address: string
   managerId: string
+  managerName?: string
+  managerPhone?: string
   phone: string
+  balance: number
+  totalRecharge?: number
+  totalConsumed?: number
   status: string
   created_at?: string
 }

@@ -223,10 +223,10 @@ const loadData = async () => {
           name: c.name,
           region: [c.province, c.city, c.district].filter(Boolean).join('/') || c.address || '-',
           level: c.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人',
-          manager: managerOp ? `${managerOp.name}（${managerOp.phone}）` : '-',
-          balance: 0,
-          totalIn: 0,
-          totalOut: 0,
+          manager: c.managerName ? `${c.managerName}（${c.managerPhone}）` : '-',
+          balance: c.balance ?? 0,
+          totalIn: c.totalRecharge ?? 0,
+          totalOut: c.totalConsumed ?? 0,
           status: c.status === 'active' ? 'normal' : 'frozen'
         }
       })

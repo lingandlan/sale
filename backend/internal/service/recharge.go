@@ -93,15 +93,21 @@ func (s *RechargeService) GetRechargeApplicationDetail(id string) (*model.Rechar
 
 // ApproveRechargeApplication 审批充值申请
 func (s *RechargeService) ApproveRechargeApplication(id, action, approvedBy, remark string) error {
-	_, err := s.rechargeRepo.GetRechargeApplicationByID(id)
+	app, err := s.rechargeRepo.GetRechargeApplicationByID(id)
 	if err != nil {
 		return errors.New("充值申请不存在")
+	}
+	if app.Status != "pending" {
+		return errors.New("该申请已被处理")
 	}
 
 	var status string
 	if action == "approve" {
 		status = "approved"
-		// TODO: 实际增加积分到充值中心
+		// 增加充值中心积分（Points = 基础积分 + 返利积分）
+		if err := s.rechargeRepo.AddCenterBalance(app.CenterID, float64(app.Points)); err != nil {
+			return fmt.Errorf("增加充值中心余额失败: %w", err)
+		}
 	} else if action == "reject" {
 		status = "rejected"
 	} else {
@@ -347,9 +353,50 @@ func (s *RechargeService) GetCardStats() (map[string]interface{}, error) {
 
 // ========== 充值中心 ==========
 
-// GetCenters 获取充值中心列表
-func (s *RechargeService) GetCenters() ([]model.RechargeCenter, error) {
-	return s.rechargeRepo.GetCenters()
+// GetCenters 获取充值中心列表（含管理员、累计充值、已消耗）
+func (s *RechargeService) GetCenters() ([]map[string]interface{}, error) {
+	centers, err := s.rechargeRepo.GetCenters()
+	if err != nil {
+		return nil, err
+	}
+
+	operators, _ := s.rechargeRepo.GetOperators()
+	opMap := make(map[string]*model.RechargeOperator)
+	for i := range operators {
+		opMap[operators[i].CenterID] = &operators[i]
+	}
+
+	result := make([]map[string]interface{}, 0, len(centers))
+	for _, c := range centers {
+		item := map[string]interface{}{
+			"id":        c.ID,
+			"name":      c.Name,
+			"code":      c.Code,
+			"province":  c.Province,
+			"city":      c.City,
+			"district":  c.District,
+			"address":   c.Address,
+			"managerId": c.ManagerID,
+			"phone":     c.Phone,
+			"balance":   c.Balance,
+			"status":    c.Status,
+			"createdAt": c.CreatedAt,
+			"updatedAt": c.UpdatedAt,
+		}
+
+		// 管理员：从 operator 列表匹配
+		if op, ok := opMap[c.ID]; ok {
+			item["managerName"] = op.Name
+			item["managerPhone"] = op.Phone
+		}
+
+			item["totalRecharge"] = s.rechargeRepo.GetCenterTotalRecharge(c.ID)
+			item["totalConsumed"] = s.rechargeRepo.GetCenterTotalConsumed(c.ID)
+
+
+		result = append(result, item)
+	}
+	return result, nil
 }
 
 // GetCenterDetail 获取充值中心详情
