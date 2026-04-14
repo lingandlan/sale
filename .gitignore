@@ -1,0 +1,18 @@
+.idea/
+tmp/
+.claude/worktrees/
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage.txt
+coverage/
+
+# Build artifacts
+backend/main
+backend/tmp/
+
+# OS files
+.DS_Store
