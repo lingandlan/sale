@@ -141,7 +141,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { submitCRechargeEntry } from '@/api/recharge'
+import { submitCRechargeEntry, getCenterDetail } from '@/api/recharge'
 
 interface MemberInfo {
   id: string
@@ -157,7 +157,19 @@ const searchQuery = ref('')
 const memberInfo = ref<MemberInfo | null>(null)
 const rechargeAmount = ref<number>(0)
 const remark = ref('')
-const storeBalance = ref(120000)
+const storeBalance = ref(0)
+
+const loadStoreBalance = async () => {
+  try {
+    const res = await getCenterDetail('1')
+    storeBalance.value = res.data.data.balance ?? 0
+  } catch {
+    storeBalance.value = 0
+  }
+}
+
+// 页面加载时获取门店余额
+loadStoreBalance()
 
 const quickAmounts = [100, 500, 1000, 5000]
 

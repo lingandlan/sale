@@ -93,6 +93,7 @@ func SetupRouter(
 		center.Use(authMiddleware.Auth())
 		{
 			center.GET("", rechargeHandler.GetCenters)
+			center.GET("/:id", rechargeHandler.GetCenterDetail)
 			center.POST("", rechargeHandler.CreateCenter)
 			center.PUT("/:id", rechargeHandler.UpdateCenter)
 			center.DELETE("/:id", rechargeHandler.DeleteCenter)

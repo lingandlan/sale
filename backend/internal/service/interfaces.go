@@ -50,6 +50,7 @@ type RechargeServiceInterface interface {
 	GetCardDetail(cardNo string) (map[string]interface{}, error)
 	GetCardStats() (map[string]interface{}, error)
 	GetCenters() ([]model.RechargeCenter, error)
+	GetCenterDetail(id string) (*model.RechargeCenter, error)
 	CreateCenter(data map[string]interface{}) (*model.RechargeCenter, error)
 	UpdateCenter(id string, data map[string]interface{}) (*model.RechargeCenter, error)
 	DeleteCenter(id string) error

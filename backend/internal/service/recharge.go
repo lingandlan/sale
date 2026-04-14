@@ -117,17 +117,28 @@ func (s *RechargeService) ApproveRechargeApplication(id, action, approvedBy, rem
 func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.CRecharge, error) {
 	memberPhone := data["memberPhone"].(string)
 	amount := data["amount"].(float64)
+	centerID := data["centerId"].(string)
 	points := int(amount)
 
-	// TODO: 验证会员是否存在
+	// 获取充值中心信息及余额
+	center, err := s.rechargeRepo.GetCenterByID(centerID)
+	if err != nil {
+		return nil, errors.New("充值中心不存在")
+	}
+	if center.Balance < amount {
+		return nil, errors.New("充值中心余额不足")
+	}
+
 	// TODO: 获取会员当前余额
+	memberBalanceBefore := 0
+	memberBalanceAfter := memberBalanceBefore + points
 
 	recharge := &model.CRecharge{
 		ID:            uuid.New().String(),
 		MemberID:      data["memberId"].(string),
 		MemberName:    data["memberName"].(string),
 		MemberPhone:   memberPhone,
-		CenterID:      data["centerId"].(string),
+		CenterID:      centerID,
 		CenterName:    data["centerName"].(string),
 		Amount:        amount,
 		Points:        points,
@@ -135,12 +146,17 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 		OperatorID:    data["operatorId"].(string),
 		OperatorName:  data["operatorName"].(string),
 		Remark:        data["remark"].(string),
-		BalanceBefore: 0, // TODO: 从会员余额获取
-		BalanceAfter:  points,
+		BalanceBefore: memberBalanceBefore,
+		BalanceAfter:  memberBalanceAfter,
 	}
 
 	if err := s.rechargeRepo.CreateCRecharge(recharge); err != nil {
 		return nil, err
+	}
+
+	// 扣减充值中心余额
+	if _, err := s.rechargeRepo.DeductCenterBalance(centerID, amount); err != nil {
+		return nil, errors.New("扣减中心余额失败")
 	}
 
 	return recharge, nil
@@ -334,6 +350,11 @@ func (s *RechargeService) GetCardStats() (map[string]interface{}, error) {
 // GetCenters 获取充值中心列表
 func (s *RechargeService) GetCenters() ([]model.RechargeCenter, error) {
 	return s.rechargeRepo.GetCenters()
+}
+
+// GetCenterDetail 获取充值中心详情
+func (s *RechargeService) GetCenterDetail(id string) (*model.RechargeCenter, error) {
+	return s.rechargeRepo.GetCenterByID(id)
 }
 
 // CreateCenter 创建充值中心

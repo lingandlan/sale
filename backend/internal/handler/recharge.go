@@ -113,6 +113,8 @@ func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
 	response.SuccessWithMessage(c, errmsg.Get("recharge.c_create_success"), gin.H{
 		"id":            recharge.ID,
 		"transactionNo": recharge.ID,
+		"balanceBefore": recharge.BalanceBefore,
+		"balanceAfter":  recharge.BalanceAfter,
 	})
 }
 
@@ -277,6 +279,16 @@ func (h *RechargeHandler) GetCenters(c *gin.Context) {
 	result, err := h.rechargeService.GetCenters()
 	if err != nil {
 		response.InternalError(c, errmsg.Get("center.list_failed"))
+		return
+	}
+	response.Success(c, result)
+}
+
+func (h *RechargeHandler) GetCenterDetail(c *gin.Context) {
+	id := c.Param("id")
+	result, err := h.rechargeService.GetCenterDetail(id)
+	if err != nil {
+		response.NotFound(c, errmsg.Get("center.list_failed"))
 		return
 	}
 	response.Success(c, result)

@@ -25,6 +25,8 @@ type RechargeRepoInterface interface {
 	CreateCardTransaction(transaction *model.CardTransaction) error
 	GetCardTransactions(cardNo string) ([]model.CardTransaction, error)
 	GetCardStats() (map[string]int64, error)
+	GetCenterByID(id string) (*model.RechargeCenter, error)
+	DeductCenterBalance(id string, amount float64) (float64, error)
 	GetCenters() ([]model.RechargeCenter, error)
 	CreateCenter(center *model.RechargeCenter) error
 	UpdateCenter(center *model.RechargeCenter) error
@@ -226,6 +228,29 @@ func (r *RechargeRepository) GetCardStats() (map[string]int64, error) {
 }
 
 // ========== 充值中心 ==========
+
+// GetCenterByID 根据ID获取充值中心
+func (r *RechargeRepository) GetCenterByID(id string) (*model.RechargeCenter, error) {
+	var center model.RechargeCenter
+	err := r.db.Where("id = ?", id).First(&center).Error
+	return &center, err
+}
+
+// DeductCenterBalance 扣减充值中心余额，返回扣减后余额
+func (r *RechargeRepository) DeductCenterBalance(id string, amount float64) (float64, error) {
+	var center model.RechargeCenter
+	if err := r.db.Where("id = ?", id).First(&center).Error; err != nil {
+		return 0, err
+	}
+	if center.Balance < amount {
+		return 0, gorm.ErrRecordNotFound // 余额不足
+	}
+	newBalance := center.Balance - amount
+	if err := r.db.Model(&model.RechargeCenter{}).Where("id = ?", id).Update("balance", newBalance).Error; err != nil {
+		return 0, err
+	}
+	return newBalance, nil
+}
 
 // GetCenters 获取充值中心列表
 func (r *RechargeRepository) GetCenters() ([]model.RechargeCenter, error) {

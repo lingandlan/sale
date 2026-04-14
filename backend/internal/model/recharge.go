@@ -82,6 +82,7 @@ type RechargeCenter struct {
 	Code      string    `json:"code" gorm:"uniqueIndex;size:64"`    // 中心编码
 	Address   string    `json:"address"`                            // 地址
 	Phone     string    `json:"phone"`                              // 联系电话
+	Balance   float64   `json:"balance" gorm:"default:0"`           // 积分余额
 	Status    string    `json:"status" gorm:"default:'active';size:32"` // active/inactive
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`

@@ -169,6 +169,11 @@ export function submitCRechargeEntry(data: CRechargeEntryData) {
   return request.post<{ data: CRechargeEntryResponse }>('/recharge/c-entry', data)
 }
 
+// 获取充值中心详情（含余额）
+export function getCenterDetail(id: string) {
+  return request.get<{ data: { id: string; name: string; balance: number } }>(`/recharge/centers/${id}`)
+}
+
 // 获取充值记录列表
 export function getRechargeRecordList(params: RechargeRecordListParams) {
   return request.get<{ data: RechargeRecordListResponse }>('/recharge/records', { params })
