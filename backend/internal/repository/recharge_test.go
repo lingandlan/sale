@@ -493,7 +493,7 @@ func TestRechargeRepository_Center(t *testing.T) {
 	db := setupRechargeTestDB(t)
 	repo := NewRechargeRepository(db)
 
-	t.Run("create and get centers (only active)", func(t *testing.T) {
+	t.Run("create and get centers", func(t *testing.T) {
 		activeCenter := &model.RechargeCenter{
 			ID:      "center_active",
 			Name:    "Active Center",
@@ -518,10 +518,7 @@ func TestRechargeRepository_Center(t *testing.T) {
 
 		list, err := repo.GetCenters()
 		require.NoError(t, err)
-		assert.GreaterOrEqual(t, len(list), 1)
-		for _, c := range list {
-			assert.Equal(t, "active", c.Status)
-		}
+		assert.GreaterOrEqual(t, len(list), 2)
 	})
 
 	t.Run("update center", func(t *testing.T) {

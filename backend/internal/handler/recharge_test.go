@@ -127,12 +127,20 @@ func (m *MockRechargeService) GetCardStats() (map[string]interface{}, error) {
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
-func (m *MockRechargeService) GetCenters() ([]model.RechargeCenter, error) {
+func (m *MockRechargeService) GetCenters() ([]map[string]interface{}, error) {
 	args := m.Called()
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]model.RechargeCenter), args.Error(1)
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
+func (m *MockRechargeService) GetCenterDetail(id string) (*model.RechargeCenter, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.RechargeCenter), args.Error(1)
 }
 
 func (m *MockRechargeService) CreateCenter(data map[string]interface{}) (*model.RechargeCenter, error) {
@@ -801,7 +809,7 @@ func TestRechargeHandler_GetCenters(t *testing.T) {
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		centers := []model.RechargeCenter{{ID: "c1", Name: "北京"}}
+		centers := []map[string]interface{}{{"id": "c1", "name": "北京"}}
 		mockSvc.On("GetCenters").Return(centers, nil).Once()
 
 		req, _ := http.NewRequest("GET", "/api/v1/center", nil)
