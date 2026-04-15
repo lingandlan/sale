@@ -37,6 +37,12 @@
 - 启动前端/后端前先清理僵尸进程：`lsof -ti:PORT | xargs kill`
 - 后端启动命令：`cd backend && air`（热加载）
 
+## 业务设计决策
+
+- **充值中心余额**：绑定到充值中心 ID（center_id），不绑定到个人用户
+- **用户登录**：手机号(phone)作为登录账号，username 作为显示名称
+- **用户角色**：super_admin > hq_admin > finance > center_admin > operator
+
 ## 测试账号
 
 - 主分支：13800000000 / 123456

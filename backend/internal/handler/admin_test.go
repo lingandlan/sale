@@ -92,6 +92,7 @@ func TestAdminHandler_CreateUser(t *testing.T) {
 
 		body := map[string]interface{}{
 			"phone":    "13800138000",
+				"username": "testuser",
 			"password": "123456",
 			"name":     "New User",
 			"role":     "operator",

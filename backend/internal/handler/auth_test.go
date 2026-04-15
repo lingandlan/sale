@@ -131,6 +131,7 @@ func TestAuthHandler_Register(t *testing.T) {
 		mockUserSvc.On("Create", ctx, mock.AnythingOfType("*model.CreateUserRequest")).Return(newUser, nil).Once()
 
 		body := map[string]interface{}{
+			"username": "testuser",
 			"phone":    "13800138000",
 			"password": "password123",
 			"name":     "New User",

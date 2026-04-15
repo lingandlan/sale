@@ -20,6 +20,7 @@ func setupTestDB(t *testing.T) (*sqlx.DB, func()) {
 	err = gormDB.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL DEFAULT '',
 			phone TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
 			name TEXT NOT NULL,
@@ -54,6 +55,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 	t.Run("create and get by id", func(t *testing.T) {
 		user := &model.User{
+			Username: "testuser1",
 			Phone:    "13800138000",
 			Password: "password",
 			Name:     "CRUD User",
@@ -67,12 +69,14 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 		result, err := repo.GetByID(ctx, id)
 		require.NoError(t, err)
+		assert.Equal(t, "testuser1", result.Username)
 		assert.Equal(t, "13800138000", result.Phone)
 		assert.Equal(t, "CRUD User", result.Name)
 	})
 
 	t.Run("get by phone", func(t *testing.T) {
 		user := &model.User{
+			Username: "testuser2",
 			Phone:    "13800138001",
 			Password: "password",
 			Name:     "GetByPhone User",
@@ -93,6 +97,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 	t.Run("update user", func(t *testing.T) {
 		user := &model.User{
+			Username: "testuser3",
 			Phone:    "13800138002",
 			Password: "password",
 			Name:     "Old Name",
@@ -103,6 +108,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 		updatedUser := &model.User{
 			ID:       id,
+			Username: "testuser3_new",
 			Phone:    "13800138002",
 			Password: "password",
 			Name:     "New Name",
@@ -114,13 +120,14 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 		result, _ := repo.GetByID(ctx, id)
 		assert.Equal(t, "New Name", result.Name)
+		assert.Equal(t, "testuser3_new", result.Username)
 	})
 
 	t.Run("list users", func(t *testing.T) {
 		users := []*model.User{
-			{Phone: "13800138003", Password: "p", Name: "List User 1", Role: model.RoleOperator, Status: model.UserStatusNormal},
-			{Phone: "13800138004", Password: "p", Name: "List User 2", Role: model.RoleHQAdmin, Status: model.UserStatusNormal},
-			{Phone: "13800138005", Password: "p", Name: "List User 3", Role: model.RoleOperator, Status: model.UserStatusNormal},
+			{Username: "list1", Phone: "13800138003", Password: "p", Name: "List User 1", Role: model.RoleOperator, Status: model.UserStatusNormal},
+			{Username: "list2", Phone: "13800138004", Password: "p", Name: "List User 2", Role: model.RoleHQAdmin, Status: model.UserStatusNormal},
+			{Username: "list3", Phone: "13800138005", Password: "p", Name: "List User 3", Role: model.RoleOperator, Status: model.UserStatusNormal},
 		}
 		for _, u := range users {
 			repo.Create(ctx, u)
@@ -134,6 +141,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 	t.Run("update password", func(t *testing.T) {
 		user := &model.User{
+			Username: "pwduser",
 			Phone:    "13800138006",
 			Password: "oldpass",
 			Name:     "Pwd User",
@@ -148,6 +156,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 	t.Run("delete user", func(t *testing.T) {
 		user := &model.User{
+			Username: "deluser",
 			Phone:    "13800138007",
 			Password: "password",
 			Name:     "Delete User",
@@ -162,6 +171,7 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 	t.Run("update status", func(t *testing.T) {
 		user := &model.User{
+			Username: "statususer",
 			Phone:    "13800138008",
 			Password: "password",
 			Name:     "Status User",

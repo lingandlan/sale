@@ -10,7 +10,7 @@
     <div class="content-area">
       <!-- 筛选栏 -->
       <div class="filter-card">
-        <el-input v-model="filters.keyword" placeholder="搜索用户名/手机号" style="width: 240px" clearable />
+        <el-input v-model="filters.keyword" placeholder="搜索用户名/手机号/姓名" style="width: 240px" clearable />
         <el-select v-model="filters.role" placeholder="角色" style="width: 160px" clearable>
           <el-option label="超级管理员" value="super_admin" />
           <el-option label="总部管理员" value="hq_admin" />
@@ -19,8 +19,8 @@
           <el-option label="充值中心操作员" value="operator" />
         </el-select>
         <el-select v-model="filters.status" placeholder="状态" style="width: 120px" clearable>
-          <el-option label="启用" value="active" />
-          <el-option label="停用" value="disabled" />
+          <el-option label="启用" value="1" />
+          <el-option label="停用" value="0" />
         </el-select>
         <el-button type="primary" plain @click="handleSearch">查询</el-button>
         <el-button @click="handleResetFilter">重置</el-button>
@@ -84,7 +84,7 @@
           <el-input v-model="formData.username" placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="手机号" required>
-          <el-input v-model="formData.phone" placeholder="请输入手机号" />
+          <el-input v-model="formData.phone" placeholder="请输入手机号" maxlength="11" />
         </el-form-item>
         <el-form-item label="姓名" required>
           <el-input v-model="formData.realName" placeholder="请输入姓名" />
@@ -130,6 +130,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAdminUsers, createAdminUser, updateAdminUser, toggleUserStatus, resetUserPassword } from '@/api/admin'
+import { getCenterList } from '@/api/center'
 
 const filters = reactive({ keyword: '', role: '', status: '' })
 const pagination = reactive({ page: 1, size: 10, total: 0 })
@@ -142,12 +143,7 @@ const confirmMessage = ref('')
 const confirmAction = ref<'disable' | 'enable'>('disable')
 const editingUser = ref<any>(null)
 
-const centers = [
-  { id: 1, name: '北京子公司合伙人' },
-  { id: 2, name: '上海子公司合伙人' },
-  { id: 3, name: '广州服务中心合伙人' },
-  { id: 4, name: '深圳子公司合伙人' }
-]
+const centers = ref<{ id: number; name: string }[]>([])
 
 const formData = reactive({
   id: null as number | null,
@@ -171,12 +167,24 @@ const roleTagType = (role: string) => {
   return map[role] || ''
 }
 
+const loadCenters = async () => {
+  try {
+    const res = await getCenterList()
+    if (res?.data) {
+      const items = Array.isArray(res.data) ? res.data : []
+      centers.value = items.map((c: any) => ({ id: c.id, name: c.name }))
+    }
+  } catch {
+    // fallback to empty
+  }
+}
+
 const loadData = async () => {
   try {
     const res = await getAdminUsers({
       keyword: filters.keyword || undefined,
       role: filters.role || undefined,
-      status: filters.status || undefined,
+      status: filters.status ? Number(filters.status) : undefined,
       page: pagination.page,
       page_size: pagination.size
     })
@@ -188,13 +196,14 @@ const loadData = async () => {
         phone: u.phone,
         realName: u.name,
         role: u.role,
+        centerId: u.center_id,
         center: u.center_name || '-',
         status: u.status === 1 ? 'active' : 'disabled',
         lastLogin: u.last_login_at || '-'
       }))
       pagination.total = res.data.total || 0
     }
-  } catch (error) {
+  } catch {
     // fallback to empty
   }
 }
@@ -210,14 +219,29 @@ const handleAdd = () => {
 
 const handleEdit = (row: any) => {
   drawerTitle.value = '编辑用户'
-  Object.assign(formData, { ...row, password: '' })
+  Object.assign(formData, {
+    id: row.id,
+    username: row.username,
+    phone: row.phone,
+    realName: row.realName,
+    role: row.role,
+    centerId: row.centerId,
+    password: ''
+  })
   drawerVisible.value = true
 }
 
 const handleSaveUser = async () => {
+  // 前端校验
+  if (!formData.username?.trim()) { ElMessage.warning('请输入用户名'); return }
+  if (!formData.phone || formData.phone.length !== 11) { ElMessage.warning('请输入正确的11位手机号'); return }
+  if (!formData.realName?.trim()) { ElMessage.warning('请输入姓名'); return }
+  if (!formData.role) { ElMessage.warning('请选择角色'); return }
+
   try {
     if (formData.id) {
       await updateAdminUser(formData.id, {
+        username: formData.username,
         name: formData.realName,
         phone: formData.phone,
         role: formData.role,
@@ -236,7 +260,7 @@ const handleSaveUser = async () => {
     ElMessage.success(formData.id ? '编辑成功' : '创建成功')
     drawerVisible.value = false
     loadData()
-  } catch (error) {
+  } catch {
     // error handled by interceptor
   }
 }
@@ -261,7 +285,7 @@ const handleConfirmAction = async () => {
       await toggleUserStatus(editingUser.value.id, confirmAction.value === 'disable' ? 0 : 1)
       loadData()
       ElMessage.success(confirmAction.value === 'disable' ? '已禁用' : '已启用')
-    } catch (error) {
+    } catch {
       // error handled by interceptor
     }
   }
@@ -272,13 +296,14 @@ const handleResetPwd = async (row: any) => {
   try {
     await resetUserPassword(row.id, '123456')
     ElMessage.success(`已重置 ${row.realName} 的密码为默认密码`)
-  } catch (error) {
+  } catch {
     // error handled by interceptor
   }
 }
 
 onMounted(() => {
   loadData()
+  loadCenters()
 })
 </script>
 

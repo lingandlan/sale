@@ -5,7 +5,7 @@ import request from '@/utils/request'
 export interface AdminUserListParams {
   keyword?: string
   role?: string
-  status?: string
+  status?: number
   page: number
   page_size: number
 }
@@ -40,11 +40,11 @@ export interface AdminUserCreateData {
 }
 
 export interface AdminUserUpdateData {
+  username?: string
   name?: string
   phone?: string
   role?: string
   center_id?: number
-  status?: number
 }
 
 // 获取用户列表

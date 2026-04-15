@@ -160,7 +160,38 @@ func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) float64 {
 
 func (m *MockRechargeRepo) GetCenters() ([]model.RechargeCenter, error) {
 	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]model.RechargeCenter), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetCenterByID(id string) (*model.RechargeCenter, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.RechargeCenter), args.Error(1)
+}
+
+func (m *MockRechargeRepo) AddCenterBalance(id string, amount float64) error {
+	args := m.Called(id, amount)
+	return args.Error(0)
+}
+
+func (m *MockRechargeRepo) DeductCenterBalance(id string, amount float64) (float64, error) {
+	args := m.Called(id, amount)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetCenterTotalRecharge(centerID string) int64 {
+	args := m.Called(centerID)
+	return args.Get(0).(int64)
+}
+
+func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) float64 {
+	args := m.Called(centerID)
+	return args.Get(0).(float64)
 }
 
 func (m *MockRechargeRepo) CreateCenter(center *model.RechargeCenter) error {
@@ -338,6 +369,7 @@ func TestRechargeService_ApproveRechargeApplication(t *testing.T) {
 		repo.On("GetRechargeApplicationByID", "app-1").Return(pendingApp, nil)
 		repo.On("AddCenterBalance", "center-1", float64(100)).Return(nil)
 		repo.On("UpdateRechargeApplicationStatus", "app-1", "approved", "admin", "").Return(nil)
+		repo.On("AddCenterBalance", mock.AnythingOfType("string"), mock.AnythingOfType("float64")).Return(nil)
 
 		err := svc.ApproveRechargeApplication("app-1", "approve", "admin", "")
 		assert.NoError(t, err)
