@@ -18,3 +18,9 @@ backend/tmp/
 .DS_Store
 # Local env overrides (worktree-specific ports)
 *.env.local
+
+# Local Claude settings
+.claude/settings.local.json
+
+# Apifox submodule dirty state
+apifox-mcp
