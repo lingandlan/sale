@@ -166,34 +166,6 @@ func (m *MockRechargeRepo) GetCenters() ([]model.RechargeCenter, error) {
 	return args.Get(0).([]model.RechargeCenter), args.Error(1)
 }
 
-func (m *MockRechargeRepo) GetCenterByID(id string) (*model.RechargeCenter, error) {
-	args := m.Called(id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*model.RechargeCenter), args.Error(1)
-}
-
-func (m *MockRechargeRepo) AddCenterBalance(id string, amount float64) error {
-	args := m.Called(id, amount)
-	return args.Error(0)
-}
-
-func (m *MockRechargeRepo) DeductCenterBalance(id string, amount float64) (float64, error) {
-	args := m.Called(id, amount)
-	return args.Get(0).(float64), args.Error(1)
-}
-
-func (m *MockRechargeRepo) GetCenterTotalRecharge(centerID string) int64 {
-	args := m.Called(centerID)
-	return args.Get(0).(int64)
-}
-
-func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) float64 {
-	args := m.Called(centerID)
-	return args.Get(0).(float64)
-}
-
 func (m *MockRechargeRepo) CreateCenter(center *model.RechargeCenter) error {
 	args := m.Called(center)
 	return args.Error(0)
@@ -228,34 +200,6 @@ func (m *MockRechargeRepo) UpdateOperator(operator *model.RechargeOperator) erro
 func (m *MockRechargeRepo) DeleteOperator(id string) error {
 	args := m.Called(id)
 	return args.Error(0)
-}
-
-func (m *MockRechargeRepo) GetCenterByID(id string) (*model.RechargeCenter, error) {
-	args := m.Called(id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*model.RechargeCenter), args.Error(1)
-}
-
-func (m *MockRechargeRepo) AddCenterBalance(id string, amount float64) error {
-	args := m.Called(id, amount)
-	return args.Error(0)
-}
-
-func (m *MockRechargeRepo) DeductCenterBalance(id string, amount float64) (float64, error) {
-	args := m.Called(id, amount)
-	return args.Get(0).(float64), args.Error(1)
-}
-
-func (m *MockRechargeRepo) GetCenterTotalRecharge(centerID string) int64 {
-	args := m.Called(centerID)
-	return args.Get(0).(int64)
-}
-
-func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) float64 {
-	args := m.Called(centerID)
-	return args.Get(0).(float64)
 }
 
 func (m *MockRechargeRepo) GetOperatorByUsername(username string) (*model.RechargeOperator, error) {
