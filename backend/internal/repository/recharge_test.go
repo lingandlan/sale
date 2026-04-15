@@ -23,6 +23,7 @@ func setupRechargeTestDB(t *testing.T) *gorm.DB {
 		&model.CRecharge{},
 		&model.StoreCard{},
 		&model.CardTransaction{},
+		&model.CardIssueRecord{},
 		&model.RechargeCenter{},
 		&model.RechargeOperator{},
 	)
@@ -242,22 +243,14 @@ func TestRechargeRepository_CRecharge(t *testing.T) {
 func TestRechargeRepository_StoreCard(t *testing.T) {
 	db := setupRechargeTestDB(t)
 	repo := NewRechargeRepository(db)
-	now := time.Now()
-	future := now.Add(365 * 24 * time.Hour)
 
 	t.Run("create and get by card no", func(t *testing.T) {
 		card := &model.StoreCard{
-			ID:              "card_001",
-			CardNo:          "SC_2026_0001",
-			HolderID:        "holder_1",
-			HolderName:      "张三",
-			HolderPhone:     "13800138000",
-			Balance:         5000.0,
-			Status:          "active",
-			IssueCenterID:   "center_1",
-			IssueCenterName: "Center A",
-			IssueDate:       now,
-			ExpiryDate:      future,
+			ID:       "card_001",
+			CardNo:   "SC_2026_0001",
+			CardType: model.CardTypePhysical,
+			Balance:  5000,
+			Status:   model.CardStatusActive,
 		}
 
 		err := repo.CreateCard(card)
@@ -267,165 +260,97 @@ func TestRechargeRepository_StoreCard(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "card_001", result.ID)
 		assert.Equal(t, "SC_2026_0001", result.CardNo)
-		assert.Equal(t, "张三", result.HolderName)
-		assert.Equal(t, 5000.0, result.Balance)
-		assert.Equal(t, "active", result.Status)
+		assert.Equal(t, 5000, result.Balance)
+		assert.Equal(t, model.CardStatusActive, result.Status)
 	})
 
 	t.Run("get card list with status filter", func(t *testing.T) {
 		activeCard := &model.StoreCard{
-			ID:              "card_active",
-			CardNo:          fmt.Sprintf("SC_ACTIVE_%d", now.UnixNano()),
-			HolderID:        "holder_2",
-			HolderName:      "李四",
-			HolderPhone:     "13800138001",
-			Balance:         3000.0,
-			Status:          "active",
-			IssueCenterID:   "center_1",
-			IssueCenterName: "Center A",
-			IssueDate:       now,
-			ExpiryDate:      future,
+			ID:       "card_active",
+			CardNo:   fmt.Sprintf("SC_ACTIVE_%d", time.Now().UnixNano()),
+			CardType: model.CardTypePhysical,
+			Balance:  3000,
+			Status:   model.CardStatusActive,
 		}
-		inactiveCard := &model.StoreCard{
-			ID:              "card_inactive",
-			CardNo:          fmt.Sprintf("SC_INACTIVE_%d", now.UnixNano()),
-			HolderID:        "holder_3",
-			HolderName:      "王五",
-			HolderPhone:     "13800138002",
-			Balance:         0,
-			Status:          "inactive",
-			IssueCenterID:   "center_1",
-			IssueCenterName: "Center A",
-			IssueDate:       now,
-			ExpiryDate:      future,
+		inStockCard := &model.StoreCard{
+			ID:       "card_instock",
+			CardNo:   fmt.Sprintf("SC_INSTOCK_%d", time.Now().UnixNano()),
+			CardType: model.CardTypePhysical,
+			Balance:  1000,
+			Status:   model.CardStatusInStock,
 		}
 
 		err := repo.CreateCard(activeCard)
 		require.NoError(t, err)
-		err = repo.CreateCard(inactiveCard)
+		err = repo.CreateCard(inStockCard)
 		require.NoError(t, err)
 
 		// Filter by active
-		list, total, err := repo.GetCardList("active", "", "", 1, 10)
+		list, total, err := repo.GetCardList(model.CardStatusActive, "", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(1))
 		for _, item := range list {
-			assert.Equal(t, "active", item.Status)
+			assert.Equal(t, model.CardStatusActive, item.Status)
 		}
 
-		// Filter by inactive
-		list, total, err = repo.GetCardList("inactive", "", "", 1, 10)
+		// Filter by inStock
+		list, total, err = repo.GetCardList(model.CardStatusInStock, "", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(1))
 		for _, item := range list {
-			assert.Equal(t, "inactive", item.Status)
+			assert.Equal(t, model.CardStatusInStock, item.Status)
 		}
 	})
 
-	t.Run("update card balance", func(t *testing.T) {
+	t.Run("update card by map", func(t *testing.T) {
 		card := &model.StoreCard{
-			ID:              "card_balance",
-			CardNo:          "SC_BALANCE_001",
-			HolderID:        "holder_4",
-			HolderName:      "赵六",
-			HolderPhone:     "13800138003",
-			Balance:         5000.0,
-			Status:          "active",
-			IssueCenterID:   "center_1",
-			IssueCenterName: "Center A",
-			IssueDate:       now,
-			ExpiryDate:      future,
+			ID:       "card_balance",
+			CardNo:   "SC_BALANCE_001",
+			CardType: model.CardTypePhysical,
+			Balance:  5000,
+			Status:   model.CardStatusActive,
 		}
 		err := repo.CreateCard(card)
 		require.NoError(t, err)
 
-		err = repo.UpdateCardBalance("SC_BALANCE_001", 3000.0)
+		err = repo.UpdateCardByMap("SC_BALANCE_001", map[string]interface{}{"balance": 3000})
 		require.NoError(t, err)
 
 		result, err := repo.GetCardByCardNo("SC_BALANCE_001")
 		require.NoError(t, err)
-		assert.Equal(t, 3000.0, result.Balance)
-	})
-
-	t.Run("update card status", func(t *testing.T) {
-		card := &model.StoreCard{
-			ID:              "card_status",
-			CardNo:          "SC_STATUS_001",
-			HolderID:        "holder_5",
-			HolderName:      "孙七",
-			HolderPhone:     "13800138004",
-			Balance:         1000.0,
-			Status:          "active",
-			IssueCenterID:   "center_1",
-			IssueCenterName: "Center A",
-			IssueDate:       now,
-			ExpiryDate:      future,
-		}
-		err := repo.CreateCard(card)
-		require.NoError(t, err)
-
-		err = repo.UpdateCardStatus("SC_STATUS_001", "inactive")
-		require.NoError(t, err)
-
-		result, err := repo.GetCardByCardNo("SC_STATUS_001")
-		require.NoError(t, err)
-		assert.Equal(t, "inactive", result.Status)
+		assert.Equal(t, 3000, result.Balance)
 	})
 
 	t.Run("get card stats", func(t *testing.T) {
 		// Create cards with different statuses
 		cards := []*model.StoreCard{
 			{
-				ID:              "stat_card_1",
-				CardNo:          "STAT_001",
-				HolderID:        "h_1",
-				HolderName:      "Stat1",
-				HolderPhone:     "13900000001",
-				Balance:         1000.0,
-				Status:          "active",
-				IssueCenterID:   "center_1",
-				IssueCenterName: "Center A",
-				IssueDate:       now,
-				ExpiryDate:      future,
+				ID:       "stat_card_1",
+				CardNo:   "STAT_001",
+				CardType: model.CardTypePhysical,
+				Balance:  1000,
+				Status:   model.CardStatusActive,
 			},
 			{
-				ID:              "stat_card_2",
-				CardNo:          "STAT_002",
-				HolderID:        "h_2",
-				HolderName:      "Stat2",
-				HolderPhone:     "13900000002",
-				Balance:         2000.0,
-				Status:          "active",
-				IssueCenterID:   "center_1",
-				IssueCenterName: "Center A",
-				IssueDate:       now,
-				ExpiryDate:      future,
+				ID:       "stat_card_2",
+				CardNo:   "STAT_002",
+				CardType: model.CardTypePhysical,
+				Balance:  2000,
+				Status:   model.CardStatusActive,
 			},
 			{
-				ID:              "stat_card_3",
-				CardNo:          "STAT_003",
-				HolderID:        "h_3",
-				HolderName:      "Stat3",
-				HolderPhone:     "13900000003",
-				Balance:         0,
-				Status:          "inactive",
-				IssueCenterID:   "center_1",
-				IssueCenterName: "Center A",
-				IssueDate:       now,
-				ExpiryDate:      future,
+				ID:       "stat_card_3",
+				CardNo:   "STAT_003",
+				CardType: model.CardTypePhysical,
+				Balance:  0,
+				Status:   model.CardStatusInStock,
 			},
 			{
-				ID:              "stat_card_4",
-				CardNo:          "STAT_004",
-				HolderID:        "h_4",
-				HolderName:      "Stat4",
-				HolderPhone:     "13900000004",
-				Balance:         500.0,
-				Status:          "expired",
-				IssueCenterID:   "center_1",
-				IssueCenterName: "Center A",
-				IssueDate:       now,
-				ExpiryDate:      now.Add(-24 * time.Hour), // already expired
+				ID:       "stat_card_4",
+				CardNo:   "STAT_004",
+				CardType: model.CardTypePhysical,
+				Balance:  500,
+				Status:   model.CardStatusExpired,
 			},
 		}
 		for _, c := range cards {
@@ -437,9 +362,9 @@ func TestRechargeRepository_StoreCard(t *testing.T) {
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, stats["totalCards"], int64(4))
 		assert.GreaterOrEqual(t, stats["activeCards"], int64(2))
-		assert.GreaterOrEqual(t, stats["frozenCards"], int64(1))
+		assert.GreaterOrEqual(t, stats["inStockCards"], int64(1))
 		assert.GreaterOrEqual(t, stats["expiredCards"], int64(1))
-		// Total balance should include at least 1000+2000+500 = 3500
+		// Total balance should include at least 1000+2000+500 = 3500 (active+expired)
 		assert.GreaterOrEqual(t, stats["totalBalance"], int64(3500))
 	})
 }
@@ -452,22 +377,24 @@ func TestRechargeRepository_CardTransaction(t *testing.T) {
 
 	t.Run("create and get transactions ordered DESC", func(t *testing.T) {
 		tx1 := &model.CardTransaction{
-			ID:           "txn_001",
-			CardNo:       "SC_TXN_001",
-			Type:         "issue",
-			Amount:       5000.0,
-			BalanceAfter: 5000.0,
-			Remark:       "开卡充值",
-			OperatorID:   "op_1",
+			ID:            "txn_001",
+			CardNo:        "SC_TXN_001",
+			Type:          "issue",
+			Amount:        5000,
+			BalanceBefore: 0,
+			BalanceAfter:  5000,
+			Remark:        "开卡充值",
+			OperatorID:    "op_1",
 		}
 		tx2 := &model.CardTransaction{
-			ID:           "txn_002",
-			CardNo:       "SC_TXN_001",
-			Type:         "consume",
-			Amount:       1000.0,
-			BalanceAfter: 4000.0,
-			Remark:       "消费扣款",
-			OperatorID:   "op_1",
+			ID:            "txn_002",
+			CardNo:        "SC_TXN_001",
+			Type:          "consume",
+			Amount:        1000,
+			BalanceBefore: 5000,
+			BalanceAfter:  4000,
+			Remark:        "消费扣款",
+			OperatorID:    "op_1",
 		}
 
 		err := repo.CreateCardTransaction(tx1)
@@ -475,8 +402,9 @@ func TestRechargeRepository_CardTransaction(t *testing.T) {
 		err = repo.CreateCardTransaction(tx2)
 		require.NoError(t, err)
 
-		list, err := repo.GetCardTransactions("SC_TXN_001")
+		list, total, err := repo.GetCardTransactions("SC_TXN_001", 1, 10)
 		require.NoError(t, err)
+		assert.GreaterOrEqual(t, total, int64(2))
 		assert.GreaterOrEqual(t, len(list), 2)
 
 		// Verify ordered DESC by created_at (most recent first)

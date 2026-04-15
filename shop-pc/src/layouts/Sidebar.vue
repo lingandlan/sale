@@ -109,7 +109,8 @@ const menuGroups = ref([
     title: '门店卡',
     icon: '🎫',
     items: [
-      { key: '/card/issue', title: '门店卡发放' },
+      { key: '/card/inventory', title: '总卡库管理' },
+      { key: '/card/issue', title: '绑定卡号' },
       { key: '/card/verify', title: '门店卡核销' },
       { key: '/card/manage', title: '门店卡管理' },
       { key: '/card/stats', title: '门店卡统计' }

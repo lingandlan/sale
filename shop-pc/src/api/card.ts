@@ -1,14 +1,38 @@
 import request from '@/utils/request'
 
+// 卡状态枚举
+export const CardStatusMap: Record<number, string> = {
+  1: '已入库',
+  2: '已发放',
+  3: '已激活',
+  4: '已冻结',
+  5: '已过期',
+  6: '已作废'
+}
+
+export const CardStatusTagType: Record<number, string> = {
+  1: 'info',
+  2: '',
+  3: 'success',
+  4: 'warning',
+  5: 'danger',
+  6: 'info'
+}
+
+export const CardTypeMap: Record<number, string> = {
+  1: '实体卡',
+  2: '虚拟卡'
+}
+
 // 门店卡核销
 export interface CardVerifyResponse {
   cardNo: string
-  holder: string
-  holderPhone: string
+  cardType: number
   balance: number
-  status: 'active' | 'inactive' | 'expired'
-  issueDate: string
-  expiryDate: string
+  status: number
+  activatedAt: string | null
+  expiredAt: string | null
+  issuedAt: string | null
 }
 
 export interface CardConsumeData {
@@ -17,28 +41,27 @@ export interface CardConsumeData {
   remark?: string
 }
 
-export interface CardConsumeResponse {
-  transactionNo: string
-  balanceBefore: number
-  balanceAfter: number
-  consumeTime: string
-}
-
-// 门店卡管理
+// 门店卡列表
 export interface CardListItem {
   id: string
   cardNo: string
-  holder: string
-  holderPhone: string
+  cardType: number
   balance: number
-  status: 'active' | 'inactive' | 'expired'
-  issueDate: string
-  expiryDate: string
+  status: number
+  rechargeCenterId: string
+  userId: string
+  batchNo: string
+  issueReason: string
+  issuedAt: string | null
+  activatedAt: string | null
+  expiredAt: string | null
+  createdAt: string
 }
 
 export interface CardListParams {
-  status?: string
-  holderPhone?: string
+  status?: number
+  cardNo?: string
+  centerId?: string
   page: number
   pageSize: number
 }
@@ -48,85 +71,118 @@ export interface CardListResponse {
   total: number
 }
 
-// 门店卡发放
-export interface CardIssueData {
-  holderName: string
-  holderPhone: string
-  amount: number
-  remark?: string
-}
-
-export interface CardIssueResponse {
-  cardNo: string
-  holder: string
-  balance: number
-  issueDate: string
-}
-
 // 门店卡详情
 export interface CardDetail {
   id: string
   cardNo: string
-  holder: {
-    name: string
-    phone: string
-  }
+  cardType: number
   balance: number
-  status: 'active' | 'inactive' | 'expired'
-  issueDate: string
-  expiryDate: string
-  issueCenter: string
+  status: number
+  rechargeCenterId: string
+  userId: string
+  batchNo: string
+  issueReason: string
+  issuedAt: string | null
+  activatedAt: string | null
+  expiredAt: string | null
+  createdAt: string
   transactions: {
     id: string
-    type: 'issue' | 'consume' | 'recharge'
+    type: string
     amount: number
+    balanceBefore: number
     balanceAfter: number
-    time: string
-    remark?: string
+    remark: string
+    operatorId: string
+    createdAt: string
   }[]
 }
 
 // 门店卡统计
 export interface CardStatsResponse {
   totalCards: number
+  inStockCards: number
+  issuedCards: number
   activeCards: number
+  frozenCards: number
+  expiredCards: number
+  voidedCards: number
   totalBalance: number
   todayConsume: number
-  todayIssue: number
   expireIn7Days: number
+}
+
+// 总卡库统计
+export interface CardInventoryResponse {
+  totalCards: number
+  issuedCards: number
+  inStockCards: number
+}
+
+// 批量入库
+export function batchImportCards(data: { startSeq: number; endSeq: number; cardType: number }) {
+  return request.post('/card/batch-import', data)
+}
+
+// 划拨到充值中心
+export function allocateCards(data: { centerId: string; startCardNo: string; endCardNo: string }) {
+  return request.post('/card/allocate', data)
+}
+
+// 绑定卡号和用户
+export function bindCard(data: {
+  cardNo: string
+  userPhone: string
+  issueReason: string
+  issueType: number
+  rechargeCenterId: string
+  relatedUserPhone?: string
+  remark?: string
+}) {
+  return request.post('/card/bind', data)
 }
 
 // 查询卡信息
 export function verifyCard(cardNo: string) {
-  return request.get<{ data: CardVerifyResponse }>(`/card/verify/${cardNo}`)
+  return request.get(`/card/verify/${cardNo}`)
 }
 
 // 核销
 export function consumeCard(data: CardConsumeData) {
-  return request.post<{ data: CardConsumeResponse }>('/card/consume', data)
+  return request.post('/card/consume', data)
 }
 
 // 获取卡列表
 export function getCardList(params: CardListParams) {
-  return request.get<{ data: CardListResponse }>('/card/list', { params })
-}
-
-// 发放卡
-export function issueCard(data: CardIssueData) {
-  return request.post<{ data: CardIssueResponse }>('/card/issue', data)
+  return request.get('/card/list', { params })
 }
 
 // 获取卡详情
 export function getCardDetail(cardNo: string) {
-  return request.get<{ data: CardDetail }>(`/card/detail/${cardNo}`)
+  return request.get(`/card/detail/${cardNo}`)
 }
 
-// 停用/启用卡
-export function toggleCardStatus(cardNo: string, status: 'active' | 'inactive') {
-  return request.post<{ data: { success: boolean } }>(`/card/${cardNo}/status`, { status })
+// 冻结卡
+export function freezeCard(cardNo: string) {
+  return request.post(`/card/${cardNo}/freeze`)
+}
+
+// 解冻卡
+export function unfreezeCard(cardNo: string) {
+  return request.post(`/card/${cardNo}/unfreeze`)
+}
+
+// 作废卡
+export function voidCard(cardNo: string) {
+  return request.post(`/card/${cardNo}/void`)
 }
 
 // 获取卡统计
 export function getCardStats() {
-  return request.get<{ data: CardStatsResponse }>('/card/stats')
+  return request.get('/card/stats')
+}
+
+// 获取总卡库统计
+export function getCardInventoryStats() {
+  return request.get('/card/inventory-stats')
 }

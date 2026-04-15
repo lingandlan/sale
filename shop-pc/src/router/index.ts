@@ -61,6 +61,24 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: 'card/inventory',
+        name: 'CardInventory',
+        component: () => import('../views/card/CardInventory.vue'),
+        meta: {
+          title: '总卡库管理',
+          icon: '🎫'
+        }
+      },
+      {
+        path: 'card/issue',
+        name: 'CardIssue',
+        component: () => import('../views/card/CardIssue.vue'),
+        meta: {
+          title: '绑定卡号',
+          icon: '🎫'
+        }
+      },
+      {
         path: 'card/verify',
         name: 'CardVerify',
         component: () => import('../views/card/CardVerify.vue'),
@@ -75,15 +93,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/card/CardManage.vue'),
         meta: {
           title: '门店卡管理',
-          icon: '🎫'
-        }
-      },
-      {
-        path: 'card/issue',
-        name: 'CardIssue',
-        component: () => import('../views/card/CardIssue.vue'),
-        meta: {
-          title: '门店卡发放',
           icon: '🎫'
         }
       },

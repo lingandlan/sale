@@ -23,7 +23,7 @@ func NewRechargeService(rechargeRepo repository.RechargeRepoInterface) *Recharge
 
 // CalculatePoints 计算积分
 // 规则：基础积分 = 金额，返还积分 = 金额 * 返还比例
-// 返还比例：上月净消费≥10万元返2%，否则返1%
+// 返还比例：上月净消费>=10万元返2%，否则返1%
 func (s *RechargeService) CalculatePoints(amount float64, lastMonthConsumption float64) (int, int, int) {
 	basePoints := int(amount)
 	var rebateRate int
@@ -192,55 +192,145 @@ func (s *RechargeService) GetCRechargeDetail(id string) (*model.CRecharge, error
 
 // ========== 门店卡 ==========
 
-// IssueCard 发放门店卡
-func (s *RechargeService) IssueCard(data map[string]interface{}) (*model.StoreCard, error) {
-	// 生成卡号
-	cardNo := s.generateCardNo()
+// 状态转换白名单
+var allowedTransitions = map[int][]int{
+	model.CardStatusInStock: {model.CardStatusVoided},
+	model.CardStatusIssued:  {model.CardStatusFrozen, model.CardStatusVoided},
+	model.CardStatusActive:  {model.CardStatusFrozen, model.CardStatusExpired},
+	model.CardStatusFrozen:  {model.CardStatusActive, model.CardStatusVoided},
+}
 
-	// 计算过期日期（1年后）
-	issueDate := time.Now()
-	expiryDate := issueDate.AddDate(1, 0, 0)
-
-	card := &model.StoreCard{
-		ID:              uuid.New().String(),
-		CardNo:          cardNo,
-		HolderID:        data["holderId"].(string),
-		HolderName:      data["holderName"].(string),
-		HolderPhone:     data["holderPhone"].(string),
-		Balance:         data["amount"].(float64),
-		Status:          "active",
-		IssueCenterID:   data["centerId"].(string),
-		IssueCenterName: data["centerName"].(string),
-		IssueDate:       issueDate,
-		ExpiryDate:      expiryDate,
+// BatchImportCards 批量入库门店卡
+func (s *RechargeService) BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error) {
+	if startSeq <= 0 || endSeq <= 0 || startSeq > endSeq {
+		return nil, errors.New("序号范围无效")
+	}
+	if endSeq-startSeq+1 > 1000 {
+		return nil, errors.New("单次入库不能超过1000张")
 	}
 
-	if err := s.rechargeRepo.CreateCard(card); err != nil {
+	// 获取当前最大序号
+	maxSeq, err := s.rechargeRepo.GetMaxCardSequence()
+	if err != nil {
 		return nil, err
 	}
 
-	// 创建交易记录
-	transaction := &model.CardTransaction{
-		ID:          uuid.New().String(),
-		CardNo:      cardNo,
-		Type:        "issue",
-		Amount:      card.Balance,
-		BalanceAfter: card.Balance,
-		Remark:      "发卡",
-		OperatorID:  data["operatorId"].(string),
+	// 检查序号冲突
+	if startSeq <= maxSeq {
+		return nil, fmt.Errorf("起始序号 %d 与已有卡号冲突（当前最大序号 %d）", startSeq, maxSeq)
 	}
-	s.rechargeRepo.CreateCardTransaction(transaction)
 
-	return card, nil
+	batchNo := fmt.Sprintf("B%s", time.Now().Format("20060102150405"))
+	cards := make([]*model.StoreCard, 0, endSeq-startSeq+1)
+	cardNos := make([]string, 0, endSeq-startSeq+1)
+
+	for seq := startSeq; seq <= endSeq; seq++ {
+		cardNo := fmt.Sprintf("TJ%08d", seq)
+		cardNos = append(cardNos, cardNo)
+		cards = append(cards, &model.StoreCard{
+			ID:       uuid.New().String(),
+			CardNo:   cardNo,
+			CardType: cardType,
+			Status:   model.CardStatusInStock,
+			Balance:  1000,
+			BatchNo:  batchNo,
+		})
+	}
+
+	if err := s.rechargeRepo.BatchCreateCards(cards); err != nil {
+		return nil, err
+	}
+
+	// 创建入库交易记录
+	for _, cardNo := range cardNos {
+		s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
+			ID:            uuid.New().String(),
+			CardNo:        cardNo,
+			Type:          "stock_in",
+			Amount:        0,
+			BalanceBefore: 1000,
+			BalanceAfter:  1000,
+			Remark:        fmt.Sprintf("批量入库（批次%s）", batchNo),
+			OperatorID:    operatorID,
+		})
+	}
+
+	return cardNos, nil
 }
 
-// generateCardNo 生成卡号
-func (s *RechargeService) generateCardNo() string {
-	// TJ + 年份后2位 + 5位序号
-	// TODO: 从数据库获取最大序号，保证唯一性
-	year := time.Now().Format("06")
-	sequence := 12345 // 临时序号
-	return fmt.Sprintf("TJ%s%05d", year, sequence)
+// AllocateCards 将卡号段划拨到充值中心
+func (s *RechargeService) AllocateCards(centerID, startCardNo, endCardNo string) (int, error) {
+	// 校验充值中心存在
+	center, err := s.rechargeRepo.GetCenterByID(centerID)
+	if err != nil || center == nil {
+		return 0, errors.New("充值中心不存在")
+	}
+
+	count, err := s.rechargeRepo.AllocateCardsToCenter(centerID, startCardNo, endCardNo)
+	if err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		return 0, errors.New("没有符合条件的卡可划拨")
+	}
+	return count, nil
+}
+
+// BindCardToUser 绑定卡号到用户
+func (s *RechargeService) BindCardToUser(cardNo, userPhone, issueReason string, issueType int, rechargeCenterID, operatorID, relatedUserPhone, remark string) error {
+	// 查卡
+	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
+	if err != nil {
+		return errors.New("卡号不存在")
+	}
+	if card.Status != model.CardStatusInStock {
+		return errors.New("该卡不在库存中，无法发放")
+	}
+	if card.RechargeCenterID != rechargeCenterID {
+		return errors.New("该卡不在本中心库存中")
+	}
+
+	// TODO: 调商城接口验证用户存在
+	userID := "" // 后续对接商城接口获取
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"status":       model.CardStatusIssued,
+		"user_id":      userID,
+		"issue_reason": issueReason,
+		"issued_at":    &now,
+	}
+
+	record := &model.CardIssueRecord{
+		ID:               uuid.New().String(),
+		CardNo:           cardNo,
+		UserID:           userID,
+		UserPhone:        userPhone,
+		IssueReason:      issueReason,
+		IssueType:        issueType,
+		RechargeCenterID: rechargeCenterID,
+		OperatorID:       operatorID,
+		RelatedUserPhone: relatedUserPhone,
+		Remark:           remark,
+	}
+
+	if err := s.rechargeRepo.BindCardToUser(cardNo, updates, record); err != nil {
+		return err
+	}
+
+	// 创建发放交易记录
+	s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
+		ID:            uuid.New().String(),
+		CardNo:        cardNo,
+		Type:          "issue",
+		Amount:        0,
+		BalanceBefore: card.Balance,
+		BalanceAfter:  card.Balance,
+		Remark:        fmt.Sprintf("发放给用户 %s（%s）", userPhone, issueReason),
+		OperatorID:    operatorID,
+	})
+
+	return nil
 }
 
 // VerifyCard 验证门店卡
@@ -249,59 +339,36 @@ func (s *RechargeService) VerifyCard(cardNo string) (*model.StoreCard, error) {
 	if err != nil {
 		return nil, errors.New("卡号不存在")
 	}
-
-	if card.Status != "active" {
-		return nil, errors.New("卡状态异常")
+	if card.Status == model.CardStatusFrozen {
+		return nil, errors.New("卡已冻结")
 	}
-
-	// 检查是否过期
-	if time.Now().After(card.ExpiryDate) {
+	if card.Status == model.CardStatusExpired {
 		return nil, errors.New("卡已过期")
 	}
-
+	if card.Status == model.CardStatusVoided {
+		return nil, errors.New("卡已作废")
+	}
+	if card.Status == model.CardStatusInStock {
+		return nil, errors.New("卡未发放")
+	}
+	// 已发放(2)和已激活(3)的卡可以查询
+	// 已激活的卡检查是否过期
+	if card.Status == model.CardStatusActive && card.ExpiredAt != nil && time.Now().After(*card.ExpiredAt) {
+		// 自动标记为过期
+		s.rechargeRepo.UpdateCardByMap(cardNo, map[string]interface{}{"status": model.CardStatusExpired})
+		return nil, errors.New("卡已过期")
+	}
 	return card, nil
 }
 
-// ConsumeCard 核销门店卡
-func (s *RechargeService) ConsumeCard(cardNo string, amount float64, remark, operatorID string) error {
-	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
-	if err != nil {
-		return errors.New("卡号不存在")
-	}
-
-	// 检查卡状态
-	if card.Status != "active" {
-		return errors.New("卡状态异常，无法核销")
-	}
-
-	// 检查余额
-	if amount > card.Balance {
-		return errors.New("余额不足")
-	}
-
-	// 更新余额
-	newBalance := card.Balance - amount
-	if err := s.rechargeRepo.UpdateCardBalance(cardNo, newBalance); err != nil {
-		return err
-	}
-
-	// 创建交易记录
-	transaction := &model.CardTransaction{
-		ID:           uuid.New().String(),
-		CardNo:       cardNo,
-		Type:         "consume",
-		Amount:       amount,
-		BalanceAfter: newBalance,
-		Remark:       remark,
-		OperatorID:   operatorID,
-	}
-
-	return s.rechargeRepo.CreateCardTransaction(transaction)
+// ConsumeCard 核销门店卡（委托给事务方法）
+func (s *RechargeService) ConsumeCard(cardNo string, amount int, operatorID, remark string) error {
+	return s.rechargeRepo.ConsumeCardInTx(cardNo, amount, operatorID, remark)
 }
 
 // GetCardList 获取门店卡列表
-func (s *RechargeService) GetCardList(status, cardNo, holderPhone string, page, pageSize int) (map[string]interface{}, error) {
-	list, total, err := s.rechargeRepo.GetCardList(status, cardNo, holderPhone, page, pageSize)
+func (s *RechargeService) GetCardList(status int, cardNo, centerID string, page, pageSize int) (map[string]interface{}, error) {
+	list, total, err := s.rechargeRepo.GetCardList(status, cardNo, centerID, page, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -314,16 +381,14 @@ func (s *RechargeService) GetCardList(status, cardNo, holderPhone string, page, 
 
 // GetCardDetail 获取门店卡详情
 func (s *RechargeService) GetCardDetail(cardNo string) (map[string]interface{}, error) {
-	card, err := s.VerifyCard(cardNo)
+	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
+	if err != nil {
+		return nil, errors.New("卡号不存在")
+	}
+	transactions, _, err := s.rechargeRepo.GetCardTransactions(cardNo, 1, 50)
 	if err != nil {
 		return nil, err
 	}
-
-	transactions, err := s.rechargeRepo.GetCardTransactions(cardNo)
-	if err != nil {
-		return nil, err
-	}
-
 	return map[string]interface{}{
 		"card":         card,
 		"transactions": transactions,
@@ -336,19 +401,79 @@ func (s *RechargeService) GetCardStats() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// 转换为 map[string]interface{}
 	result := make(map[string]interface{})
 	for k, v := range stats {
 		result[k] = v
 	}
-
-	// 今日消费和7天内过期需要从数据库查询
-	// TODO: 在Repository层实现这些统计
-	result["todayConsume"] = int64(0)
-	result["expireIn7Days"] = int64(0)
-
 	return result, nil
+}
+
+// GetCardInventoryStats 获取门店卡库存统计
+func (s *RechargeService) GetCardInventoryStats() (map[string]interface{}, error) {
+	stats, err := s.rechargeRepo.GetCardInventoryStats()
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]interface{})
+	for k, v := range stats {
+		result[k] = v
+	}
+	return result, nil
+}
+
+// transitionCardStatus 卡状态转换通用方法
+func (s *RechargeService) transitionCardStatus(cardNo string, targetStatus int, operatorID, txnType, remark string) error {
+	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
+	if err != nil {
+		return errors.New("卡号不存在")
+	}
+
+	// 校验状态转换合法性
+	allowed, ok := allowedTransitions[card.Status]
+	if !ok {
+		return errors.New("当前状态不允许操作")
+	}
+	valid := false
+	for _, s := range allowed {
+		if s == targetStatus {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return fmt.Errorf("不允许从状态%d转换到状态%d", card.Status, targetStatus)
+	}
+
+	if err := s.rechargeRepo.UpdateCardByMap(cardNo, map[string]interface{}{"status": targetStatus}); err != nil {
+		return err
+	}
+
+	s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
+		ID:            uuid.New().String(),
+		CardNo:        cardNo,
+		Type:          txnType,
+		Amount:        0,
+		BalanceBefore: card.Balance,
+		BalanceAfter:  card.Balance,
+		Remark:        remark,
+		OperatorID:    operatorID,
+	})
+	return nil
+}
+
+// FreezeCard 冻结卡
+func (s *RechargeService) FreezeCard(cardNo, operatorID string) error {
+	return s.transitionCardStatus(cardNo, model.CardStatusFrozen, operatorID, "freeze", "冻结卡")
+}
+
+// UnfreezeCard 解冻卡
+func (s *RechargeService) UnfreezeCard(cardNo, operatorID string) error {
+	return s.transitionCardStatus(cardNo, model.CardStatusActive, operatorID, "unfreeze", "解冻卡")
+}
+
+// VoidCard 作废卡
+func (s *RechargeService) VoidCard(cardNo, operatorID string) error {
+	return s.transitionCardStatus(cardNo, model.CardStatusVoided, operatorID, "void", "作废卡")
 }
 
 // ========== 充值中心 ==========
@@ -499,11 +624,6 @@ func (s *RechargeService) UpdateOperator(id string, data map[string]interface{})
 	}
 
 	return operator, nil
-}
-
-// UpdateCardStatus 更新卡状态
-func (s *RechargeService) UpdateCardStatus(cardNo, status string) error {
-	return s.rechargeRepo.UpdateCardStatus(cardNo, status)
 }
 
 // DeleteOperator 删除操作员

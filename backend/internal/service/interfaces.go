@@ -42,18 +42,26 @@ type RechargeServiceInterface interface {
 	CreateCRecharge(data map[string]interface{}) (*model.CRecharge, error)
 	GetCRechargeList(memberPhone, centerID string, page, pageSize int) (map[string]interface{}, error)
 	GetCRechargeDetail(id string) (*model.CRecharge, error)
-	IssueCard(data map[string]interface{}) (*model.StoreCard, error)
+	// 门店卡
+	BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error)
+	AllocateCards(centerID, startCardNo, endCardNo string) (int, error)
+	BindCardToUser(cardNo, userPhone, issueReason string, issueType int, rechargeCenterID, operatorID, relatedUserPhone, remark string) error
 	VerifyCard(cardNo string) (*model.StoreCard, error)
-	ConsumeCard(cardNo string, amount float64, remark, operatorID string) error
-	UpdateCardStatus(cardNo, status string) error
-	GetCardList(status, cardNo, holderPhone string, page, pageSize int) (map[string]interface{}, error)
+	ConsumeCard(cardNo string, amount int, operatorID, remark string) error
+	GetCardList(status int, cardNo, centerID string, page, pageSize int) (map[string]interface{}, error)
 	GetCardDetail(cardNo string) (map[string]interface{}, error)
 	GetCardStats() (map[string]interface{}, error)
+	GetCardInventoryStats() (map[string]interface{}, error)
+	FreezeCard(cardNo, operatorID string) error
+	UnfreezeCard(cardNo, operatorID string) error
+	VoidCard(cardNo, operatorID string) error
+	// 充值中心
 	GetCenters() ([]map[string]interface{}, error)
 	GetCenterDetail(id string) (*model.RechargeCenter, error)
 	CreateCenter(data map[string]interface{}) (*model.RechargeCenter, error)
 	UpdateCenter(id string, data map[string]interface{}) (*model.RechargeCenter, error)
 	DeleteCenter(id string) error
+	// 操作员
 	GetOperators() ([]model.RechargeOperator, error)
 	CreateOperator(data map[string]interface{}) (*model.RechargeOperator, error)
 	UpdateOperator(id string, data map[string]interface{}) (*model.RechargeOperator, error)

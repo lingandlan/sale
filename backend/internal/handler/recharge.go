@@ -147,26 +147,78 @@ func (h *RechargeHandler) GetCRechargeDetail(c *gin.Context) {
 
 // ========== 门店卡 ==========
 
-func (h *RechargeHandler) IssueCard(c *gin.Context) {
-	var req map[string]interface{}
+func (h *RechargeHandler) BatchImportCards(c *gin.Context) {
+	var req struct {
+		StartSeq int `json:"startSeq"`
+		EndSeq   int `json:"endSeq"`
+		CardType int `json:"cardType"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
 
 	// TODO: 从JWT获取操作员信息
-	req["operatorId"] = "op123"
+	operatorID := "op123"
 
-	card, err := h.rechargeService.IssueCard(req)
+	cardNos, err := h.rechargeService.BatchImportCards(req.StartSeq, req.EndSeq, req.CardType, operatorID)
 	if err != nil {
-		response.InternalError(c, errmsg.Get("card.issue_failed"))
+		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
 		return
 	}
 
 	response.SuccessWithMessage(c, errmsg.Get("card.issue_success"), gin.H{
-		"id":     card.ID,
-		"cardNo": card.CardNo,
+		"count":   len(cardNos),
+		"cardNos": cardNos,
 	})
+}
+
+func (h *RechargeHandler) AllocateCards(c *gin.Context) {
+	var req struct {
+		CenterID    string `json:"centerId"`
+		StartCardNo string `json:"startCardNo"`
+		EndCardNo   string `json:"endCardNo"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ParamsError(c, err.Error())
+		return
+	}
+
+	count, err := h.rechargeService.AllocateCards(req.CenterID, req.StartCardNo, req.EndCardNo)
+	if err != nil {
+		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
+		return
+	}
+
+	response.SuccessWithMessage(c, errmsg.Get("card.issue_success"), gin.H{
+		"count": count,
+	})
+}
+
+func (h *RechargeHandler) BindCardToUser(c *gin.Context) {
+	var req struct {
+		CardNo           string `json:"cardNo"`
+		UserPhone        string `json:"userPhone"`
+		IssueReason      string `json:"issueReason"`
+		IssueType        int    `json:"issueType"`
+		RechargeCenterID string `json:"rechargeCenterId"`
+		RelatedUserPhone string `json:"relatedUserPhone"`
+		Remark           string `json:"remark"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ParamsError(c, err.Error())
+		return
+	}
+
+	// TODO: 从JWT获取操作员信息
+	operatorID := "op123"
+
+	if err := h.rechargeService.BindCardToUser(req.CardNo, req.UserPhone, req.IssueReason, req.IssueType, req.RechargeCenterID, operatorID, req.RelatedUserPhone, req.Remark); err != nil {
+		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
+		return
+	}
+
+	response.SuccessWithMessage(c, errmsg.Get("card.issue_success"), gin.H{"success": true})
 }
 
 func (h *RechargeHandler) VerifyCard(c *gin.Context) {
@@ -174,7 +226,7 @@ func (h *RechargeHandler) VerifyCard(c *gin.Context) {
 
 	result, err := h.rechargeService.VerifyCard(cardNo)
 	if err != nil {
-		response.NotFound(c, errmsg.Get("card.verify_not_found"))
+		response.NotFound(c, errmsg.Get("card.verify_not_found")+":"+err.Error())
 		return
 	}
 
@@ -193,11 +245,12 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 		response.ParamsError(c, errmsg.Get("card.consume_no_card"))
 		return
 	}
-	amount, ok := req["amount"].(float64)
+	amountFloat, ok := req["amount"].(float64)
 	if !ok {
 		response.ParamsError(c, errmsg.Get("card.consume_no_amount"))
 		return
 	}
+	amount := int(amountFloat)
 	remark := ""
 	if req["remark"] != nil {
 		remark, _ = req["remark"].(string)
@@ -206,7 +259,7 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 	// TODO: 从JWT获取操作员ID
 	operatorID := "op123"
 
-	if err := h.rechargeService.ConsumeCard(cardNo, amount, remark, operatorID); err != nil {
+	if err := h.rechargeService.ConsumeCard(cardNo, amount, operatorID, remark); err != nil {
 		response.InternalError(c, errmsg.Get("card.consume_failed")+":"+err.Error())
 		return
 	}
@@ -214,22 +267,42 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 	response.SuccessWithMessage(c, errmsg.Get("card.consume_success"), gin.H{"success": true})
 }
 
-func (h *RechargeHandler) UpdateCardStatus(c *gin.Context) {
+func (h *RechargeHandler) FreezeCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
-	var req map[string]interface{}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ParamsError(c, err.Error())
+
+	// TODO: 从JWT获取操作员ID
+	operatorID := "op123"
+
+	if err := h.rechargeService.FreezeCard(cardNo, operatorID); err != nil {
+		response.InternalError(c, errmsg.Get("card.status_failed")+":"+err.Error())
 		return
 	}
 
-	status, ok := req["status"].(string)
-	if !ok {
-		response.ParamsError(c, errmsg.Get("card.status_no_param"))
+	response.Success(c, gin.H{"success": true})
+}
+
+func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
+	cardNo := c.Param("cardNo")
+
+	// TODO: 从JWT获取操作员ID
+	operatorID := "op123"
+
+	if err := h.rechargeService.UnfreezeCard(cardNo, operatorID); err != nil {
+		response.InternalError(c, errmsg.Get("card.status_failed")+":"+err.Error())
 		return
 	}
 
-	if err := h.rechargeService.UpdateCardStatus(cardNo, status); err != nil {
-		response.InternalError(c, errmsg.Get("card.status_failed"))
+	response.Success(c, gin.H{"success": true})
+}
+
+func (h *RechargeHandler) VoidCard(c *gin.Context) {
+	cardNo := c.Param("cardNo")
+
+	// TODO: 从JWT获取操作员ID
+	operatorID := "op123"
+
+	if err := h.rechargeService.VoidCard(cardNo, operatorID); err != nil {
+		response.InternalError(c, errmsg.Get("card.status_failed")+":"+err.Error())
 		return
 	}
 
@@ -237,13 +310,13 @@ func (h *RechargeHandler) UpdateCardStatus(c *gin.Context) {
 }
 
 func (h *RechargeHandler) GetCardList(c *gin.Context) {
-	status := c.Query("status")
+	status, _ := strconv.Atoi(c.Query("status"))
 	cardNo := c.Query("cardNo")
-	holderPhone := c.Query("holderPhone")
+	centerID := c.Query("centerId")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
-	result, err := h.rechargeService.GetCardList(status, cardNo, holderPhone, page, pageSize)
+	result, err := h.rechargeService.GetCardList(status, cardNo, centerID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.list_failed"))
 		return
@@ -266,6 +339,15 @@ func (h *RechargeHandler) GetCardDetail(c *gin.Context) {
 
 func (h *RechargeHandler) GetCardStats(c *gin.Context) {
 	result, err := h.rechargeService.GetCardStats()
+	if err != nil {
+		response.InternalError(c, errmsg.Get("card.stats_failed"))
+		return
+	}
+	response.Success(c, result)
+}
+
+func (h *RechargeHandler) GetCardInventoryStats(c *gin.Context) {
+	result, err := h.rechargeService.GetCardInventoryStats()
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.stats_failed"))
 		return

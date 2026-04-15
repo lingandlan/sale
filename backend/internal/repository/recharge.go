@@ -2,10 +2,12 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"marketplace/backend/internal/model"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -18,14 +20,21 @@ type RechargeRepoInterface interface {
 	CreateCRecharge(recharge *model.CRecharge) error
 	GetCRechargeList(memberPhone, centerID string, page, pageSize int) ([]model.CRecharge, int64, error)
 	GetCRechargeByID(id string) (*model.CRecharge, error)
+	// 门店卡
 	CreateCard(card *model.StoreCard) error
-	GetCardList(status, cardNo, holderPhone string, page, pageSize int) ([]model.StoreCard, int64, error)
+	BatchCreateCards(cards []*model.StoreCard) error
+	GetCardList(status int, cardNo, centerID string, page, pageSize int) ([]model.StoreCard, int64, error)
 	GetCardByCardNo(cardNo string) (*model.StoreCard, error)
-	UpdateCardBalance(cardNo string, balance float64) error
-	UpdateCardStatus(cardNo, status string) error
+	GetMaxCardSequence() (int, error)
+	UpdateCardByMap(cardNo string, updates map[string]interface{}) error
+	AllocateCardsToCenter(centerID, startCardNo, endCardNo string) (int, error)
+	BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error
+	ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error
 	CreateCardTransaction(transaction *model.CardTransaction) error
-	GetCardTransactions(cardNo string) ([]model.CardTransaction, error)
+	GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error)
 	GetCardStats() (map[string]int64, error)
+	GetCardInventoryStats() (map[string]int64, error)
+	// 充值中心
 	GetCenterByID(id string) (*model.RechargeCenter, error)
 	AddCenterBalance(id string, amount float64) error
 	DeductCenterBalance(id string, amount float64) (float64, error)
@@ -35,6 +44,7 @@ type RechargeRepoInterface interface {
 	CreateCenter(center *model.RechargeCenter) error
 	UpdateCenter(id string, updates map[string]interface{}) error
 	DeleteCenter(id string) error
+	// 操作员
 	GetOperators() ([]model.RechargeOperator, error)
 	CreateOperator(operator *model.RechargeOperator) error
 	UpdateOperator(operator *model.RechargeOperator) error
@@ -144,20 +154,25 @@ func (r *RechargeRepository) CreateCard(card *model.StoreCard) error {
 	return r.db.Create(card).Error
 }
 
+// BatchCreateCards 批量创建卡
+func (r *RechargeRepository) BatchCreateCards(cards []*model.StoreCard) error {
+	return r.db.CreateInBatches(cards, 100).Error
+}
+
 // GetCardList 获取门店卡列表
-func (r *RechargeRepository) GetCardList(status, cardNo, holderPhone string, page, pageSize int) ([]model.StoreCard, int64, error) {
+func (r *RechargeRepository) GetCardList(status int, cardNo, centerID string, page, pageSize int) ([]model.StoreCard, int64, error) {
 	var list []model.StoreCard
 	var total int64
 
 	query := r.db.Model(&model.StoreCard{})
-	if status != "" {
+	if status > 0 {
 		query = query.Where("status = ?", status)
 	}
 	if cardNo != "" {
 		query = query.Where("card_no LIKE ?", "%"+cardNo+"%")
 	}
-	if holderPhone != "" {
-		query = query.Where("holder_phone = ?", holderPhone)
+	if centerID != "" {
+		query = query.Where("recharge_center_id = ?", centerID)
 	}
 
 	query.Count(&total)
@@ -175,14 +190,105 @@ func (r *RechargeRepository) GetCardByCardNo(cardNo string) (*model.StoreCard, e
 	return &card, err
 }
 
-// UpdateCardBalance 更新卡余额
-func (r *RechargeRepository) UpdateCardBalance(cardNo string, balance float64) error {
-	return r.db.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Update("balance", balance).Error
+// GetMaxCardSequence 从数据库获取最大卡号序号
+func (r *RechargeRepository) GetMaxCardSequence() (int, error) {
+	var maxCardNo string
+	err := r.db.Model(&model.StoreCard{}).Select("MAX(card_no)").Scan(&maxCardNo).Error
+	if err != nil || maxCardNo == "" {
+		return 0, nil
+	}
+	// 从 "TJ00000001" 提取序号部分
+	var seq int
+	fmt.Sscanf(maxCardNo, "TJ%d", &seq)
+	return seq, nil
 }
 
-// UpdateCardStatus 更新卡状态
-func (r *RechargeRepository) UpdateCardStatus(cardNo, status string) error {
-	return r.db.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Update("status", status).Error
+// UpdateCardByMap 通用更新方法
+func (r *RechargeRepository) UpdateCardByMap(cardNo string, updates map[string]interface{}) error {
+	return r.db.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Updates(updates).Error
+}
+
+// AllocateCardsToCenter 将卡号段内的卡划拨到充值中心
+func (r *RechargeRepository) AllocateCardsToCenter(centerID, startCardNo, endCardNo string) (int, error) {
+	result := r.db.Model(&model.StoreCard{}).
+		Where("card_no >= ? AND card_no <= ? AND status = ?", startCardNo, endCardNo, model.CardStatusInStock).
+		Update("recharge_center_id", centerID)
+	return int(result.RowsAffected), result.Error
+}
+
+// BindCardToUser 绑定卡号到用户，同时创建发放记录（在一个事务中）
+func (r *RechargeRepository) BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 更新卡状态和绑定信息
+		if err := tx.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Updates(updates).Error; err != nil {
+			return err
+		}
+		// 创建发放记录
+		if err := tx.Create(record).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+// ConsumeCardInTx 事务核销（行锁 + 首次激活）
+func (r *RechargeRepository) ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. 行锁查卡
+		var card model.StoreCard
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").
+			Where("card_no = ?", cardNo).First(&card).Error; err != nil {
+			return err
+		}
+
+		// 2. 状态校验
+		if card.Status != model.CardStatusIssued && card.Status != model.CardStatusActive {
+			return errors.New("卡状态异常，无法核销")
+		}
+		if card.Status == model.CardStatusActive && card.ExpiredAt != nil && time.Now().After(*card.ExpiredAt) {
+			return errors.New("卡已过期，无法核销")
+		}
+
+		// 3. 余额校验
+		if amount < 100 {
+			return errors.New("最低消费100元")
+		}
+		if amount > card.Balance {
+			return errors.New("余额不足")
+		}
+
+		// 4. 扣减余额
+		newBalance := card.Balance - amount
+		updates := map[string]interface{}{
+			"balance": newBalance,
+		}
+
+		// 5. 首次核销激活
+		if card.ActivatedAt == nil {
+			now := time.Now()
+			expiredAt := now.AddDate(1, 0, 0)
+			updates["activated_at"] = &now
+			updates["expired_at"] = &expiredAt
+			updates["status"] = model.CardStatusActive
+		}
+
+		if err := tx.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Updates(updates).Error; err != nil {
+			return err
+		}
+
+		// 6. 创建交易记录
+		txn := &model.CardTransaction{
+			ID:            uuid.New().String(),
+			CardNo:        cardNo,
+			Type:          "consume",
+			Amount:        amount,
+			BalanceBefore: card.Balance,
+			BalanceAfter:  newBalance,
+			Remark:        remark,
+			OperatorID:    operatorID,
+		}
+		return tx.Create(txn).Error
+	})
 }
 
 // CreateCardTransaction 创建卡交易记录
@@ -190,11 +296,18 @@ func (r *RechargeRepository) CreateCardTransaction(transaction *model.CardTransa
 	return r.db.Create(transaction).Error
 }
 
-// GetCardTransactions 获取卡交易记录
-func (r *RechargeRepository) GetCardTransactions(cardNo string) ([]model.CardTransaction, error) {
+// GetCardTransactions 获取卡交易记录（分页）
+func (r *RechargeRepository) GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error) {
 	var list []model.CardTransaction
-	err := r.db.Where("card_no = ?", cardNo).Order("created_at DESC").Limit(50).Find(&list).Error
-	return list, err
+	var total int64
+
+	query := r.db.Model(&model.CardTransaction{}).Where("card_no = ?", cardNo)
+	query.Count(&total)
+
+	offset := (page - 1) * pageSize
+	err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error
+
+	return list, total, err
 }
 
 // GetCardStats 获取门店卡统计
@@ -202,31 +315,69 @@ func (r *RechargeRepository) GetCardStats() (map[string]int64, error) {
 	stats := make(map[string]int64)
 
 	// 总卡数
-	var totalCards int64
-	r.db.Model(&model.StoreCard{}).Count(&totalCards)
-	stats["totalCards"] = totalCards
+	var total int64
+	r.db.Model(&model.StoreCard{}).Count(&total)
+	stats["totalCards"] = total
 
-	// 活跃卡数
-	var activeCards int64
-	r.db.Model(&model.StoreCard{}).Where("status = ?", "active").Count(&activeCards)
-	stats["activeCards"] = activeCards
-
-	// 冻结卡数
-	var frozenCards int64
-	r.db.Model(&model.StoreCard{}).Where("status = ?", "inactive").Count(&frozenCards)
-	stats["frozenCards"] = frozenCards
-
-	// 过期卡数
-	var expiredCards int64
-	r.db.Model(&model.StoreCard{}).Where("expiry_date < ?", time.Now()).Count(&expiredCards)
-	stats["expiredCards"] = expiredCards
-
-	// 总余额
-	var totalBalance struct {
-		Total float64
+	// 按6种状态统计
+	statusFields := map[string]int{
+		"inStockCards": model.CardStatusInStock,
+		"issuedCards":  model.CardStatusIssued,
+		"activeCards":  model.CardStatusActive,
+		"frozenCards":  model.CardStatusFrozen,
+		"expiredCards": model.CardStatusExpired,
+		"voidedCards":  model.CardStatusVoided,
 	}
-	r.db.Model(&model.StoreCard{}).Select("COALESCE(SUM(balance), 0) as total").Scan(&totalBalance)
+	for field, status := range statusFields {
+		var count int64
+		r.db.Model(&model.StoreCard{}).Where("status = ?", status).Count(&count)
+		stats[field] = count
+	}
+
+	// 总余额（活跃+已冻结+已发放的卡）
+	var totalBalance struct{ Total int }
+	r.db.Model(&model.StoreCard{}).
+		Where("status IN ?", []int{model.CardStatusActive, model.CardStatusFrozen, model.CardStatusIssued}).
+		Select("COALESCE(SUM(balance), 0) as total").Scan(&totalBalance)
 	stats["totalBalance"] = int64(totalBalance.Total)
+
+	// 今日消费
+	today := time.Now().Format("2006-01-02")
+	var todayConsume struct{ Total int }
+	r.db.Model(&model.CardTransaction{}).
+		Where("type = ? AND DATE(created_at) = ?", "consume", today).
+		Select("COALESCE(SUM(amount), 0) as total").Scan(&todayConsume)
+	stats["todayConsume"] = int64(todayConsume.Total)
+
+	// 7天内过期
+	sevenDaysLater := time.Now().AddDate(0, 0, 7)
+	var expireIn7Days int64
+	r.db.Model(&model.StoreCard{}).
+		Where("status = ? AND expired_at IS NOT NULL AND expired_at <= ?", model.CardStatusActive, sevenDaysLater).
+		Count(&expireIn7Days)
+	stats["expireIn7Days"] = expireIn7Days
+
+	return stats, nil
+}
+
+// GetCardInventoryStats 总卡库统计
+func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
+	stats := make(map[string]int64)
+
+	// 总卡数
+	var total int64
+	r.db.Model(&model.StoreCard{}).Count(&total)
+	stats["totalCards"] = total
+
+	// 已发放+已激活+已冻结+已过期的卡都是"已出库"的
+	var issued int64
+	r.db.Model(&model.StoreCard{}).Where("status IN ?", []int{model.CardStatusIssued, model.CardStatusActive, model.CardStatusFrozen, model.CardStatusExpired}).Count(&issued)
+	stats["issuedCards"] = issued
+
+	// 剩余库存 = 已入库的卡
+	var inStock int64
+	r.db.Model(&model.StoreCard{}).Where("status = ?", model.CardStatusInStock).Count(&inStock)
+	stats["inStockCards"] = inStock
 
 	return stats, nil
 }

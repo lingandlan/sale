@@ -1,7 +1,7 @@
 <template>
   <div class="card-issue">
     <div class="page-header">
-      <h1 class="page-title">门店卡发放</h1>
+      <h1 class="page-title">绑定卡号和用户</h1>
     </div>
 
     <div class="content-area">
@@ -16,23 +16,37 @@
           label-width="120px"
           class="issue-form"
         >
-          <el-form-item label="持卡人姓名" prop="holderName">
-            <el-input v-model="formData.holderName" placeholder="请输入持卡人姓名" />
+          <el-form-item label="卡号" prop="cardNo">
+            <el-input v-model="formData.cardNo" placeholder="请输入卡号（如 TJ00000001）" />
           </el-form-item>
 
-          <el-form-item label="持卡人手机" prop="holderPhone">
-            <el-input v-model="formData.holderPhone" placeholder="请输入手机号" maxlength="11" />
+          <el-form-item label="用户手机号" prop="userPhone">
+            <el-input v-model="formData.userPhone" placeholder="请输入用户手机号" maxlength="11" />
           </el-form-item>
 
-          <el-form-item label="充值金额" prop="amount">
-            <el-input-number
-              v-model="formData.amount"
-              :min="100"
-              :step="100"
-              :precision="0"
-              style="width: 100%"
-            />
-            <div class="form-hint">最低100元，必须是100的整数倍</div>
+          <el-form-item label="充值中心" prop="rechargeCenterId">
+            <el-select v-model="formData.rechargeCenterId" placeholder="选择充值中心" style="width: 100%">
+              <el-option v-for="c in centers" :key="c.id" :label="c.name" :value="c.id" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="发放原因" prop="issueReason">
+            <el-select v-model="formData.issueReason" placeholder="选择发放原因" style="width: 100%">
+              <el-option value="购买套餐包" label="购买套餐包" />
+              <el-option value="推荐奖励" label="推荐奖励" />
+              <el-option value="其他" label="其他" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="发放方式" prop="issueType">
+            <el-select v-model="formData.issueType" placeholder="选择发放方式" style="width: 100%">
+              <el-option :value="1" label="实体卡（运营绑定）" />
+              <el-option :value="2" label="虚拟卡（用户领取）" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item v-if="formData.issueReason === '推荐奖励'" label="关联购买人" prop="relatedUserPhone">
+            <el-input v-model="formData.relatedUserPhone" placeholder="被推荐人手机号" maxlength="11" />
           </el-form-item>
 
           <el-form-item label="备注" prop="remark">
@@ -46,7 +60,7 @@
 
           <el-form-item>
             <el-button type="primary" class="submit-btn" @click="handleSubmit">
-              确认发放
+              确认绑定
             </el-button>
             <el-button class="cancel-btn" @click="handleCancel">取消</el-button>
           </el-form-item>
@@ -57,31 +71,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { issueCard } from '@/api/card'
+import { bindCard } from '@/api/card'
+import request from '@/utils/request'
 
 const formRef = ref<FormInstance>()
+const centers = ref<{ id: string; name: string }[]>([])
 
 const formData = ref({
-  holderName: '',
-  holderPhone: '',
-  amount: 100,
+  cardNo: '',
+  userPhone: '',
+  rechargeCenterId: '',
+  issueReason: '',
+  issueType: 1,
+  relatedUserPhone: '',
   remark: ''
 })
 
 const formRules: FormRules = {
-  holderName: [
-    { required: true, message: '请输入持卡人姓名', trigger: 'blur' }
-  ],
-  holderPhone: [
+  cardNo: [{ required: true, message: '请输入卡号', trigger: 'blur' }],
+  userPhone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ],
-  amount: [
-    { required: true, message: '请输入充值金额', trigger: 'blur' },
-    { type: 'number', min: 100, message: '最低100元', trigger: 'blur' }
-  ]
+  rechargeCenterId: [{ required: true, message: '请选择充值中心', trigger: 'change' }],
+  issueReason: [{ required: true, message: '请选择发放原因', trigger: 'change' }],
+  issueType: [{ required: true, message: '请选择发放方式', trigger: 'change' }]
+}
+
+async function loadCenters() {
+  const res = await request.get('/center')
+  const data = res.data || res
+  centers.value = Array.isArray(data) ? data : (data.list || [])
 }
 
 const handleSubmit = async () => {
@@ -94,16 +116,11 @@ const handleSubmit = async () => {
   }
 
   try {
-    await issueCard({
-      holderName: formData.value.holderName,
-      holderPhone: formData.value.holderPhone,
-      amount: formData.value.amount,
-      remark: formData.value.remark
-    })
-    ElMessage.success('发放成功')
-    handleCancel()
-  } catch (error) {
-    ElMessage.error('发放失败')
+    await bindCard(formData.value)
+    ElMessage.success('绑定成功')
+    formRef.value.resetFields()
+  } catch (error: any) {
+    ElMessage.error(error?.message || '绑定失败')
   }
 }
 
@@ -114,10 +131,10 @@ const handleCancel = () => {
     type: 'warning'
   }).then(() => {
     formRef.value?.resetFields()
-  }).catch(() => {
-    // 用户选择继续填写
-  })
+  }).catch(() => {})
 }
+
+onMounted(() => { loadCenters() })
 </script>
 
 <style scoped>
@@ -165,13 +182,6 @@ const handleCancel = () => {
 
 .issue-form {
   margin-top: 16px;
-}
-
-.form-hint {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: #8C8C8C;
-  margin-top: 4px;
 }
 
 .submit-btn {

@@ -35,6 +35,7 @@ func main() {
 		&model.RechargeApplication{},
 		&model.CRecharge{},
 		&model.StoreCard{},
+		&model.CardIssueRecord{},
 		&model.CardTransaction{},
 		&model.RechargeCenter{},
 		&model.RechargeOperator{},

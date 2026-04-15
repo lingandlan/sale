@@ -84,8 +84,13 @@ func SetupRouter(
 			card.GET("/list", rechargeHandler.GetCardList)
 			card.GET("/detail/:cardNo", rechargeHandler.GetCardDetail)
 			card.GET("/stats", rechargeHandler.GetCardStats)
-			card.POST("/issue", rechargeHandler.IssueCard)
-			card.POST("/:cardNo/status", rechargeHandler.UpdateCardStatus)
+			card.GET("/inventory-stats", rechargeHandler.GetCardInventoryStats)
+			card.POST("/batch-import", rechargeHandler.BatchImportCards)
+			card.POST("/allocate", rechargeHandler.AllocateCards)
+			card.POST("/bind", rechargeHandler.BindCardToUser)
+			card.POST("/:cardNo/freeze", rechargeHandler.FreezeCard)
+			card.POST("/:cardNo/unfreeze", rechargeHandler.UnfreezeCard)
+			card.POST("/:cardNo/void", rechargeHandler.VoidCard)
 		}
 
 		// ========== 充值中心管理 ==========

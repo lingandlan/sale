@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -59,13 +60,19 @@ func (m *MockRechargeRepo) GetCRechargeByID(id string) (*model.CRecharge, error)
 	return args.Get(0).(*model.CRecharge), args.Error(1)
 }
 
+// 门店卡 mock methods
 func (m *MockRechargeRepo) CreateCard(card *model.StoreCard) error {
 	args := m.Called(card)
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) GetCardList(status, cardNo, holderPhone string, page, pageSize int) ([]model.StoreCard, int64, error) {
-	args := m.Called(status, cardNo, holderPhone, page, pageSize)
+func (m *MockRechargeRepo) BatchCreateCards(cards []*model.StoreCard) error {
+	args := m.Called(cards)
+	return args.Error(0)
+}
+
+func (m *MockRechargeRepo) GetCardList(status int, cardNo, centerID string, page, pageSize int) ([]model.StoreCard, int64, error) {
+	args := m.Called(status, cardNo, centerID, page, pageSize)
 	return args.Get(0).([]model.StoreCard), args.Get(1).(int64), args.Error(2)
 }
 
@@ -77,13 +84,28 @@ func (m *MockRechargeRepo) GetCardByCardNo(cardNo string) (*model.StoreCard, err
 	return args.Get(0).(*model.StoreCard), args.Error(1)
 }
 
-func (m *MockRechargeRepo) UpdateCardBalance(cardNo string, balance float64) error {
-	args := m.Called(cardNo, balance)
+func (m *MockRechargeRepo) GetMaxCardSequence() (int, error) {
+	args := m.Called()
+	return args.Get(0).(int), args.Error(1)
+}
+
+func (m *MockRechargeRepo) UpdateCardByMap(cardNo string, updates map[string]interface{}) error {
+	args := m.Called(cardNo, updates)
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) UpdateCardStatus(cardNo, status string) error {
-	args := m.Called(cardNo, status)
+func (m *MockRechargeRepo) AllocateCardsToCenter(centerID, startCardNo, endCardNo string) (int, error) {
+	args := m.Called(centerID, startCardNo, endCardNo)
+	return args.Get(0).(int), args.Error(1)
+}
+
+func (m *MockRechargeRepo) BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error {
+	args := m.Called(cardNo, updates, record)
+	return args.Error(0)
+}
+
+func (m *MockRechargeRepo) ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error {
+	args := m.Called(cardNo, amount, operatorID, remark)
 	return args.Error(0)
 }
 
@@ -92,14 +114,48 @@ func (m *MockRechargeRepo) CreateCardTransaction(transaction *model.CardTransact
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) GetCardTransactions(cardNo string) ([]model.CardTransaction, error) {
-	args := m.Called(cardNo)
-	return args.Get(0).([]model.CardTransaction), args.Error(1)
+func (m *MockRechargeRepo) GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error) {
+	args := m.Called(cardNo, page, pageSize)
+	return args.Get(0).([]model.CardTransaction), args.Get(1).(int64), args.Error(2)
 }
 
 func (m *MockRechargeRepo) GetCardStats() (map[string]int64, error) {
 	args := m.Called()
 	return args.Get(0).(map[string]int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetCardInventoryStats() (map[string]int64, error) {
+	args := m.Called()
+	return args.Get(0).(map[string]int64), args.Error(1)
+}
+
+// 充值中心 mock methods
+func (m *MockRechargeRepo) GetCenterByID(id string) (*model.RechargeCenter, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.RechargeCenter), args.Error(1)
+}
+
+func (m *MockRechargeRepo) AddCenterBalance(id string, amount float64) error {
+	args := m.Called(id, amount)
+	return args.Error(0)
+}
+
+func (m *MockRechargeRepo) DeductCenterBalance(id string, amount float64) (float64, error) {
+	args := m.Called(id, amount)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetCenterTotalRecharge(centerID string) int64 {
+	args := m.Called(centerID)
+	return args.Get(0).(int64)
+}
+
+func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) float64 {
+	args := m.Called(centerID)
+	return args.Get(0).(float64)
 }
 
 func (m *MockRechargeRepo) GetCenters() ([]model.RechargeCenter, error) {
@@ -113,7 +169,7 @@ func (m *MockRechargeRepo) CreateCenter(center *model.RechargeCenter) error {
 }
 
 func (m *MockRechargeRepo) UpdateCenter(id string, updates map[string]interface{}) error {
-	args := m.Called(center)
+	args := m.Called(id, updates)
 	return args.Error(0)
 }
 
@@ -122,6 +178,7 @@ func (m *MockRechargeRepo) DeleteCenter(id string) error {
 	return args.Error(0)
 }
 
+// 操作员 mock methods
 func (m *MockRechargeRepo) GetOperators() ([]model.RechargeOperator, error) {
 	args := m.Called()
 	return args.Get(0).([]model.RechargeOperator), args.Error(1)
@@ -241,8 +298,9 @@ func TestRechargeService_ApproveRechargeApplication(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		pendingApp := &model.RechargeApplication{ID: "app-1", Status: "pending"}
+		pendingApp := &model.RechargeApplication{ID: "app-1", Status: "pending", CenterID: "center-1", Points: 100}
 		repo.On("GetRechargeApplicationByID", "app-1").Return(pendingApp, nil)
+		repo.On("AddCenterBalance", "center-1", float64(100)).Return(nil)
 		repo.On("UpdateRechargeApplicationStatus", "app-1", "approved", "admin", "").Return(nil)
 
 		err := svc.ApproveRechargeApplication("app-1", "approve", "admin", "")
@@ -288,17 +346,30 @@ func TestRechargeService_ApproveRechargeApplication(t *testing.T) {
 }
 
 func TestRechargeService_VerifyCard(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
+	t.Run("success issued card", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		futureTime := time.Now().AddDate(1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600001", Status: "active", ExpiryDate: futureTime}
+		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusIssued, Balance: 1000}
 		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
 
 		result, err := svc.VerifyCard("TJ2600001")
 		assert.NoError(t, err)
 		assert.Equal(t, "TJ2600001", result.CardNo)
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("success active card", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		futureTime := time.Now().AddDate(1, 0, 0)
+		card := &model.StoreCard{CardNo: "TJ2600002", Status: model.CardStatusActive, Balance: 1000, ExpiredAt: &futureTime}
+		repo.On("GetCardByCardNo", "TJ2600002").Return(card, nil)
+
+		result, err := svc.VerifyCard("TJ2600002")
+		assert.NoError(t, err)
+		assert.Equal(t, "TJ2600002", result.CardNo)
 		repo.AssertExpectations(t)
 	})
 
@@ -314,17 +385,29 @@ func TestRechargeService_VerifyCard(t *testing.T) {
 		repo.AssertExpectations(t)
 	})
 
-	t.Run("card inactive", func(t *testing.T) {
+	t.Run("card frozen", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		futureTime := time.Now().AddDate(1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600002", Status: "inactive", ExpiryDate: futureTime}
-		repo.On("GetCardByCardNo", "TJ2600002").Return(card, nil)
+		card := &model.StoreCard{CardNo: "TJ2600003", Status: model.CardStatusFrozen}
+		repo.On("GetCardByCardNo", "TJ2600003").Return(card, nil)
 
-		result, err := svc.VerifyCard("TJ2600002")
+		result, err := svc.VerifyCard("TJ2600003")
 		assert.Nil(t, result)
-		assert.EqualError(t, err, "卡状态异常")
+		assert.EqualError(t, err, "卡已冻结")
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("card in stock", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		card := &model.StoreCard{CardNo: "TJ2600004", Status: model.CardStatusInStock}
+		repo.On("GetCardByCardNo", "TJ2600004").Return(card, nil)
+
+		result, err := svc.VerifyCard("TJ2600004")
+		assert.Nil(t, result)
+		assert.EqualError(t, err, "卡未发放")
 		repo.AssertExpectations(t)
 	})
 
@@ -333,10 +416,11 @@ func TestRechargeService_VerifyCard(t *testing.T) {
 		svc := newTestRechargeService(repo)
 
 		pastTime := time.Now().AddDate(-1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600003", Status: "active", ExpiryDate: pastTime}
-		repo.On("GetCardByCardNo", "TJ2600003").Return(card, nil)
+		card := &model.StoreCard{CardNo: "TJ2600005", Status: model.CardStatusActive, ExpiredAt: &pastTime}
+		repo.On("GetCardByCardNo", "TJ2600005").Return(card, nil)
+		repo.On("UpdateCardByMap", "TJ2600005", mock.AnythingOfType("map[string]interface {}")).Return(nil)
 
-		result, err := svc.VerifyCard("TJ2600003")
+		result, err := svc.VerifyCard("TJ2600005")
 		assert.Nil(t, result)
 		assert.EqualError(t, err, "卡已过期")
 		repo.AssertExpectations(t)
@@ -344,17 +428,91 @@ func TestRechargeService_VerifyCard(t *testing.T) {
 }
 
 func TestRechargeService_ConsumeCard(t *testing.T) {
+	t.Run("success - delegate to repo", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		repo.On("ConsumeCardInTx", "TJ2600001", 200, "op-1", "test consume").Return(nil)
+
+		err := svc.ConsumeCard("TJ2600001", 200, "op-1", "test consume")
+		assert.NoError(t, err)
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("repo error", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		repo.On("ConsumeCardInTx", "TJ2600001", 100, "op-1", "").Return(errors.New("余额不足"))
+
+		err := svc.ConsumeCard("TJ2600001", 100, "op-1", "")
+		assert.EqualError(t, err, "余额不足")
+		repo.AssertExpectations(t)
+	})
+}
+
+func TestRechargeService_BatchImportCards(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		futureTime := time.Now().AddDate(1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600001", Status: "active", Balance: 5000, ExpiryDate: futureTime}
-		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-		repo.On("UpdateCardBalance", "TJ2600001", 3000.0).Return(nil)
+		repo.On("GetMaxCardSequence").Return(0, nil)
+		repo.On("BatchCreateCards", mock.AnythingOfType("[]*model.StoreCard")).Return(nil)
 		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
-		err := svc.ConsumeCard("TJ2600001", 2000, "test consume", "op-1")
+		cardNos, err := svc.BatchImportCards(1, 5, model.CardTypePhysical, "op-1")
+		require.NoError(t, err)
+		assert.Len(t, cardNos, 5)
+		assert.Equal(t, "TJ00000001", cardNos[0])
+		assert.Equal(t, "TJ00000005", cardNos[4])
+
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("invalid sequence range", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		cardNos, err := svc.BatchImportCards(5, 1, model.CardTypePhysical, "op-1")
+		assert.Nil(t, cardNos)
+		assert.EqualError(t, err, "序号范围无效")
+	})
+
+	t.Run("sequence conflict", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		repo.On("GetMaxCardSequence").Return(10, nil)
+
+		cardNos, err := svc.BatchImportCards(5, 10, model.CardTypePhysical, "op-1")
+		assert.Nil(t, cardNos)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "冲突")
+
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("too many cards", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		cardNos, err := svc.BatchImportCards(1, 1002, model.CardTypePhysical, "op-1")
+		assert.Nil(t, cardNos)
+		assert.EqualError(t, err, "单次入库不能超过1000张")
+	})
+}
+
+func TestRechargeService_FreezeCard(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusIssued, Balance: 1000}
+		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
+		repo.On("UpdateCardByMap", "TJ2600001", mock.AnythingOfType("map[string]interface {}")).Return(nil)
+		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
+
+		err := svc.FreezeCard("TJ2600001", "op-1")
 		assert.NoError(t, err)
 		repo.AssertExpectations(t)
 	})
@@ -365,113 +523,59 @@ func TestRechargeService_ConsumeCard(t *testing.T) {
 
 		repo.On("GetCardByCardNo", "INVALID").Return(nil, assert.AnError)
 
-		err := svc.ConsumeCard("INVALID", 100, "", "op-1")
+		err := svc.FreezeCard("INVALID", "op-1")
 		assert.EqualError(t, err, "卡号不存在")
 		repo.AssertExpectations(t)
 	})
-
-	t.Run("card inactive", func(t *testing.T) {
-		repo := new(MockRechargeRepo)
-		svc := newTestRechargeService(repo)
-
-		futureTime := time.Now().AddDate(1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600001", Status: "inactive", Balance: 5000, ExpiryDate: futureTime}
-		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-
-		err := svc.ConsumeCard("TJ2600001", 100, "", "op-1")
-		assert.EqualError(t, err, "卡状态异常，无法核销")
-		repo.AssertExpectations(t)
-	})
-
-	t.Run("insufficient balance", func(t *testing.T) {
-		repo := new(MockRechargeRepo)
-		svc := newTestRechargeService(repo)
-
-		futureTime := time.Now().AddDate(1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600001", Status: "active", Balance: 100, ExpiryDate: futureTime}
-		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-
-		err := svc.ConsumeCard("TJ2600001", 200, "", "op-1")
-		assert.EqualError(t, err, "余额不足")
-		repo.AssertExpectations(t)
-	})
-
-	t.Run("repo error on update balance", func(t *testing.T) {
-		repo := new(MockRechargeRepo)
-		svc := newTestRechargeService(repo)
-
-		futureTime := time.Now().AddDate(1, 0, 0)
-		card := &model.StoreCard{CardNo: "TJ2600001", Status: "active", Balance: 5000, ExpiryDate: futureTime}
-		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-		repo.On("UpdateCardBalance", "TJ2600001", 4000.0).Return(assert.AnError)
-
-		err := svc.ConsumeCard("TJ2600001", 1000, "", "op-1")
-		assert.Error(t, err)
-		repo.AssertExpectations(t)
-	})
 }
 
-func TestRechargeService_IssueCard(t *testing.T) {
+func TestRechargeService_UnfreezeCard(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		repo.On("CreateCard", mock.AnythingOfType("*model.StoreCard")).Return(nil)
+		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusFrozen, Balance: 1000}
+		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
+		repo.On("UpdateCardByMap", "TJ2600001", mock.AnythingOfType("map[string]interface {}")).Return(nil)
 		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
-		data := map[string]interface{}{
-			"holderId":    "member-1",
-			"holderName":  "李四",
-			"holderPhone": "13800001111",
-			"amount":      float64(5000),
-			"centerId":    "center-1",
-			"centerName":  "北京中心",
-			"operatorId":  "op-1",
-		}
-
-		card, err := svc.IssueCard(data)
-		require.NoError(t, err)
-		assert.NotEmpty(t, card.ID)
-		assert.Contains(t, card.CardNo, "TJ")
-		assert.Equal(t, "active", card.Status)
-		assert.Equal(t, 5000.0, card.Balance)
-		assert.WithinDuration(t, time.Now().AddDate(1, 0, 0), card.ExpiryDate, 5*time.Second)
-
-		repo.AssertExpectations(t)
-	})
-
-	t.Run("repository error", func(t *testing.T) {
-		repo := new(MockRechargeRepo)
-		svc := newTestRechargeService(repo)
-
-		repo.On("CreateCard", mock.AnythingOfType("*model.StoreCard")).Return(assert.AnError)
-
-		data := map[string]interface{}{
-			"holderId":    "member-1",
-			"holderName":  "李四",
-			"holderPhone": "13800001111",
-			"amount":      float64(5000),
-			"centerId":    "center-1",
-			"centerName":  "北京中心",
-			"operatorId":  "op-1",
-		}
-
-		card, err := svc.IssueCard(data)
-		assert.Nil(t, card)
-		assert.Error(t, err)
+		err := svc.UnfreezeCard("TJ2600001", "op-1")
+		assert.NoError(t, err)
 		repo.AssertExpectations(t)
 	})
 }
 
-func TestRechargeService_UpdateCardStatus(t *testing.T) {
+func TestRechargeService_VoidCard(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		repo.On("UpdateCardStatus", "TJ2600001", "inactive").Return(nil)
+		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusInStock, Balance: 1000}
+		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
+		repo.On("UpdateCardByMap", "TJ2600001", mock.AnythingOfType("map[string]interface {}")).Return(nil)
+		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
-		err := svc.UpdateCardStatus("TJ2600001", "inactive")
+		err := svc.VoidCard("TJ2600001", "op-1")
 		assert.NoError(t, err)
+		repo.AssertExpectations(t)
+	})
+}
+
+func TestRechargeService_GetCardStats(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		stats := map[string]int64{
+			"totalCards":  10,
+			"activeCards": 5,
+		}
+		repo.On("GetCardStats").Return(stats, nil)
+
+		result, err := svc.GetCardStats()
+		require.NoError(t, err)
+		assert.Equal(t, int64(10), result["totalCards"])
+		assert.Equal(t, int64(5), result["activeCards"])
 		repo.AssertExpectations(t)
 	})
 }
