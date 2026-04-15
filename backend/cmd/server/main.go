@@ -77,10 +77,11 @@ func main() {
 	authSvc := service.NewAuthService(&cfg.JWT, redisClient, userRepo)
 	userSvc := service.NewUserService(userRepo)
 	rechargeSvc := service.NewRechargeService(rechargeRepo)
+	memberSvc := service.NewMemberService()
 
 	// 8. 初始化 Handler
 	authHandler := handler.NewAuthHandler(authSvc, userSvc)
-	userHandler := handler.NewUserHandler(userSvc)
+	userHandler := handler.NewUserHandler(userSvc, memberSvc)
 	adminHandler := handler.NewAdminHandler(userSvc)
 	rechargeHandler := handler.NewRechargeHandler(rechargeSvc)
 

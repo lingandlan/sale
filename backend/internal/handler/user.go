@@ -14,12 +14,13 @@ import (
 
 // UserHandler 用户处理器
 type UserHandler struct {
-	userSvc service.UserServiceInterface
+	userSvc    service.UserServiceInterface
+	memberSvc  service.MemberServiceInterface
 }
 
 // NewUserHandler 创建 UserHandler
-func NewUserHandler(userSvc service.UserServiceInterface) *UserHandler {
-	return &UserHandler{userSvc: userSvc}
+func NewUserHandler(userSvc service.UserServiceInterface, memberSvc service.MemberServiceInterface) *UserHandler {
+	return &UserHandler{userSvc: userSvc, memberSvc: memberSvc}
 }
 
 // GetUserInfo 获取当前用户信息
@@ -129,4 +130,21 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 	}
 
 	response.Success(c, nil)
+}
+
+// SearchMember 根据手机号查询商城会员信息
+func (h *UserHandler) SearchMember(c *gin.Context) {
+	phone := c.Query("phone")
+	if phone == "" {
+		response.ParamsError(c, "手机号不能为空")
+		return
+	}
+
+	member, err := h.memberSvc.SearchByPhone(phone)
+	if err != nil {
+		response.NotFound(c, err.Error())
+		return
+	}
+
+	response.Success(c, member)
 }

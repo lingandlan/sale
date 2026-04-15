@@ -216,7 +216,7 @@ func TestRechargeRepository_CRecharge(t *testing.T) {
 		require.NoError(t, err)
 
 		// Filter by phone
-		list, total, err := repo.GetCRechargeList("13800138001", "", 1, 10)
+		list, total, err := repo.GetCRechargeList("13800138001", "", "", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(1))
 		for _, item := range list {
@@ -224,7 +224,7 @@ func TestRechargeRepository_CRecharge(t *testing.T) {
 		}
 
 		// Filter by centerID
-		list, total, err = repo.GetCRechargeList("", "center_2", 1, 10)
+		list, total, err = repo.GetCRechargeList("", "center_2", "", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(1))
 		for _, item := range list {
@@ -232,7 +232,7 @@ func TestRechargeRepository_CRecharge(t *testing.T) {
 		}
 
 		// No filter
-		_, total, err = repo.GetCRechargeList("", "", 1, 10)
+		_, total, err = repo.GetCRechargeList("", "", "", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(2))
 	})

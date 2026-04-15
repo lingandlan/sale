@@ -43,7 +43,7 @@ const mockApiIdMap: Record<string, string> = {
 
 // 创建axios实例
 const service: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL: '/api/v1',
   timeout: 15000
 })
 

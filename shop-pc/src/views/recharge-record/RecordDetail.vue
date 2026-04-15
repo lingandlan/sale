@@ -10,52 +10,56 @@
 
     <div class="content-area">
       <div class="info-card">
-        <div class="card-header">📋 充值信息</div>
+        <div class="card-header">充值信息</div>
         <el-divider />
         <div class="info-grid">
           <div class="info-row">
             <span class="info-label">交易单号</span>
-            <span class="info-value">{{ record.transactionNo }}</span>
+            <span class="info-value">{{ record.id || '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">会员姓名</span>
-            <span class="info-value">{{ record.memberName }}</span>
+            <span class="info-value">{{ record.memberName || '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">手机号</span>
-            <span class="info-value">{{ record.memberPhone }}</span>
+            <span class="info-value">{{ record.memberPhone || '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">充值金额</span>
-            <span class="amount-value">¥{{ record.amount.toLocaleString() }}</span>
+            <span class="amount-value">{{ record.amount != null ? `¥${Number(record.amount).toLocaleString()}` : '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">获得积分</span>
-            <span class="info-value">{{ record.points.toLocaleString() }} 积分</span>
+            <span class="info-value">{{ record.points != null ? `${Number(record.points).toLocaleString()} 积分` : '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">充值前余额</span>
-            <span class="info-value">{{ record.balanceBefore.toLocaleString() }} 积分</span>
+            <span class="info-value">{{ record.balanceBefore != null ? `${Number(record.balanceBefore).toLocaleString()} 积分` : '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">充值后余额</span>
-            <span class="info-value text-green">{{ record.balanceAfter.toLocaleString() }} 积分</span>
+            <span class="info-value text-green">{{ record.balanceAfter != null ? `${Number(record.balanceAfter).toLocaleString()} 积分` : '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">支付方式</span>
-            <span class="info-value">{{ record.paymentMethod }}</span>
+            <span class="info-value">{{ paymentMethodMap[record.paymentMethod] || record.paymentMethod || '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">充值中心</span>
-            <span class="info-value">{{ record.centerName }}</span>
+            <span class="info-value">{{ record.centerName || '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">操作员</span>
-            <span class="info-value">{{ record.operator }}</span>
+            <span class="info-value">{{ record.operatorName || '-' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">充值时间</span>
-            <span class="info-value">{{ record.createdAt }}</span>
+            <span class="info-value">{{ formatTime(record.createdAt) }}</span>
+          </div>
+          <div class="info-row" v-if="record.remark">
+            <span class="info-label">备注</span>
+            <span class="info-value">{{ record.remark }}</span>
           </div>
         </div>
       </div>
@@ -71,19 +75,19 @@ import { getRechargeRecordDetail } from '@/api/recharge'
 const router = useRouter()
 const route = useRoute()
 
-const record = ref<any>({
-  transactionNo: '',
-  memberName: '',
-  memberPhone: '',
-  amount: 0,
-  points: 0,
-  balanceBefore: 0,
-  balanceAfter: 0,
-  paymentMethod: '',
-  centerName: '',
-  operator: '',
-  createdAt: ''
-})
+const paymentMethodMap: Record<string, string> = {
+  cash: '现金',
+  wechat: '微信',
+  alipay: '支付宝',
+  card: '门店卡',
+}
+
+const formatTime = (t: string) => {
+  if (!t) return '-'
+  return t.replace('T', ' ').slice(0, 19)
+}
+
+const record = ref<any>({})
 
 const handleBack = () => {
   router.back()
@@ -94,22 +98,9 @@ const loadData = async () => {
   try {
     const res = await getRechargeRecordDetail(id)
     if (res?.data) {
-      const d = res.data
-      record.value = {
-        transactionNo: d.transactionNo,
-        memberName: d.member?.name || '',
-        memberPhone: d.member?.phone || '',
-        amount: d.amount,
-        points: d.points,
-        balanceBefore: d.balanceBefore,
-        balanceAfter: d.balanceAfter,
-        paymentMethod: d.paymentMethod,
-        centerName: d.center?.name || '',
-        operator: d.operator || '',
-        createdAt: d.createdAt
-      }
+      record.value = res.data
     }
-  } catch (error) {
+  } catch {
     // fallback
   }
 }

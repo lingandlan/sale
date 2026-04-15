@@ -18,7 +18,7 @@ type RechargeRepoInterface interface {
 	GetRechargeApplicationByID(id string) (*model.RechargeApplication, error)
 	UpdateRechargeApplicationStatus(id, status, approvedBy, remark string) error
 	CreateCRecharge(recharge *model.CRecharge) error
-	GetCRechargeList(memberPhone, centerID string, page, pageSize int) ([]model.CRecharge, int64, error)
+	GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) ([]model.CRecharge, int64, error)
 	GetCRechargeByID(id string) (*model.CRecharge, error)
 	// 门店卡
 	CreateCard(card *model.StoreCard) error
@@ -120,7 +120,7 @@ func (r *RechargeRepository) CreateCRecharge(recharge *model.CRecharge) error {
 }
 
 // GetCRechargeList 获取C端充值列表
-func (r *RechargeRepository) GetCRechargeList(memberPhone, centerID string, page, pageSize int) ([]model.CRecharge, int64, error) {
+func (r *RechargeRepository) GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) ([]model.CRecharge, int64, error) {
 	var list []model.CRecharge
 	var total int64
 
@@ -130,6 +130,12 @@ func (r *RechargeRepository) GetCRechargeList(memberPhone, centerID string, page
 	}
 	if centerID != "" {
 		query = query.Where("center_id = ?", centerID)
+	}
+	if startDate != "" {
+		query = query.Where("created_at >= ?", startDate)
+	}
+	if endDate != "" {
+		query = query.Where("created_at <= ?", endDate+" 23:59:59")
 	}
 
 	query.Count(&total)

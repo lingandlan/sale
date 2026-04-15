@@ -124,6 +124,15 @@ const routes: RouteRecordRaw[] = [
         }
       },
       {
+        path: 'recharge/records/:id',
+        name: 'RechargeRecordDetail',
+        component: () => import('../views/recharge-record/RecordDetail.vue'),
+        meta: {
+          title: '充值记录详情',
+          icon: '💰'
+        }
+      },
+      {
         path: 'user/manage',
         name: 'UserManage',
         component: () => import('../views/user/UserManage.vue'),

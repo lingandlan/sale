@@ -121,10 +121,12 @@ func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
 func (h *RechargeHandler) GetCRechargeList(c *gin.Context) {
 	memberPhone := c.Query("memberPhone")
 	centerID := c.Query("centerId")
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
-	result, err := h.rechargeService.GetCRechargeList(memberPhone, centerID, page, pageSize)
+	result, err := h.rechargeService.GetCRechargeList(memberPhone, centerID, startDate, endDate, page, pageSize)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("recharge.c_list_failed"))
 		return

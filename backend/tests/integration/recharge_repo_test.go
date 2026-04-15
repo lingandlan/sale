@@ -53,19 +53,19 @@ func TestRechargeRepo_CRechargeCRUD(t *testing.T) {
 	})
 
 	t.Run("GetCRechargeList", func(t *testing.T) {
-		list, total, err := repo.GetCRechargeList("", "", 1, 10)
+		list, total, err := repo.GetCRechargeList("", "", "", "", 1, 10)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), total)
 		assert.Len(t, list, 1)
 	})
 
 	t.Run("GetCRechargeList filter by phone", func(t *testing.T) {
-		_, total, err := repo.GetCRechargeList("13800001111", "", 1, 10)
+		_, total, err := repo.GetCRechargeList("13800001111", "", "", "", 1, 10)
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), total)
 
 		// 不匹配的手机号
-		_, total, err = repo.GetCRechargeList("19900000000", "", 1, 10)
+		_, total, err = repo.GetCRechargeList("19900000000", "", "", "", 1, 10)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), total)
 	})

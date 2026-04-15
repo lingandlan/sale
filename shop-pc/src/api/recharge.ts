@@ -169,6 +169,32 @@ export function submitCRechargeEntry(data: CRechargeEntryData) {
   return request.post<{ data: CRechargeEntryResponse }>('/recharge/c-entry', data)
 }
 
+// 会员查询
+export interface MemberInfo {
+  userId: string
+  name: string
+  phone: string
+  balance: number
+  level: string
+  nickName: string
+}
+
+export function searchMember(phone: string) {
+  return request.get<{ data: MemberInfo }>('/recharge/c-entry/search-member', { params: { phone } })
+}
+
+// 获取充值中心列表
+export interface CenterItem {
+  id: string
+  name: string
+  balance: number
+  status: string
+}
+
+export function getCenterList() {
+  return request.get<{ data: CenterItem[] }>('/center')
+}
+
 // 获取充值中心详情（含余额）
 export function getCenterDetail(id: string) {
   return request.get<{ data: { id: string; name: string; balance: number } }>(`/center/${id}`)

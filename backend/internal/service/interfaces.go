@@ -40,7 +40,7 @@ type RechargeServiceInterface interface {
 	GetRechargeApplicationDetail(id string) (*model.RechargeApplication, error)
 	ApproveRechargeApplication(id, action, approvedBy, remark string) error
 	CreateCRecharge(data map[string]interface{}) (*model.CRecharge, error)
-	GetCRechargeList(memberPhone, centerID string, page, pageSize int) (map[string]interface{}, error)
+	GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) (map[string]interface{}, error)
 	GetCRechargeDetail(id string) (*model.CRecharge, error)
 	// 门店卡
 	BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error)

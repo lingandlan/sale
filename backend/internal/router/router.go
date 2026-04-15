@@ -64,6 +64,7 @@ func SetupRouter(
 		{
 			cRecharge.POST("", rechargeHandler.CreateCRecharge)
 			cRecharge.GET("", rechargeHandler.GetCRechargeList)
+			cRecharge.GET("/search-member", userHandler.SearchMember)
 			cRecharge.GET("/:id", rechargeHandler.GetCRechargeDetail)
 		}
 

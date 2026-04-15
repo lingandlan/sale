@@ -167,7 +167,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { submitCRechargeEntry, getCenterDetail } from '@/api/recharge'
+import { submitCRechargeEntry, getCenterDetail, searchMember } from '@/api/recharge'
 import { getCenterList } from '@/api/center'
 import { useUserStore } from '@/stores/user'
 
@@ -261,23 +261,29 @@ const canSubmit = computed(() => {
   return memberInfo.value && rechargeAmount.value > 0 && selectedCenterId.value
 })
 
-const handleSearch = () => {
+const handleSearch = async () => {
   if (!searchQuery.value.trim()) {
     ElMessage.warning('请输入手机号或会员卡号')
     return
   }
 
-  // TODO: 调用API查询会员信息
-  // Mock数据
-  memberInfo.value = {
-    id: 'M888888',
-    name: '张三',
-    phone: '138****5678',
-    balance: 5000,
-    level: '普通会员'
+  try {
+    const res = await searchMember(searchQuery.value.trim())
+    if (res?.data) {
+      const d = res.data
+      memberInfo.value = {
+        id: d.userId,
+        name: d.name || d.nickName || '-',
+        phone: d.phone,
+        balance: d.balance || 0,
+        level: d.level || '普通会员'
+      }
+      ElMessage.success('查询成功')
+    }
+  } catch {
+    memberInfo.value = null
+    ElMessage.error('未找到该会员')
   }
-
-  ElMessage.success('查询成功')
 }
 
 const setAmount = (amount: number) => {

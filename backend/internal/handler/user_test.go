@@ -102,7 +102,7 @@ func setupUserRouter(h *UserHandler) *gin.Engine {
 
 func TestUserHandler_GetUserByID(t *testing.T) {
 	mockSvc := new(MockUserService)
-	h := NewUserHandler(mockSvc)
+	h := NewUserHandler(mockSvc, nil)
 	router := setupUserRouter(h)
 	ctx := context.Background()
 
@@ -125,7 +125,7 @@ func TestUserHandler_GetUserByID(t *testing.T) {
 
 func TestUserHandler_UpdateUserInfo(t *testing.T) {
 	mockSvc := new(MockUserService)
-	h := NewUserHandler(mockSvc)
+	h := NewUserHandler(mockSvc, nil)
 	router := setupUserRouter(h)
 	ctx := context.Background()
 	newName := "New Name"
@@ -149,7 +149,7 @@ func TestUserHandler_UpdateUserInfo(t *testing.T) {
 
 func TestUserHandler_ListUsers(t *testing.T) {
 	mockSvc := new(MockUserService)
-	h := NewUserHandler(mockSvc)
+	h := NewUserHandler(mockSvc, nil)
 	router := setupUserRouter(h)
 	ctx := context.Background()
 
