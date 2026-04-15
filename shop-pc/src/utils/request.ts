@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 
 const isMock = import.meta.env.VITE_USE_MOCK === 'true'
@@ -113,31 +113,104 @@ service.interceptors.response.use(
       return res
     }
 
-    // 业务层 401：token 无效/过期，跳转登录
+    // 业务层 401：token 无效/过期，尝试刷新
     if (res.code === 401) {
-      clearAuthAndRedirect()
-      return Promise.reject(new Error(res.message || '请先登录'))
+      return handleTokenExpired(response.config)
     }
 
     const msg = res.message || errorCodeMap[res.code] || '请求失败'
     ElMessage.error(msg)
     return Promise.reject(new Error(msg))
   },
-  (error) => {
+  async (error) => {
     const status = error.response?.status
-    const data = error.response?.data
 
-    // HTTP 401：未认证，清除 token 并跳转登录
+    // HTTP 401：未认证，尝试刷新 token
     if (status === 401) {
-      clearAuthAndRedirect()
-      return Promise.reject(error)
+      try {
+        const config = error.response?.config
+        return await handleTokenExpired(config)
+      } catch {
+        // 刷新也失败，走正常登出
+      }
     }
 
+    const data = error.response?.data
     const msg = data?.message || errorCodeMap[status] || error.message || '网络错误'
     ElMessage.error(msg)
     return Promise.reject(error)
   }
 )
+
+// ==================== Token 刷新机制 ====================
+
+let isRefreshing = false
+let pendingRequests: ((token: string) => void)[] = []
+
+/** 用 refresh_token 换新的 access_token */
+async function refreshAccessToken(): Promise<string> {
+  const refreshToken = localStorage.getItem('refresh_token')
+  if (!refreshToken) {
+    return Promise.reject(new Error('no refresh token'))
+  }
+
+  // 用独立的 axios 实例发请求，避免触发当前实例的拦截器
+  const { data } = await axios.post('/api/v1/auth/refresh', {
+    refresh_token: refreshToken
+  })
+
+  const res = data as any
+  if (res.code !== 0 && res.code !== 200) {
+    return Promise.reject(new Error('refresh failed'))
+  }
+
+  const newAccessToken: string = res.data.access_token
+  const newRefreshToken: string = res.data.refresh_token
+
+  localStorage.setItem('access_token', newAccessToken)
+  localStorage.setItem('refresh_token', newRefreshToken)
+
+  return newAccessToken
+}
+
+/** 处理 token 过期：刷新 token 并重试原始请求 */
+async function handleTokenExpired(config: any) {
+  if (!config) {
+    clearAuthAndRedirect()
+    return Promise.reject(new Error('请先登录'))
+  }
+
+  if (isRefreshing) {
+    // 正在刷新中，排队等待
+    return new Promise((resolve) => {
+      pendingRequests.push((token: string) => {
+        config.headers.Authorization = `Bearer ${token}`
+        resolve(service(config))
+      })
+    })
+  }
+
+  isRefreshing = true
+
+  try {
+    const newToken = await refreshAccessToken()
+
+    // 通知排队的请求
+    pendingRequests.forEach(cb => cb(newToken))
+    pendingRequests = []
+
+    // 重试原始请求
+    config.headers.Authorization = `Bearer ${newToken}`
+    return service(config)
+  } catch {
+    // 刷新失败，清除所有排队请求并跳转登录
+    pendingRequests = []
+    clearAuthAndRedirect()
+    return Promise.reject(new Error('请先登录'))
+  } finally {
+    isRefreshing = false
+  }
+}
 
 function clearAuthAndRedirect() {
   // 避免重复跳转
