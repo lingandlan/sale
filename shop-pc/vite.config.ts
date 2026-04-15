@@ -14,11 +14,11 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
-      port: 5175,
+      port: parseInt(env.VITE_PORT || '5175'),
       // Mock 模式下不使用代理（直接请求 Apifox 本地服务）
       proxy: env.VITE_USE_MOCK === 'true' ? {} : {
         '/api': {
-          target: 'http://localhost:8080',
+          target: env.VITE_API_BASE_URL ? env.VITE_API_BASE_URL.replace(/\/api\/v1$/, '') : 'http://localhost:8080',
           changeOrigin: true
         }
       }

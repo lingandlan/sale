@@ -45,6 +45,7 @@ func (s *UserService) Create(ctx context.Context, req *model.CreateUserRequest) 
 	}
 
 	user := &model.User{
+		Username: req.Username,
 		Phone:    req.Phone,
 		Password: hashedPassword,
 		Name:     req.Name,
@@ -69,6 +70,9 @@ func (s *UserService) Update(ctx context.Context, id int64, req *model.UpdateUse
 		return nil, apperrors.ErrNotFound
 	}
 
+	if req.Username != nil {
+		user.Username = *req.Username
+	}
 	if req.Name != nil {
 		user.Name = *req.Name
 	}
@@ -150,7 +154,7 @@ func (s *UserService) UpdateStatus(ctx context.Context, id int64, req *model.Upd
 	}
 
 	// 更新状态
-	return s.userRepo.UpdateStatus(ctx, user.ID, req.Status)
+	return s.userRepo.UpdateStatus(ctx, user.ID, *req.Status)
 }
 
 // Delete 删除用户（管理员，软删除）

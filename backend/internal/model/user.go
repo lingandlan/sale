@@ -9,7 +9,8 @@ import (
 // User 用户模型（太积堂系统）
 type User struct {
 	ID           int64          `gorm:"primaryKey;autoIncrement" json:"id" db:"id"`
-	Phone        string         `gorm:"size:20;uniqueIndex:uk_phone;not null;comment:手机号（登录账号）" json:"phone" db:"phone"`
+	Username     string         `gorm:"size:50;uniqueIndex:uk_username;not null;comment:用户名（登录账号）" json:"username" db:"username"`
+	Phone        string         `gorm:"size:20;uniqueIndex:uk_phone;not null;comment:手机号" json:"phone" db:"phone"`
 	Password     string         `gorm:"size:255;not null;comment:密码（bcrypt加密）" json:"-" db:"password"`
 	Name         string         `gorm:"size:50;not null;comment:姓名" json:"name" db:"name"`
 	Role         string         `gorm:"size:20;default:'operator';comment:角色：super_admin=超管, admin=管理员, operator=操作员" json:"role" db:"role"`
@@ -63,6 +64,7 @@ type RefreshTokenRequest struct {
 
 // CreateUserRequest 创建用户请求
 type CreateUserRequest struct {
+	Username  string `json:"username" binding:"required,min=2,max=50"`
 	Phone     string `json:"phone" binding:"required,len=11"`
 	Password  string `json:"password" binding:"required,min=6,max=32"`
 	Name      string `json:"name" binding:"required,min=2,max=50"`
@@ -72,6 +74,7 @@ type CreateUserRequest struct {
 
 // UpdateUserRequest 更新用户请求
 type UpdateUserRequest struct {
+	Username   *string `json:"username" binding:"omitempty,min=2,max=50"`
 	Name       *string `json:"name" binding:"omitempty,min=2,max=50"`
 	Phone      *string `json:"phone" binding:"omitempty,len=11"`
 	Role       *string `json:"role" binding:"omitempty,oneof=super_admin hq_admin finance center_admin operator"`
@@ -92,7 +95,7 @@ type ResetPasswordRequest struct {
 
 // UpdateUserStatusRequest 更新用户状态请求（管理员）
 type UpdateUserStatusRequest struct {
-	Status int8 `json:"status" binding:"required,oneof=0 1"`
+	Status *int8 `json:"status" binding:"required,oneof=0 1"`
 }
 
 // ListUsersRequest 获取用户列表请求（管理员）

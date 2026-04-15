@@ -58,7 +58,7 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 // GetByID 根据 ID 获取用户
 func (r *UserRepository) GetByID(ctx context.Context, id int64) (*model.User, error) {
 	user := &model.User{}
-	query := `SELECT id, phone, password, name, role, center_id, center_name, status,
+	query := `SELECT id, username, phone, password, name, role, center_id, center_name, status,
 	             last_login_at, last_login_ip, created_at, updated_at
 	         FROM users WHERE id = ? AND deleted_at IS NULL`
 	if err := r.db.GetContext(ctx, user, query, id); err != nil {
@@ -70,7 +70,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int64) (*model.User, er
 // GetByPhone 根据手机号获取用户
 func (r *UserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
 	user := &model.User{}
-	query := `SELECT id, phone, password, name, role, center_id, center_name, status,
+	query := `SELECT id, username, phone, password, name, role, center_id, center_name, status,
 	             last_login_at, last_login_ip, created_at, updated_at
 	         FROM users WHERE phone = ? AND deleted_at IS NULL`
 	if err := r.db.GetContext(ctx, user, query, phone); err != nil {
@@ -81,11 +81,11 @@ func (r *UserRepository) GetByPhone(ctx context.Context, phone string) (*model.U
 
 // Create 创建用户
 func (r *UserRepository) Create(ctx context.Context, user *model.User) (int64, error) {
-	query := `INSERT INTO users (phone, password, name, role, center_id, center_name, status, created_at, updated_at)
-	         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO users (username, phone, password, name, role, center_id, center_name, status, created_at, updated_at)
+	         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	now := time.Now()
 	result, err := r.db.ExecContext(ctx, query,
-		user.Phone, user.Password, user.Name, user.Role,
+		user.Username, user.Phone, user.Password, user.Name, user.Role,
 		user.CenterID, user.CenterName, user.Status, now, now)
 	if err != nil {
 		return 0, err
@@ -95,9 +95,9 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (int64, e
 
 // Update 更新用户
 func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
-	query := `UPDATE users SET name = ?, phone = ?, role = ?, center_id = ?, center_name = ?, updated_at = ?
+	query := `UPDATE users SET username = ?, name = ?, phone = ?, role = ?, center_id = ?, center_name = ?, updated_at = ?
 	         WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, user.Name, user.Phone, user.Role, user.CenterID, user.CenterName, time.Now(), user.ID)
+	_, err := r.db.ExecContext(ctx, query, user.Username, user.Name, user.Phone, user.Role, user.CenterID, user.CenterName, time.Now(), user.ID)
 	return err
 }
 
@@ -126,7 +126,7 @@ func (r *UserRepository) List(ctx context.Context, page, pageSize int) ([]*model
 	}
 
 	offset := (page - 1) * pageSize
-	query := `SELECT id, phone, name, role, center_id, center_name, status,
+	query := `SELECT id, username, phone, name, role, center_id, center_name, status,
 	             last_login_at, last_login_ip, created_at, updated_at
 	         FROM users WHERE deleted_at IS NULL
 	         ORDER BY created_at DESC
@@ -148,8 +148,8 @@ func (r *UserRepository) ListWithFilters(ctx context.Context, page, pageSize int
 	args := []interface{}{}
 
 	if keyword != "" {
-		where += " AND (phone LIKE ? OR name LIKE ?)"
-		args = append(args, "%"+keyword+"%", "%"+keyword+"%")
+		where += " AND (username LIKE ? OR phone LIKE ? OR name LIKE ?)"
+		args = append(args, "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
 
 	if role != "" {
@@ -170,7 +170,7 @@ func (r *UserRepository) ListWithFilters(ctx context.Context, page, pageSize int
 
 	// 获取分页数据
 	offset := (page - 1) * pageSize
-	query := `SELECT id, phone, name, role, center_id, center_name, status,
+	query := `SELECT id, username, phone, name, role, center_id, center_name, status,
 	             last_login_at, last_login_ip, created_at, updated_at
 	         FROM users WHERE ` + where + `
 	         ORDER BY created_at DESC
