@@ -169,8 +169,8 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 }
 
 // GetCRechargeList 获取C端充值列表
-func (s *RechargeService) GetCRechargeList(memberPhone, centerID string, page, pageSize int) (map[string]interface{}, error) {
-	list, total, err := s.rechargeRepo.GetCRechargeList(memberPhone, centerID, page, pageSize)
+func (s *RechargeService) GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) (map[string]interface{}, error) {
+	list, total, err := s.rechargeRepo.GetCRechargeList(memberPhone, centerID, startDate, endDate, page, pageSize)
 	if err != nil {
 		return nil, err
 	}

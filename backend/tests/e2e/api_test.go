@@ -112,8 +112,8 @@ func (m *MockE2ERechargeRepo) CreateCRecharge(recharge *model.CRecharge) error {
 	args := m.Called(recharge)
 	return args.Error(0)
 }
-func (m *MockE2ERechargeRepo) GetCRechargeList(memberPhone, centerID string, page, pageSize int) ([]model.CRecharge, int64, error) {
-	args := m.Called(memberPhone, centerID, page, pageSize)
+func (m *MockE2ERechargeRepo) GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) ([]model.CRecharge, int64, error) {
+	args := m.Called(memberPhone, centerID, startDate, endDate, page, pageSize)
 	return args.Get(0).([]model.CRecharge), args.Get(1).(int64), args.Error(2)
 }
 func (m *MockE2ERechargeRepo) GetCRechargeByID(id string) (*model.CRecharge, error) {
