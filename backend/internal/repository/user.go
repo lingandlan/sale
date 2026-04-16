@@ -40,6 +40,7 @@ type UserRepoInterface interface {
 	List(ctx context.Context, page, pageSize int) ([]*model.User, int64, error)
 	ListWithFilters(ctx context.Context, page, pageSize int, keyword, role string, status *int8) ([]*model.User, int64, error)
 	UpdateStatus(ctx context.Context, id int64, status int8) error
+	UpdateLoginInfo(ctx context.Context, id int64, loginIP string) error
 	Delete(ctx context.Context, id int64) error
 }
 

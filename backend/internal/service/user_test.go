@@ -66,6 +66,11 @@ func (m *MockUserRepo) Delete(ctx context.Context, id int64) error {
 	return args.Error(0)
 }
 
+func (m *MockUserRepo) UpdateLoginInfo(ctx context.Context, id int64, loginIP string) error {
+	args := m.Called(ctx, id, loginIP)
+	return args.Error(0)
+}
+
 func TestUserService_GetByID(t *testing.T) {
 	mockRepo := new(MockUserRepo)
 	svc := NewUserService(mockRepo)

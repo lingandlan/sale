@@ -197,7 +197,7 @@ const loadData = async () => {
         realName: u.name,
         role: u.role,
         centerId: u.center_id,
-        center: u.center_name || '-',
+        center: centers.value.find(c => c.id === Number(u.center_id))?.name || '-',
         status: u.status === 1 ? 'active' : 'disabled',
         lastLogin: u.last_login_at || '-'
       }))
@@ -301,9 +301,9 @@ const handleResetPwd = async (row: any) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadCenters()
   loadData()
-  loadCenters()
 })
 </script>
 

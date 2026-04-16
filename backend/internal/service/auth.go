@@ -146,6 +146,9 @@ func (s *AuthService) Login(ctx context.Context, phone, password string) (*model
 		return nil, fmt.Errorf("store refresh token failed: %w", err)
 	}
 
+	// 更新登录时间
+	_ = s.userRepo.UpdateLoginInfo(ctx, user.ID, "")
+
 	return &model.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
