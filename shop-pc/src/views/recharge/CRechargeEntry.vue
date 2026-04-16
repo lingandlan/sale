@@ -29,6 +29,10 @@
             />
           </el-select>
         </div>
+        <div v-if="selectedCenterId" class="center-balance-row">
+          <span class="info-label">中心积分余额</span>
+          <span class="center-balance-value">{{ storeBalance.toLocaleString() }} 积分</span>
+        </div>
       </div>
 
       <!-- 会员查询卡片 -->
@@ -59,20 +63,12 @@
             <span class="info-value">{{ memberInfo.id }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">会员姓名</span>
-            <span class="info-value">{{ memberInfo.name }}</span>
-          </div>
-          <div class="info-row">
             <span class="info-label">手机号码</span>
             <span class="info-value">{{ memberInfo.phone }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">当前积分</span>
-            <span class="info-value">{{ memberInfo.balance.toLocaleString() }} 积分</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">会员等级</span>
-            <el-tag size="small" type="primary">{{ memberInfo.level }}</el-tag>
+            <span class="info-value highlight">{{ memberInfo.balance.toLocaleString() }} 积分</span>
           </div>
         </div>
       </div>
@@ -331,10 +327,14 @@ const handleSubmit = async () => {
       paymentMethod: 'cash',
       remark: remark.value || ''
     })
-    ElMessage.success(`充值成功！已为会员 ${memberInfo.value?.name} 充值 ${calculatedPoints.value.toLocaleString()} 积分`)
+    ElMessage.success(`充值成功！已为会员充值 ${calculatedPoints.value.toLocaleString()} 积分`)
     resetForm()
-  } catch {
-    // 用户取消
+  } catch (err: any) {
+    // 用户取消确认框
+    if (err === 'cancel' || err?.toString?.().includes('cancel')) return
+    // 展示后端返回的具体错误信息
+    const msg = err?.message || '充值失败，请稍后重试'
+    ElMessage.error(msg)
   }
 }
 
@@ -410,6 +410,29 @@ const resetForm = () => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+/* 中心余额展示 */
+.center-balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #F9F9F9;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+
+.center-balance-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #52C41A;
+}
+
+.highlight {
+  color: #C00000;
+  font-weight: 600;
 }
 
 /* 搜索行 */
