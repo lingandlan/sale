@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -77,16 +78,16 @@ func (m *MockRechargeService) GetCRechargeDetail(id string) (*model.CRecharge, e
 	return args.Get(0).(*model.CRecharge), args.Error(1)
 }
 
-func (m *MockRechargeService) BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error) {
-	args := m.Called(startSeq, endSeq, cardType, operatorID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+func (m *MockRechargeService) BatchImportCards(file []byte, ext string, operatorID string) (int, []string, error) {
+	args := m.Called(file, ext, operatorID)
+	if args.Get(1) == nil {
+		return args.Int(0), nil, args.Error(2)
 	}
-	return args.Get(0).([]string), args.Error(1)
+	return args.Int(0), args.Get(1).([]string), args.Error(2)
 }
 
-func (m *MockRechargeService) AllocateCards(centerID, startCardNo, endCardNo string) (int, error) {
-	args := m.Called(centerID, startCardNo, endCardNo)
+func (m *MockRechargeService) AllocateCards(centerID string, quantity int) (int, error) {
+	args := m.Called(centerID, quantity)
 	return args.Int(0), args.Error(1)
 }
 
@@ -625,15 +626,17 @@ func TestRechargeHandler_BatchImportCards(t *testing.T) {
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("BatchImportCards", 1, 5, 1, "op123").Return([]string{"TJ00000001", "TJ00000002", "TJ00000003", "TJ00000004", "TJ00000005"}, nil).Once()
+		cardNos := []string{"TJ00000001", "TJ00000002"}
+		mockSvc.On("BatchImportCards", mock.AnythingOfType("[]uint8"), mock.AnythingOfType("string"), "op123").Return(2, cardNos, nil).Once()
 
-		body := map[string]interface{}{
-			"startSeq": 1, "endSeq": 5,
-			"cardType": 1,
-		}
-		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
+		var buf bytes.Buffer
+		writer := multipart.NewWriter(&buf)
+		part, _ := writer.CreateFormFile("file", "test.xlsx")
+		part.Write([]byte("fake-excel-content"))
+		writer.Close()
+
+		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", &buf)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -642,13 +645,13 @@ func TestRechargeHandler_BatchImportCards(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 
-	t.Run("invalid json", func(t *testing.T) {
+	t.Run("no file", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", bytes.NewBufferString("{bad}"))
-		req.Header.Set("Content-Type", "application/json")
+		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", bytes.NewBufferString(""))
+		req.Header.Set("Content-Type", "multipart/form-data")
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 

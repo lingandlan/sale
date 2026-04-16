@@ -43,8 +43,8 @@ type RechargeServiceInterface interface {
 	GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) (map[string]interface{}, error)
 	GetCRechargeDetail(id string) (*model.CRecharge, error)
 	// 门店卡
-	BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error)
-	AllocateCards(centerID, startCardNo, endCardNo string) (int, error)
+	BatchImportCards(file []byte, ext string, operatorID string) (int, []string, error)
+	AllocateCards(centerID string, quantity int) (int, error)
 	BindCardToUser(cardNo, userPhone, issueReason string, issueType int, rechargeCenterID, operatorID, relatedUserPhone, remark string) error
 	VerifyCard(cardNo string) (*model.StoreCard, error)
 	ConsumeCard(cardNo string, amount int, operatorID, remark string) error

@@ -5,6 +5,7 @@
         <div class="card-header">
           <span>总卡库管理</span>
           <el-button type="primary" @click="showImportDialog = true">批量入库</el-button>
+          <el-button @click="downloadTemplate">下载模板</el-button>
         </div>
       </template>
 
@@ -33,11 +34,8 @@
             <el-option v-for="c in centers" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="起始卡号" prop="startCardNo">
-          <el-input v-model="allocateForm.startCardNo" placeholder="如 TJ00000001" />
-        </el-form-item>
-        <el-form-item label="结束卡号" prop="endCardNo">
-          <el-input v-model="allocateForm.endCardNo" placeholder="如 TJ00000010" />
+        <el-form-item label="划拨数量" prop="quantity">
+          <el-input-number v-model="allocateForm.quantity" :min="1" :max="1000" style="width: 100%" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleAllocate" :loading="allocateLoading">确认划拨</el-button>
@@ -47,35 +45,34 @@
 
     <!-- 批量入库对话框 -->
     <el-dialog v-model="showImportDialog" title="批量入库" width="500px">
-      <el-form :model="importForm" label-width="100px" :rules="importRules" ref="importFormRef">
-        <el-form-item label="起始序号" prop="startSeq">
-          <el-input-number v-model="importForm.startSeq" :min="1" :max="99999999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="结束序号" prop="endSeq">
-          <el-input-number v-model="importForm.endSeq" :min="1" :max="99999999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="卡类型" prop="cardType">
-          <el-select v-model="importForm.cardType" style="width: 100%">
-            <el-option :value="1" label="实体卡" />
-            <el-option :value="2" label="虚拟卡" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="数量预览">
-          <span>{{ importCount }} 张</span>
-        </el-form-item>
-      </el-form>
+      <el-upload
+        ref="uploadRef"
+        :auto-upload="false"
+        :limit="1"
+        accept=".xlsx,.xls,.csv"
+        :on-change="handleFileChange"
+        :on-remove="handleFileRemove"
+        drag
+      >
+        <el-icon style="font-size: 48px; color: #c0c4cc"><upload-filled /></el-icon>
+        <div style="margin-top: 8px">拖拽文件到此处，或<em>点击上传</em></div>
+        <template #tip>
+          <div class="el-upload__tip">支持 .xlsx / .csv 文件，格式：卡号 | 卡类型 | 面值</div>
+        </template>
+      </el-upload>
       <template #footer>
         <el-button @click="showImportDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleImport" :loading="importLoading">确认入库</el-button>
+        <el-button type="primary" @click="handleImport" :loading="importLoading" :disabled="!uploadFile">确认入库</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance } from 'element-plus'
+import { UploadFilled } from '@element-plus/icons-vue'
+import type { FormInstance, UploadFile } from 'element-plus'
 import { batchImportCards, allocateCards, getCardInventoryStats, type CardInventoryResponse } from '@/api/card'
 import request from '@/utils/request'
 
@@ -85,27 +82,42 @@ const centers = ref<{ id: string; name: string }[]>([])
 // 批量入库
 const showImportDialog = ref(false)
 const importLoading = ref(false)
-const importFormRef = ref<FormInstance>()
-const importForm = ref({ startSeq: 1, endSeq: 10, cardType: 1 })
-const importRules = {
-  startSeq: [{ required: true, message: '请输入起始序号', trigger: 'blur' }],
-  endSeq: [{ required: true, message: '请输入结束序号', trigger: 'blur' }],
-  cardType: [{ required: true, message: '请选择卡类型', trigger: 'change' }]
+const uploadRef = ref()
+const uploadFile = ref<File | null>(null)
+
+function handleFileChange(file: UploadFile) {
+  if (file.raw) {
+    uploadFile.value = file.raw
+  }
 }
-const importCount = computed(() => {
-  const s = importForm.value.startSeq
-  const e = importForm.value.endSeq
-  return s > 0 && e >= s ? e - s + 1 : 0
-})
+
+function downloadTemplate() {
+  // 生成 UTF-8 BOM + CSV 内容，Excel 可直接打开
+  const rows = [
+    '卡号,卡类型,面值',
+    'xx1,实体,1000',
+    'xx2,虚拟,500'
+  ]
+  const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = '门店卡导入模板.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function handleFileRemove() {
+  uploadFile.value = null
+}
 
 // 划拨
 const allocateLoading = ref(false)
 const allocateFormRef = ref<FormInstance>()
-const allocateForm = ref({ centerId: '', startCardNo: '', endCardNo: '' })
+const allocateForm = ref({ centerId: '', quantity: 1 })
 const allocateRules = {
   centerId: [{ required: true, message: '请选择充值中心', trigger: 'change' }],
-  startCardNo: [{ required: true, message: '请输入起始卡号', trigger: 'blur' }],
-  endCardNo: [{ required: true, message: '请输入结束卡号', trigger: 'blur' }]
+  quantity: [{ required: true, message: '请输入划拨数量', trigger: 'blur' }]
 }
 
 async function loadInventory() {
@@ -120,23 +132,42 @@ async function loadCenters() {
 }
 
 async function handleImport() {
-  await importFormRef.value?.validate()
-  await ElMessageBox.confirm(`确认入库 ${importCount.value} 张门店卡？`, '确认')
+  if (!uploadFile.value) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
+  await ElMessageBox.confirm('确认导入所选Excel文件中的门店卡？', '确认')
   importLoading.value = true
-  const res = await batchImportCards(importForm.value).finally(() => { importLoading.value = false })
-  ElMessage.success(`成功入库 ${(res.data || res).count} 张卡`)
-  showImportDialog.value = false
-  loadInventory()
+  const file = uploadFile.value
+  try {
+    const res = await batchImportCards(file)
+    ElMessage.success(`成功入库 ${(res.data || res).count} 张卡`)
+    showImportDialog.value = false
+    uploadFile.value = null
+    loadInventory()
+  } catch (err: any) {
+    const msg = err?.response?.data?.msg || err?.message || '导入失败'
+    ElMessage.error(msg)
+  } finally {
+    importLoading.value = false
+  }
 }
 
 async function handleAllocate() {
   await allocateFormRef.value?.validate()
-  await ElMessageBox.confirm(`确认划拨卡号 ${allocateForm.value.startCardNo} ~ ${allocateForm.value.endCardNo}？`, '确认')
+  await ElMessageBox.confirm(`确认划拨 ${allocateForm.value.quantity} 张卡到所选充值中心？`, '确认')
   allocateLoading.value = true
-  const res = await allocateCards(allocateForm.value).finally(() => { allocateLoading.value = false })
-  ElMessage.success(`成功划拨 ${(res.data || res).count} 张卡`)
-  allocateForm.value = { centerId: '', startCardNo: '', endCardNo: '' }
-  loadInventory()
+  try {
+    const res = await allocateCards(allocateForm.value)
+    ElMessage.success(`成功划拨 ${(res.data || res).count} 张卡`)
+    allocateForm.value = { centerId: '', quantity: 1 }
+    loadInventory()
+  } catch (err: any) {
+    const msg = err?.response?.data?.msg || err?.message || '划拨失败'
+    ElMessage.error(msg)
+  } finally {
+    allocateLoading.value = false
+  }
 }
 
 onMounted(() => {

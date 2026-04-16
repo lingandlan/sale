@@ -2,12 +2,14 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/xuri/excelize/v2"
 
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/repository"
@@ -94,8 +96,13 @@ func (m *MockRechargeRepo) UpdateCardByMap(cardNo string, updates map[string]int
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) AllocateCardsToCenter(centerID, startCardNo, endCardNo string) (int, error) {
-	args := m.Called(centerID, startCardNo, endCardNo)
+func (m *MockRechargeRepo) GetAllocatableCardCount() (int64, error) {
+	args := m.Called()
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) AllocateCardsByQuantity(centerID string, quantity int) (int, error) {
+	args := m.Called(centerID, quantity)
 	return args.Get(0).(int), args.Error(1)
 }
 
@@ -463,54 +470,161 @@ func TestRechargeService_ConsumeCard(t *testing.T) {
 	})
 }
 
+// helper: 生成Excel测试文件字节
+func buildTestExcel(t *testing.T, rows [][]string) []byte {
+	t.Helper()
+	f := excelize.NewFile()
+	sheet := "Sheet1"
+	for i, row := range rows {
+		for j, cell := range row {
+			axis, _ := excelize.CoordinatesToCellName(j+1, i+1)
+			f.SetCellValue(sheet, axis, cell)
+		}
+	}
+	buf, err := f.WriteToBuffer()
+	require.NoError(t, err)
+	return buf.Bytes()
+}
+
 func TestRechargeService_BatchImportCards(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		repo.On("GetMaxCardSequence").Return(0, nil)
 		repo.On("BatchCreateCards", mock.AnythingOfType("[]*model.StoreCard")).Return(nil)
 		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
-		cardNos, err := svc.BatchImportCards(1, 5, model.CardTypePhysical, "op-1")
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+			{"TJ00000001", "实体卡", "1000"},
+			{"TJ00000002", "虚拟卡", "2000"},
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
 		require.NoError(t, err)
-		assert.Len(t, cardNos, 5)
+		assert.Equal(t, 2, count)
+		assert.Len(t, cardNos, 2)
 		assert.Equal(t, "TJ00000001", cardNos[0])
-		assert.Equal(t, "TJ00000005", cardNos[4])
+		assert.Equal(t, "TJ00000002", cardNos[1])
 
 		repo.AssertExpectations(t)
 	})
 
-	t.Run("invalid sequence range", func(t *testing.T) {
+	t.Run("empty card number", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		cardNos, err := svc.BatchImportCards(5, 1, model.CardTypePhysical, "op-1")
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+			{"", "实体卡", "1000"},
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
 		assert.Nil(t, cardNos)
-		assert.EqualError(t, err, "序号范围无效")
+		assert.Contains(t, err.Error(), "卡号为空")
 	})
 
-	t.Run("sequence conflict", func(t *testing.T) {
+	t.Run("invalid card type", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		repo.On("GetMaxCardSequence").Return(10, nil)
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+			{"TJ00000001", "未知卡", "1000"},
+		}
+		fileBytes := buildTestExcel(t, rows)
 
-		cardNos, err := svc.BatchImportCards(5, 10, model.CardTypePhysical, "op-1")
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
 		assert.Nil(t, cardNos)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "冲突")
+		assert.Contains(t, err.Error(), "卡类型错误")
+	})
 
-		repo.AssertExpectations(t)
+	t.Run("invalid balance", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+			{"TJ00000001", "实体卡", "abc"},
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
+		assert.Nil(t, cardNos)
+		assert.Contains(t, err.Error(), "面值必须为正整数")
+	})
+
+	t.Run("duplicate card number in excel", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+			{"TJ00000001", "实体卡", "1000"},
+			{"TJ00000001", "虚拟卡", "2000"},
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
+		assert.Nil(t, cardNos)
+		assert.Contains(t, err.Error(), "卡号重复")
 	})
 
 	t.Run("too many cards", func(t *testing.T) {
 		repo := new(MockRechargeRepo)
 		svc := newTestRechargeService(repo)
 
-		cardNos, err := svc.BatchImportCards(1, 1002, model.CardTypePhysical, "op-1")
+		rows := [][]string{{"卡号", "卡类型", "面值"}}
+		for i := 1; i <= 1001; i++ {
+			rows = append(rows, []string{
+				fmt.Sprintf("TJ%08d", i),
+				"实体卡",
+				"1000",
+			})
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
 		assert.Nil(t, cardNos)
 		assert.EqualError(t, err, "单次入库不能超过1000张")
+	})
+
+	t.Run("empty data rows", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
+		assert.Nil(t, cardNos)
+		assert.Contains(t, err.Error(), "没有数据行")
+	})
+
+	t.Run("insufficient columns", func(t *testing.T) {
+		repo := new(MockRechargeRepo)
+		svc := newTestRechargeService(repo)
+
+		rows := [][]string{
+			{"卡号", "卡类型", "面值"},
+			{"TJ00000001", "实体卡"},
+		}
+		fileBytes := buildTestExcel(t, rows)
+
+		count, cardNos, err := svc.BatchImportCards(fileBytes, ".xlsx", "op-1")
+		assert.Equal(t, 0, count)
+		assert.Nil(t, cardNos)
+		assert.Contains(t, err.Error(), "列数不足")
 	})
 }
 

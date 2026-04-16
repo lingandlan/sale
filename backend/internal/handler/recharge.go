@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"io"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -150,43 +153,62 @@ func (h *RechargeHandler) GetCRechargeDetail(c *gin.Context) {
 // ========== 门店卡 ==========
 
 func (h *RechargeHandler) BatchImportCards(c *gin.Context) {
-	var req struct {
-		StartSeq int `json:"startSeq"`
-		EndSeq   int `json:"endSeq"`
-		CardType int `json:"cardType"`
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.ParamsError(c, "请上传Excel文件")
+		return
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ParamsError(c, err.Error())
+
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".xlsx" && ext != ".xls" && ext != ".csv" {
+		response.ParamsError(c, "仅支持.xlsx或.csv格式文件")
+		return
+	}
+
+	content, err := file.Open()
+	if err != nil {
+		response.InternalError(c, "无法读取上传文件")
+		return
+	}
+	defer content.Close()
+
+	fileBytes, err := io.ReadAll(content)
+	if err != nil {
+		response.InternalError(c, "无法读取文件内容")
 		return
 	}
 
 	// TODO: 从JWT获取操作员信息
 	operatorID := "op123"
 
-	cardNos, err := h.rechargeService.BatchImportCards(req.StartSeq, req.EndSeq, req.CardType, operatorID)
+	count, cardNos, err := h.rechargeService.BatchImportCards(fileBytes, ext, operatorID)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
 		return
 	}
 
 	response.SuccessWithMessage(c, errmsg.Get("card.issue_success"), gin.H{
-		"count":   len(cardNos),
+		"count":   count,
 		"cardNos": cardNos,
 	})
 }
 
 func (h *RechargeHandler) AllocateCards(c *gin.Context) {
 	var req struct {
-		CenterID    string `json:"centerId"`
-		StartCardNo string `json:"startCardNo"`
-		EndCardNo   string `json:"endCardNo"`
+		CenterID string `json:"centerId"`
+		Quantity  int    `json:"quantity"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
 
-	count, err := h.rechargeService.AllocateCards(req.CenterID, req.StartCardNo, req.EndCardNo)
+	if req.Quantity <= 0 {
+		response.ParamsError(c, "划拨数量必须大于0")
+		return
+	}
+
+	count, err := h.rechargeService.AllocateCards(req.CenterID, req.Quantity)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
 		return

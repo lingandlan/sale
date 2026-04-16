@@ -27,7 +27,8 @@ type RechargeRepoInterface interface {
 	GetCardByCardNo(cardNo string) (*model.StoreCard, error)
 	GetMaxCardSequence() (int, error)
 	UpdateCardByMap(cardNo string, updates map[string]interface{}) error
-	AllocateCardsToCenter(centerID, startCardNo, endCardNo string) (int, error)
+	GetAllocatableCardCount() (int64, error)
+	AllocateCardsByQuantity(centerID string, quantity int) (int, error)
 	BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error
 	ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error
 	CreateCardTransaction(transaction *model.CardTransaction) error
@@ -214,12 +215,49 @@ func (r *RechargeRepository) UpdateCardByMap(cardNo string, updates map[string]i
 	return r.db.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Updates(updates).Error
 }
 
-// AllocateCardsToCenter 将卡号段内的卡划拨到充值中心
-func (r *RechargeRepository) AllocateCardsToCenter(centerID, startCardNo, endCardNo string) (int, error) {
-	result := r.db.Model(&model.StoreCard{}).
-		Where("card_no >= ? AND card_no <= ? AND status = ?", startCardNo, endCardNo, model.CardStatusInStock).
-		Update("recharge_center_id", centerID)
-	return int(result.RowsAffected), result.Error
+// GetAllocatableCardCount 获取可划拨库存卡数量
+func (r *RechargeRepository) GetAllocatableCardCount() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.StoreCard{}).
+		Where("status = ? AND (recharge_center_id IS NULL OR recharge_center_id = '')", model.CardStatusInStock).
+		Count(&count).Error
+	return count, err
+}
+
+// AllocateCardsByQuantity 按数量划拨卡到充值中心
+func (r *RechargeRepository) AllocateCardsByQuantity(centerID string, quantity int) (int, error) {
+	var allocated int
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 按card_no升序取前N张可划拨的卡
+		var cards []model.StoreCard
+		if err := tx.Where("status = ? AND (recharge_center_id IS NULL OR recharge_center_id = '')", model.CardStatusInStock).
+			Order("card_no ASC").
+			Limit(quantity).
+			Find(&cards).Error; err != nil {
+			return err
+		}
+
+		if len(cards) == 0 {
+			return nil
+		}
+
+		// 收集卡号
+		cardNos := make([]string, len(cards))
+		for i, c := range cards {
+			cardNos[i] = c.CardNo
+		}
+
+		// 批量更新
+		result := tx.Model(&model.StoreCard{}).
+			Where("card_no IN ?", cardNos).
+			Update("recharge_center_id", centerID)
+		if result.Error != nil {
+			return result.Error
+		}
+		allocated = int(result.RowsAffected)
+		return nil
+	})
+	return allocated, err
 }
 
 // BindCardToUser 绑定卡号到用户，同时创建发放记录（在一个事务中）

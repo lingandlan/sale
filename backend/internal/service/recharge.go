@@ -1,14 +1,18 @@
 package service
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/repository"
 
 	"github.com/google/uuid"
+	"github.com/xuri/excelize/v2"
 )
 
 type RechargeService struct {
@@ -200,73 +204,169 @@ var allowedTransitions = map[int][]int{
 	model.CardStatusFrozen:  {model.CardStatusActive, model.CardStatusVoided},
 }
 
-// BatchImportCards 批量入库门店卡
-func (s *RechargeService) BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error) {
-	if startSeq <= 0 || endSeq <= 0 || startSeq > endSeq {
-		return nil, errors.New("序号范围无效")
-	}
-	if endSeq-startSeq+1 > 1000 {
-		return nil, errors.New("单次入库不能超过1000张")
-	}
+// cardTypeMap 卡类型中文映射
+var cardTypeMap = map[string]int{
+	"实体":   model.CardTypePhysical,
+	"实体卡":  model.CardTypePhysical,
+	"虚拟":   model.CardTypeVirtual,
+	"虚拟卡":  model.CardTypeVirtual,
+}
 
-	// 获取当前最大序号
-	maxSeq, err := s.rechargeRepo.GetMaxCardSequence()
+// parseExcel 解析 Excel 文件为行数据
+func (s *RechargeService) parseExcel(file []byte) ([][]string, error) {
+	f, err := excelize.OpenReader(bytes.NewReader(file))
 	if err != nil {
-		return nil, err
+		return nil, errors.New("无法解析Excel文件")
+	}
+	defer f.Close()
+
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		return nil, errors.New("Excel文件没有工作表")
+	}
+	rows, err := f.GetRows(sheets[0])
+	if err != nil {
+		return nil, errors.New("无法读取Excel内容")
+	}
+	return rows, nil
+}
+
+// parseCSV 解析 CSV 文件为行数据（逗号分隔，UTF-8 BOM 兼容）
+func (s *RechargeService) parseCSV(file []byte) ([][]string, error) {
+	text := string(file)
+	// 去掉 UTF-8 BOM
+	text = strings.TrimPrefix(text, "\uFEFF")
+
+	var rows [][]string
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		rows = append(rows, strings.Split(line, ","))
+	}
+	if len(rows) == 0 {
+		return nil, errors.New("CSV文件没有数据")
+	}
+	return rows, nil
+}
+
+// BatchImportCards 批量入库门店卡（支持 xlsx/csv）
+func (s *RechargeService) BatchImportCards(file []byte, ext string, operatorID string) (int, []string, error) {
+	// 1. 根据文件类型解析为行数据
+	var rows [][]string
+	var err error
+
+	switch ext {
+	case ".csv":
+		rows, err = s.parseCSV(file)
+	default: // .xlsx, .xls
+		rows, err = s.parseExcel(file)
+	}
+	if err != nil {
+		return 0, nil, err
 	}
 
-	// 检查序号冲突
-	if startSeq <= maxSeq {
-		return nil, fmt.Errorf("起始序号 %d 与已有卡号冲突（当前最大序号 %d）", startSeq, maxSeq)
+	// 跳过表头，至少需要2行（1行表头+1行数据）
+	if len(rows) <= 1 {
+		return 0, nil, errors.New("Excel文件没有数据行（至少需要表头+1行数据）")
 	}
 
+	dataRows := rows[1:] // 跳过表头
+	if len(dataRows) > 1000 {
+		return 0, nil, errors.New("单次入库不能超过1000张")
+	}
+
+	// 3. 解析并校验每行
+	cardNoSet := make(map[string]bool)
+	cards := make([]*model.StoreCard, 0, len(dataRows))
+	cardNos := make([]string, 0, len(dataRows))
 	batchNo := fmt.Sprintf("B%s", time.Now().Format("20060102150405"))
-	cards := make([]*model.StoreCard, 0, endSeq-startSeq+1)
-	cardNos := make([]string, 0, endSeq-startSeq+1)
 
-	for seq := startSeq; seq <= endSeq; seq++ {
-		cardNo := fmt.Sprintf("TJ%08d", seq)
+	for i, row := range dataRows {
+		rowNum := i + 2 // Excel行号（1-based，跳过表头）
+		if len(row) < 3 {
+			return 0, nil, fmt.Errorf("第%d行列数不足，需要3列（卡号、卡类型、面值）", rowNum)
+		}
+
+		cardNo := strings.TrimSpace(row[0])
+		cardTypeStr := strings.TrimSpace(row[1])
+		balanceStr := strings.TrimSpace(row[2])
+
+		// 校验卡号非空
+		if cardNo == "" {
+			return 0, nil, fmt.Errorf("第%d行卡号为空", rowNum)
+		}
+
+		// 校验卡类型
+		cardType, ok := cardTypeMap[cardTypeStr]
+		if !ok {
+			return 0, nil, fmt.Errorf("第%d行卡类型错误（需为实体/实体卡/虚拟/虚拟卡）: %s", rowNum, cardTypeStr)
+		}
+
+		// 校验面值（正整数）
+		balance, err := strconv.Atoi(balanceStr)
+		if err != nil || balance <= 0 {
+			return 0, nil, fmt.Errorf("第%d行面值必须为正整数: %s", rowNum, balanceStr)
+		}
+
+		// Excel内卡号去重
+		if cardNoSet[cardNo] {
+			return 0, nil, fmt.Errorf("第%d行卡号重复: %s", rowNum, cardNo)
+		}
+		cardNoSet[cardNo] = true
+
 		cardNos = append(cardNos, cardNo)
 		cards = append(cards, &model.StoreCard{
 			ID:       uuid.New().String(),
 			CardNo:   cardNo,
 			CardType: cardType,
 			Status:   model.CardStatusInStock,
-			Balance:  1000,
+			Balance:  balance,
 			BatchNo:  batchNo,
 		})
 	}
 
+	// 6. 入库
 	if err := s.rechargeRepo.BatchCreateCards(cards); err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 
-	// 创建入库交易记录
-	for _, cardNo := range cardNos {
+	// 7. 创建入库交易记录
+	for _, card := range cards {
 		s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
 			ID:            uuid.New().String(),
-			CardNo:        cardNo,
+			CardNo:        card.CardNo,
 			Type:          "stock_in",
 			Amount:        0,
-			BalanceBefore: 1000,
-			BalanceAfter:  1000,
+			BalanceBefore: card.Balance,
+			BalanceAfter:  card.Balance,
 			Remark:        fmt.Sprintf("批量入库（批次%s）", batchNo),
 			OperatorID:    operatorID,
 		})
 	}
 
-	return cardNos, nil
+	return len(cards), cardNos, nil
 }
 
-// AllocateCards 将卡号段划拨到充值中心
-func (s *RechargeService) AllocateCards(centerID, startCardNo, endCardNo string) (int, error) {
+// AllocateCards 按数量划拨卡到充值中心
+func (s *RechargeService) AllocateCards(centerID string, quantity int) (int, error) {
 	// 校验充值中心存在
 	center, err := s.rechargeRepo.GetCenterByID(centerID)
 	if err != nil || center == nil {
 		return 0, errors.New("充值中心不存在")
 	}
 
-	count, err := s.rechargeRepo.AllocateCardsToCenter(centerID, startCardNo, endCardNo)
+	// 校验库存充足
+	available, err := s.rechargeRepo.GetAllocatableCardCount()
+	if err != nil {
+		return 0, err
+	}
+	if available < int64(quantity) {
+		return 0, fmt.Errorf("库存不足，当前可划拨%d张，需要%d张", available, quantity)
+	}
+
+	count, err := s.rechargeRepo.AllocateCardsByQuantity(centerID, quantity)
 	if err != nil {
 		return 0, err
 	}
