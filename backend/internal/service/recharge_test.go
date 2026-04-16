@@ -199,8 +199,8 @@ func (m *MockRechargeRepo) CreateOperator(operator *model.RechargeOperator) erro
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) UpdateOperator(operator *model.RechargeOperator) error {
-	args := m.Called(operator)
+func (m *MockRechargeRepo) UpdateOperator(id string, updates map[string]interface{}) error {
+	args := m.Called(id, updates)
 	return args.Error(0)
 }
 

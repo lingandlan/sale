@@ -65,6 +65,11 @@ func (m *MockAuthUserRepo) Delete(ctx context.Context, id int64) error {
 	return args.Error(0)
 }
 
+func (m *MockAuthUserRepo) UpdateLoginInfo(ctx context.Context, id int64, loginIP string) error {
+	args := m.Called(ctx, id, loginIP)
+	return args.Error(0)
+}
+
 func (m *MockAuthUserRepo) UpdatePassword(ctx context.Context, id int64, password string) error {
 	args := m.Called(ctx, id, password)
 	return args.Error(0)

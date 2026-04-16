@@ -172,7 +172,7 @@ const loadCenters = async () => {
     const res = await getCenterList()
     if (res?.data) {
       const items = Array.isArray(res.data) ? res.data : []
-      centers.value = items.map((c: any) => ({ id: c.id, name: c.name }))
+      centers.value = items.map((c: any) => ({ id: Number(c.id), name: c.name }))
     }
   } catch {
     // fallback to empty
@@ -197,7 +197,7 @@ const loadData = async () => {
         realName: u.name,
         role: u.role,
         centerId: u.center_id,
-        center: u.center_name || '-',
+        center: centers.value.find(c => c.id === Number(u.center_id))?.name || '-',
         status: u.status === 1 ? 'active' : 'disabled',
         lastLogin: u.last_login_at || '-'
       }))
@@ -245,7 +245,7 @@ const handleSaveUser = async () => {
         name: formData.realName,
         phone: formData.phone,
         role: formData.role,
-        center_id: formData.centerId || undefined
+        center_id: formData.centerId ? Number(formData.centerId) : undefined
       })
     } else {
       await createAdminUser({
@@ -253,7 +253,7 @@ const handleSaveUser = async () => {
         phone: formData.phone,
         name: formData.realName,
         role: formData.role,
-        center_id: formData.centerId || undefined,
+        center_id: formData.centerId ? Number(formData.centerId) : undefined,
         password: formData.password || '123456'
       })
     }
@@ -301,9 +301,9 @@ const handleResetPwd = async (row: any) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadCenters()
   loadData()
-  loadCenters()
 })
 </script>
 

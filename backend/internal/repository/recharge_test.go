@@ -543,9 +543,7 @@ func TestRechargeRepository_Operator(t *testing.T) {
 		err := repo.CreateOperator(op)
 		require.NoError(t, err)
 
-		op.Name = "新名字"
-		op.Role = "admin"
-		err = repo.UpdateOperator(op)
+		err = repo.UpdateOperator("op_002", map[string]interface{}{"name": "新名字", "role": "admin"})
 		require.NoError(t, err)
 
 		var updated model.RechargeOperator

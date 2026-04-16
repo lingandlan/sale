@@ -48,7 +48,7 @@ type RechargeRepoInterface interface {
 	// 操作员
 	GetOperators() ([]model.RechargeOperator, error)
 	CreateOperator(operator *model.RechargeOperator) error
-	UpdateOperator(operator *model.RechargeOperator) error
+	UpdateOperator(id string, updates map[string]interface{}) error
 	DeleteOperator(id string) error
 }
 
@@ -529,8 +529,8 @@ func (r *RechargeRepository) CreateOperator(operator *model.RechargeOperator) er
 }
 
 // UpdateOperator 更新操作员
-func (r *RechargeRepository) UpdateOperator(operator *model.RechargeOperator) error {
-	return r.db.Save(operator).Error
+func (r *RechargeRepository) UpdateOperator(id string, updates map[string]interface{}) error {
+	return r.db.Model(&model.RechargeOperator{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // DeleteOperator 删除操作员
