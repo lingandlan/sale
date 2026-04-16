@@ -5,9 +5,9 @@
 | Session | Backend | 前端 PC | 数据库 | Redis DB |
 |---------|---------|---------|--------|----------|
 | Main | 8080 | 5175 | sale_dev | 0 |
-| Alpha | 8081 | 5178 | sale_alpha | 1 |
-| Beta | 8082 | 5179 | sale_beta | 2 |
-| Gamma | 8083 | 5177 | sale_gamma | 3 |
+| Alpha | 8081 | 5178 | sale_dev | 1 |
+| Beta | 8082 | 5179 | sale_dev | 2 |
+| Gamma | 8083 | 5177 | sale_dev | 3 |
 
 ## 技术栈
 

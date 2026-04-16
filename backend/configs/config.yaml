@@ -30,3 +30,9 @@ log:
   mode: debug  # debug / production
   level: info  # debug / info / warn / error
   service_name: marketplace-api
+
+mall:
+  base_url: "https://cloud.xingyunxuan.cn/"
+  app_id: "gy3dbd36ec92d80868"
+  app_secret: "c81ddb0edad1da2650f0c6a0e17a0a31"
+  customer_id: "ef74aU1ZXBg"
