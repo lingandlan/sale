@@ -1,0 +1,140 @@
+# 太积堂充值与门店管理系统 - 项目上下文
+
+> 每次新对话开头直接引用此文件，快速了解项目全貌。
+
+## 项目概览
+
+B端管理后台（shop-pc）+ H5端（shop-h5）+ Go后端（backend），用于管理充值中心、门店卡、充值申请审批、用户管理等业务。
+
+## 技术栈
+
+- 后端: Go 1.22 + Gin + GORM + MySQL 5.6 + Redis + Casbin
+- 前端 PC: Vue 3 + TypeScript + Element Plus + Pinia + Axios
+- 前端 H5: UniApp（早期阶段）
+
+## 端口配置
+
+| Session | Backend | 前端 PC | 数据库 | Redis DB |
+|---------|---------|---------|--------|----------|
+| Main    | 8080    | 5175    | sale_dev  | 0 |
+| Alpha   | 8081    | 5178    | sale_alpha | 1 |
+| Beta    | 8082    | 5179    | sale_beta  | 2 |
+| Gamma   | 8083    | 5177    | sale_gamma | 3 |
+
+端口通过 `process.env.VITE_PORT` / `process.env.VITE_API_PORT` 环境变量覆盖，worktree 用 `.env.local`（gitignored）。
+
+## 目录结构
+
+```
+sale/
+├── backend/
+│   ├── cmd/server/main.go          # 入口
+│   ├── internal/
+│   │   ├── config/                 # 配置加载
+│   │   ├── handler/                # HTTP处理器 (auth, recharge, user, admin)
+│   │   ├── middleware/             # 中间件 (auth, cors, rbac, logger, recovery)
+│   │   ├── model/                  # GORM模型 (user.go, recharge.go)
+│   │   ├── rbac/                   # Casbin权限
+│   │   ├── repository/             # 数据访问层
+│   │   ├── router/router.go        # 路由注册
+│   │   └── service/                # 业务逻辑层 + interfaces.go 接口定义
+│   ├── migrations/sql/             # 增量SQL（GORM model变更必须同步）
+│   └── configs/config.yaml         # 配置文件
+├── shop-pc/                        # B端管理后台
+│   └── src/
+│       ├── api/                    # Axios API (auth, card, center, dashboard, operator, recharge)
+│       ├── layouts/                # MainLayout + Header + Sidebar
+│       ├── router/index.ts         # 路由 + beforeEach守卫
+│       ├── stores/user.ts          # Pinia用户Store
+│       ├── views/
+│       │   ├── card/               # CardInventory, CardIssue, CardManage, CardVerify, CardDetail, CardStats
+│       │   ├── center/             # CenterManage
+│       │   ├── operator/           # OperatorManage
+│       │   ├── recharge/           # BRechargeApply, BRechargeList, BRechargeDetail, CRechargeEntry
+│       │   ├── recharge-record/    # RecordList, RecordDetail
+│       │   ├── user/               # UserManage
+│       │   └── system/             # SystemConfig
+│       └── utils/                  # request.ts (Axios封装), regionData.ts
+├── shop-h5/                        # C端H5 (UniApp, 早期)
+└── .claude/CLAUDE.md               # 开发规范（详细）
+```
+
+## 后端API路由 (/api/v1)
+
+| 模块 | 路由前缀 | 主要接口 |
+|------|---------|---------|
+| 认证 | /auth | login, logout, refresh |
+| 仪表盘 | /dashboard | statistics, todos, recharge-trends |
+| B端充值 | /recharge/b-apply, /recharge/b-approval | 创建申请, 列表, 详情, 审批 |
+| C端充值 | /recharge/c-entry | 创建, 列表(含日期筛选), search-member, 详情 |
+| 充值记录 | /recharge/records | 列表, 详情 |
+| 门店卡 | /card | verify, consume, list, detail, stats, batch-import, allocate, bind, freeze/unfreeze/void, inventory-stats |
+| 充值中心 | /center | CRUD + 详情(含余额) |
+| 操作员 | /operator | CRUD |
+| 用户 | /user | info, update, change-password |
+| 管理员 | /admin | users CRUD, reset-password, update-status |
+| 系统 | /system | config GET/PUT |
+
+## 核心业务模型
+
+### 门店卡 (StoreCard) - 已对齐PRD v1.4
+
+- 面值固定 1000 元/张，余额为 int 类型
+- 卡号格式: TJ + 8位序号 (TJ00000001)
+- 6种状态: 1-已入库 → 2-已发放 → 3-已激活 → 4-已冻结 → 5-已过期 → 6-已作废
+- 三步流程: 批量入库 → 划拨充值中心 → 绑定用户
+- 首次核销自动激活，有效期 = 激活日 + 1年
+- 核销最低100元，事务+行锁(FOR UPDATE)防超卖
+- 状态机校验 (allowedTransitions map)
+
+### 充值中心 (RechargeCenter)
+
+- 有余额(Balance)，审批通过自动加余额
+- C端充值扣减中心余额
+- 关联管理员(manager_id)，省市区三级地址
+
+### 充值申请 (RechargeApplication)
+
+- B端申请 → 审批通过 → 充值中心余额增加
+- 防重复审批检查
+
+### 用户 (User)
+
+- 手机号(phone)作为登录账号，username 作为显示名称
+- 角色: super_admin > hq_admin > finance > center_admin > operator
+
+## 关键开发规范
+
+1. GORM model 为唯一 schema 来源，变更必须同步增量 SQL 到 `backend/migrations/sql/`
+2. 禁止 `Save()` 做部分更新，必须用 `Updates(map[string]interface{})`
+3. Axios interceptor 已 unwrap response.data，代码用 `res.data`
+4. Vue SFC 回调中不能用 await，先存变量
+5. Element Plus el-dropdown trigger 用数组 `["hover"]`
+6. 启动: `cd backend && air` (后端热加载), `cd shop-pc && npm run dev` (前端)
+7. 启动前先清理僵尸进程: `lsof -ti:PORT | xargs kill`
+
+## 测试账号
+
+- 主分支: 13800000000 / 123456
+- Alpha: 13900000001 / 123456
+
+## Git分支策略
+
+- `main` - 主分支
+- `design` - 开发分支（当前活跃）
+- `worktree-alpha/beta/opencode` - 各worktree的分支
+- commit message 格式: `<type>(<scope>): <description>` (有 hook 校验)
+
+## 当前进度
+
+- [x] 用户认证 + RBAC权限
+- [x] B端充值申请/审批流程
+- [x] C端充值录入 + 会员查询
+- [x] 充值记录列表 + 详情
+- [x] 充值中心管理 (CRUD + 余额 + 三级地址)
+- [x] 操作员管理
+- [x] 门店卡模块 (对齐PRD v1.4: 6状态/库存制/激活机制/事务核销)
+- [x] 用户管理页面 (CRUD + 状态筛选)
+- [x] 仪表盘 (统计/待办/趋势)
+- [ ] shop-h5 C端开发 (早期)
+- [ ] 系统配置页面 (占位)
