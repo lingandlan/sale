@@ -418,9 +418,9 @@ func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
 	r.db.Model(&model.StoreCard{}).Where("status IN ?", []int{model.CardStatusIssued, model.CardStatusActive, model.CardStatusFrozen, model.CardStatusExpired}).Count(&issued)
 	stats["issuedCards"] = issued
 
-	// 剩余库存 = 已入库的卡
+	// 剩余库存 = 已入库且未划拨到充值中心的卡
 	var inStock int64
-	r.db.Model(&model.StoreCard{}).Where("status = ?", model.CardStatusInStock).Count(&inStock)
+	r.db.Model(&model.StoreCard{}).Where("status = ? AND (recharge_center_id IS NULL OR recharge_center_id = '')", model.CardStatusInStock).Count(&inStock)
 	stats["inStockCards"] = inStock
 
 	return stats, nil

@@ -4,8 +4,10 @@
       <template #header>
         <div class="card-header">
           <span>总卡库管理</span>
-          <el-button type="primary" @click="showImportDialog = true">批量入库</el-button>
-          <el-button @click="downloadTemplate">下载模板</el-button>
+          <div class="card-header-actions">
+            <el-button @click="downloadTemplate">下载模板</el-button>
+            <el-button type="primary" @click="showImportDialog = true">批量入库</el-button>
+          </div>
         </div>
       </template>
 
@@ -181,6 +183,10 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.card-header-actions {
+  display: flex;
+  gap: 8px;
 }
 .stats-row {
   text-align: center;
