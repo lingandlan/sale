@@ -154,7 +154,8 @@
       "Bash(docker exec:*)",
       "Bash(xargs -I{} ps -p {} -o command=)",
       "Bash(kill 28873)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(lsof -i:5175 -sTCP:LISTEN)"
     ],
     "disableAutoMode": "disable"
   }

@@ -36,6 +36,17 @@
 - 合并分支时必须检查 `configs/config.yaml` 和 `vite.config.ts` 端口配置是否冲突
 - 启动前端/后端前先清理僵尸进程：`lsof -ti:PORT | xargs kill`
 - 后端启动命令：`cd backend && air`（热加载）
+- **各环境统一用 `./start.sh` 一键启动**，脚本内自动清理残留进程、设置正确端口和 Redis DB
+
+### 启动方式
+
+| 环境 | 启动命令 | 目录 |
+|------|---------|------|
+| Main | `./start.sh` | 项目根目录 |
+| Alpha | `./start.sh` | `.claude/worktrees/alpha/` |
+| Beta | `./start.sh` | `.claude/worktrees/beta/` |
+
+脚本通过环境变量 `APP_SERVER_PORT` / `APP_REDIS_DB` 覆盖后端端口，前端通过 `.env.local`（gitignored）读取端口，互不冲突。
 
 ## 业务设计决策
 
