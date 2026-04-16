@@ -38,7 +38,7 @@ func (m *RBACMiddleware) Auth() gin.HandlerFunc {
 
 		// 超级管理员拥有所有权限
 		role, _ := c.Get("role")
-		if role.(string) == "super_admin" {
+		if role.(string) == "super_admin" || role.(string) == "hq_admin" {
 			c.Next()
 			return
 		}

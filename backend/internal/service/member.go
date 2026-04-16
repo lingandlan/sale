@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+
+	"marketplace/backend/pkg/mall"
 )
 
 // MemberInfo 会员信息（来自WSY商城服务）
@@ -23,11 +25,11 @@ var _ MemberServiceInterface = (*MemberService)(nil)
 
 // MemberService 会员服务
 type MemberService struct {
-	// TODO: 后续注入 WSY HTTP client
+	wsyClient *mall.WSYClient
 }
 
-func NewMemberService() *MemberService {
-	return &MemberService{}
+func NewMemberService(wsyClient *mall.WSYClient) *MemberService {
+	return &MemberService{wsyClient: wsyClient}
 }
 
 // SearchByPhone 通过手机号查询会员信息
@@ -38,18 +40,24 @@ func (s *MemberService) SearchByPhone(phone string) (*MemberInfo, error) {
 		return nil, fmt.Errorf("手机号不能为空")
 	}
 
-	// TODO: 对接 WSY 服务
-	// 步骤1: POST wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function
-	//        act=10000_phone_get_user_info, phone=xxx → 获取 user_id
-	// 步骤2: act=10000_integral_user_integral, user_id=xxx → 获取积分余额
+	// 步骤1: 通过手机号获取 user_id
+	userID, err := s.wsyClient.PhoneToUserID(phone)
+	if err != nil {
+		return nil, fmt.Errorf("查询会员失败: %w", err)
+	}
 
-	// Mock 数据 — 后续替换为真实 WSY 调用
+	// 步骤2: 获取积分余额
+	integral, err := s.wsyClient.GetUserIntegral(userID)
+	if err != nil {
+		return nil, fmt.Errorf("查询积分失败: %w", err)
+	}
+
 	return &MemberInfo{
-		UserID:   "370955981",
-		Name:     "张三",
+		UserID:   userID,
+		Name:     "",
 		Phone:    phone,
-		Balance:  5000,
+		Balance:  integral,
 		Level:    "普通会员",
-		NickName: "张三",
+		NickName: "",
 	}, nil
 }

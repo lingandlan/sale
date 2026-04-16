@@ -14,6 +14,7 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Log      LogConfig      `mapstructure:"log"`
+	Mall     MallConfig     `mapstructure:"mall"`
 }
 
 // ServerConfig HTTP 服务器配置
@@ -65,6 +66,14 @@ type LogConfig struct {
 	Mode         string `mapstructure:"mode"`
 	Level        string `mapstructure:"level"`
 	ServiceName  string `mapstructure:"service_name"`
+}
+
+// MallConfig WSY商城接口配置
+type MallConfig struct {
+	BaseURL    string `mapstructure:"base_url"`
+	AppID      string `mapstructure:"app_id"`
+	AppSecret  string `mapstructure:"app_secret"`
+	CustomerID string `mapstructure:"customer_id"`
 }
 
 // Load 加载配置文件

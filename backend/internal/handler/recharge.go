@@ -109,7 +109,7 @@ func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
 
 	recharge, err := h.rechargeService.CreateCRecharge(req)
 	if err != nil {
-		response.InternalError(c, errmsg.Get("recharge.c_create_failed"))
+		response.Error(c, 400, err.Error())
 		return
 	}
 
