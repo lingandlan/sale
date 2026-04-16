@@ -169,10 +169,8 @@ import { useUserStore } from '@/stores/user'
 
 interface MemberInfo {
   id: string
-  name: string
   phone: string
   balance: number
-  level: string
 }
 
 interface CenterOption {
@@ -269,10 +267,8 @@ const handleSearch = async () => {
       const d = res.data
       memberInfo.value = {
         id: d.userId,
-        name: d.name || d.nickName || '-',
         phone: d.phone,
         balance: d.balance || 0,
-        level: d.level || '普通会员'
       }
       ElMessage.success('查询成功')
     }
@@ -319,7 +315,7 @@ const handleSubmit = async () => {
     )
     await submitCRechargeEntry({
       memberId: memberInfo.value!.id,
-      memberName: memberInfo.value!.name,
+      memberName: memberInfo.value!.phone,
       memberPhone: memberInfo.value!.phone,
       centerId: selectedCenterId.value,
       centerName: selectedCenterName.value,

@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${env.VITE_API_PORT || '8080'}`,
           changeOrigin: true
         }
+      },
+      watch: {
+        usePolling: true,
+        interval: 1000
       }
     },
     test: {
