@@ -119,13 +119,17 @@ export interface CardInventoryResponse {
   inStockCards: number
 }
 
-// 批量入库
-export function batchImportCards(data: { startSeq: number; endSeq: number; cardType: number }) {
-  return request.post('/card/batch-import', data)
+// 批量入库（Excel上传）
+export function batchImportCards(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/card/batch-import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 }
 
-// 划拨到充值中心
-export function allocateCards(data: { centerId: string; startCardNo: string; endCardNo: string }) {
+// 划拨到充值中心（按数量）
+export function allocateCards(data: { centerId: string; quantity: number }) {
   return request.post('/card/allocate', data)
 }
 
