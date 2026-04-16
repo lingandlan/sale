@@ -605,25 +605,40 @@ func (s *RechargeService) CreateOperator(data map[string]interface{}) (*model.Re
 
 // UpdateOperator 更新操作员
 func (s *RechargeService) UpdateOperator(id string, data map[string]interface{}) (*model.RechargeOperator, error) {
-	operator := &model.RechargeOperator{
-		ID:       id,
-		Name:     data["name"].(string),
-		Phone:    data["phone"].(string),
-		CenterID: data["centerId"].(string),
-		Role:     data["role"].(string),
-		Status:   data["status"].(string),
+	updates := map[string]interface{}{}
+
+	if v, ok := data["name"].(string); ok && v != "" {
+		updates["name"] = v
+	}
+	if v, ok := data["phone"].(string); ok && v != "" {
+		updates["phone"] = v
+	}
+	if v, ok := data["role"].(string); ok && v != "" {
+		updates["role"] = v
+	}
+	if v, ok := data["status"].(string); ok && v != "" {
+		updates["status"] = v
+	}
+	if v, ok := data["password"].(string); ok && v != "" {
+		updates["password"] = v
+	}
+	// 前端发 center_id，数据库字段 center_id
+	if v, ok := data["center_id"].(string); ok && v != "" {
+		updates["center_id"] = v
+	}
+	if v, ok := data["centerId"].(string); ok && v != "" {
+		updates["center_id"] = v
 	}
 
-	// 如果有新密码
-	if password, ok := data["password"]; ok && password != "" {
-		operator.Password = password.(string)
+	if len(updates) == 0 {
+		return nil, fmt.Errorf("no fields to update")
 	}
 
-	if err := s.rechargeRepo.UpdateOperator(operator); err != nil {
+	if err := s.rechargeRepo.UpdateOperator(id, updates); err != nil {
 		return nil, err
 	}
 
-	return operator, nil
+	return &model.RechargeOperator{ID: id}, nil
 }
 
 // DeleteOperator 删除操作员
