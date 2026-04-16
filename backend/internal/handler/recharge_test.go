@@ -77,12 +77,22 @@ func (m *MockRechargeService) GetCRechargeDetail(id string) (*model.CRecharge, e
 	return args.Get(0).(*model.CRecharge), args.Error(1)
 }
 
-func (m *MockRechargeService) IssueCard(data map[string]interface{}) (*model.StoreCard, error) {
-	args := m.Called(data)
+func (m *MockRechargeService) BatchImportCards(startSeq, endSeq, cardType int, operatorID string) ([]string, error) {
+	args := m.Called(startSeq, endSeq, cardType, operatorID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*model.StoreCard), args.Error(1)
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *MockRechargeService) AllocateCards(centerID, startCardNo, endCardNo string) (int, error) {
+	args := m.Called(centerID, startCardNo, endCardNo)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *MockRechargeService) BindCardToUser(cardNo, userPhone, issueReason string, issueType int, rechargeCenterID, operatorID, relatedUserPhone, remark string) error {
+	args := m.Called(cardNo, userPhone, issueReason, issueType, rechargeCenterID, operatorID, relatedUserPhone, remark)
+	return args.Error(0)
 }
 
 func (m *MockRechargeService) VerifyCard(cardNo string) (*model.StoreCard, error) {
@@ -93,18 +103,28 @@ func (m *MockRechargeService) VerifyCard(cardNo string) (*model.StoreCard, error
 	return args.Get(0).(*model.StoreCard), args.Error(1)
 }
 
-func (m *MockRechargeService) ConsumeCard(cardNo string, amount float64, remark, operatorID string) error {
-	args := m.Called(cardNo, amount, remark, operatorID)
+func (m *MockRechargeService) ConsumeCard(cardNo string, amount int, operatorID, remark string) error {
+	args := m.Called(cardNo, amount, operatorID, remark)
 	return args.Error(0)
 }
 
-func (m *MockRechargeService) UpdateCardStatus(cardNo, status string) error {
-	args := m.Called(cardNo, status)
+func (m *MockRechargeService) FreezeCard(cardNo, operatorID string) error {
+	args := m.Called(cardNo, operatorID)
 	return args.Error(0)
 }
 
-func (m *MockRechargeService) GetCardList(status, cardNo, holderPhone string, page, pageSize int) (map[string]interface{}, error) {
-	args := m.Called(status, cardNo, holderPhone, page, pageSize)
+func (m *MockRechargeService) UnfreezeCard(cardNo, operatorID string) error {
+	args := m.Called(cardNo, operatorID)
+	return args.Error(0)
+}
+
+func (m *MockRechargeService) VoidCard(cardNo, operatorID string) error {
+	args := m.Called(cardNo, operatorID)
+	return args.Error(0)
+}
+
+func (m *MockRechargeService) GetCardList(status int, cardNo, centerID string, page, pageSize int) (map[string]interface{}, error) {
+	args := m.Called(status, cardNo, centerID, page, pageSize)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -120,6 +140,14 @@ func (m *MockRechargeService) GetCardDetail(cardNo string) (map[string]interface
 }
 
 func (m *MockRechargeService) GetCardStats() (map[string]interface{}, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockRechargeService) GetCardInventoryStats() (map[string]interface{}, error) {
 	args := m.Called()
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -236,14 +264,20 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 		card.GET("/list", h.GetCardList)
 		card.GET("/detail/:cardNo", h.GetCardDetail)
 		card.GET("/stats", h.GetCardStats)
-		card.POST("/issue", h.IssueCard)
-		card.POST("/:cardNo/status", h.UpdateCardStatus)
+		card.GET("/inventory-stats", h.GetCardInventoryStats)
+		card.POST("/batch-import", h.BatchImportCards)
+		card.POST("/allocate", h.AllocateCards)
+		card.POST("/bind", h.BindCardToUser)
+		card.POST("/:cardNo/freeze", h.FreezeCard)
+		card.POST("/:cardNo/unfreeze", h.UnfreezeCard)
+		card.POST("/:cardNo/void", h.VoidCard)
 	}
 
 	// 充值中心
 	center := v1.Group("/center")
 	{
 		center.GET("", h.GetCenters)
+		center.GET("/:id", h.GetCenterDetail)
 		center.POST("", h.CreateCenter)
 		center.PUT("/:id", h.UpdateCenter)
 		center.DELETE("/:id", h.DeleteCenter)
@@ -585,21 +619,20 @@ func TestRechargeHandler_RecordsList(t *testing.T) {
 
 // ========== 门店卡 ==========
 
-func TestRechargeHandler_IssueCard(t *testing.T) {
+func TestRechargeHandler_BatchImportCards(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		card := &model.StoreCard{ID: "card-001", CardNo: "TJ2612345"}
-		mockSvc.On("IssueCard", mock.Anything).Return(card, nil).Once()
+		mockSvc.On("BatchImportCards", 1, 5, 1, "op123").Return([]string{"TJ00000001", "TJ00000002", "TJ00000003", "TJ00000004", "TJ00000005"}, nil).Once()
 
 		body := map[string]interface{}{
-			"holderId": "m001", "holderName": "张三", "holderPhone": "13900139000",
-			"amount": 5000, "centerId": "c1", "centerName": "北京",
+			"startSeq": 1, "endSeq": 5,
+			"cardType": 1,
 		}
 		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest("POST", "/api/v1/card/issue", bytes.NewBuffer(jsonBody))
+		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -614,7 +647,7 @@ func TestRechargeHandler_IssueCard(t *testing.T) {
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		req, _ := http.NewRequest("POST", "/api/v1/card/issue", bytes.NewBufferString("{bad}"))
+		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", bytes.NewBufferString("{bad}"))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -629,7 +662,7 @@ func TestRechargeHandler_VerifyCard(t *testing.T) {
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		card := &model.StoreCard{ID: "card-001", CardNo: "TJ2612345", Status: "active", Balance: 1000}
+		card := &model.StoreCard{ID: "card-001", CardNo: "TJ2612345", Status: model.CardStatusActive, Balance: 1000}
 		mockSvc.On("VerifyCard", "TJ2612345").Return(card, nil).Once()
 
 		req, _ := http.NewRequest("GET", "/api/v1/card/verify/TJ2612345", nil)
@@ -663,7 +696,7 @@ func TestRechargeHandler_ConsumeCard(t *testing.T) {
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("ConsumeCard", "TJ2612345", 100.0, "消费", "op123").Return(nil).Once()
+		mockSvc.On("ConsumeCard", "TJ2612345", 100, "op123", "消费").Return(nil).Once()
 
 		body := map[string]interface{}{"cardNo": "TJ2612345", "amount": 100.0, "remark": "消费"}
 		jsonBody, _ := json.Marshal(body)
@@ -708,17 +741,15 @@ func TestRechargeHandler_ConsumeCard(t *testing.T) {
 	})
 }
 
-func TestRechargeHandler_UpdateCardStatus(t *testing.T) {
+func TestRechargeHandler_FreezeCard(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
 		h := NewRechargeHandler(mockSvc)
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("UpdateCardStatus", "TJ2612345", "inactive").Return(nil).Once()
+		mockSvc.On("FreezeCard", "TJ2612345", "op123").Return(nil).Once()
 
-		body := map[string]interface{}{"status": "inactive"}
-		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest("POST", "/api/v1/card/TJ2612345/status", bytes.NewBuffer(jsonBody))
+		req, _ := http.NewRequest("POST", "/api/v1/card/TJ2612345/freeze", nil)
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -726,21 +757,6 @@ func TestRechargeHandler_UpdateCardStatus(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		assertResponseCode(t, w.Body.Bytes(), 0)
 		mockSvc.AssertExpectations(t)
-	})
-
-	t.Run("missing status", func(t *testing.T) {
-		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
-		router := setupRechargeRouter(h)
-
-		body := map[string]interface{}{}
-		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest("POST", "/api/v1/card/TJ2612345/status", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		assertResponseCode(t, w.Body.Bytes(), 400)
 	})
 }
 
@@ -751,9 +767,9 @@ func TestRechargeHandler_GetCardList(t *testing.T) {
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"list": []interface{}{}, "total": 0}
-		mockSvc.On("GetCardList", "active", "TJ2612345", "13900139000", 1, 10).Return(result, nil).Once()
+		mockSvc.On("GetCardList", 1, "TJ2612345", "c1", 1, 10).Return(result, nil).Once()
 
-		req, _ := http.NewRequest("GET", "/api/v1/card/list?status=active&cardNo=TJ2612345&holderPhone=13900139000", nil)
+		req, _ := http.NewRequest("GET", "/api/v1/card/list?status=1&cardNo=TJ2612345&centerId=c1", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
