@@ -12,11 +12,12 @@ import (
 )
 
 type RechargeService struct {
-	rechargeRepo repository.RechargeRepoInterface
+	rechargeRepo  repository.RechargeRepoInterface
+	memberService MemberServiceInterface
 }
 
-func NewRechargeService(rechargeRepo repository.RechargeRepoInterface) *RechargeService {
-	return &RechargeService{rechargeRepo: rechargeRepo}
+func NewRechargeService(rechargeRepo repository.RechargeRepoInterface, memberService MemberServiceInterface) *RechargeService {
+	return &RechargeService{rechargeRepo: rechargeRepo, memberService: memberService}
 }
 
 // ========== B端充值申请 ==========
@@ -135,9 +136,11 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 		return nil, errors.New("充值中心余额不足")
 	}
 
-	// TODO: 获取会员当前余额
+	// 获取会员当前余额（WSY积分）
 	memberBalanceBefore := 0
-	memberBalanceAfter := memberBalanceBefore + points
+	if info, err := s.memberService.SearchByPhone(memberPhone); err == nil {
+		memberBalanceBefore = int(info.Balance)
+	}
 
 	recharge := &model.CRecharge{
 		ID:            uuid.New().String(),
@@ -153,7 +156,7 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 		OperatorName:  data["operatorName"].(string),
 		Remark:        data["remark"].(string),
 		BalanceBefore: memberBalanceBefore,
-		BalanceAfter:  memberBalanceAfter,
+		BalanceAfter:  memberBalanceBefore + points,
 	}
 
 	if err := s.rechargeRepo.CreateCRecharge(recharge); err != nil {
@@ -163,6 +166,19 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 	// 扣减充值中心余额
 	if _, err := s.rechargeRepo.DeductCenterBalance(centerID, amount); err != nil {
 		return nil, errors.New("扣减中心余额失败")
+	}
+
+	// WSY加积分
+	batchcode := fmt.Sprintf("%d%s", time.Now().Unix(), recharge.ID)
+	if len(batchcode) > 30 {
+		batchcode = batchcode[:30]
+	}
+	if afterIntegral, err := s.memberService.AddIntegral(memberPhone, float64(points), batchcode, fmt.Sprintf("充值中心充值 %s", centerID)); err == nil {
+		recharge.BalanceAfter = int(afterIntegral)
+		s.rechargeRepo.UpdateCRecharge(recharge.ID, map[string]interface{}{
+			"balance_before": memberBalanceBefore,
+			"balance_after":  int(afterIntegral),
+		})
 	}
 
 	return recharge, nil

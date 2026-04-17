@@ -177,6 +177,239 @@ func (c *WSYClient) GetUserIntegral(userID string) (float64, error) {
 	return integral, nil
 }
 
+// AddUserIntegral 添加积分，返回变动后积分
+func (c *WSYClient) AddUserIntegral(userID string, integral float64, changeType, batchcode, remark, unionID string) (float64, error) {
+	token, err := c.GetAccessToken()
+	if err != nil {
+		return 0, err
+	}
+
+	endpoint := fmt.Sprintf("%s/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function", c.baseURL)
+	form := url.Values{
+		"access_token":     {token},
+		"act":              {"10000_integral_add"},
+		"customer_id_lock": {c.customerID},
+		"user_id":          {userID},
+		"integral":         {fmt.Sprintf("%v", integral)},
+		"change_type":      {changeType},
+		"batchcode":        {batchcode},
+	}
+	if remark != "" {
+		form.Set("remark", remark)
+	}
+	if unionID != "" {
+		form.Set("union_id", unionID)
+	}
+
+	body, err := c.postForm(endpoint, form)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		ErrCode      int    `json:"errcode"`
+		ErrMsg       string `json:"errmsg"`
+		AfterIntegral string `json:"after_integral"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, fmt.Errorf("WSY integral_add 解析失败: %w, body: %s", err, string(body))
+	}
+	// 幂等：union_id 重复返回 100100，视为成功
+	if result.ErrCode == 100100 {
+		return 0, nil
+	}
+	if result.ErrCode != 0 {
+		return 0, fmt.Errorf("WSY integral_add 失败: errcode=%d, errmsg=%s", result.ErrCode, result.ErrMsg)
+	}
+
+	var afterIntegral float64
+	fmt.Sscanf(result.AfterIntegral, "%f", &afterIntegral)
+	return afterIntegral, nil
+}
+
+// ReduceUserIntegral 扣除积分，返回变动后积分
+func (c *WSYClient) ReduceUserIntegral(userID string, integral float64, changeType, batchcode, unionID string) (float64, error) {
+	token, err := c.GetAccessToken()
+	if err != nil {
+		return 0, err
+	}
+
+	endpoint := fmt.Sprintf("%s/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function", c.baseURL)
+	form := url.Values{
+		"access_token":     {token},
+		"act":              {"10000_integral_reduce"},
+		"customer_id_lock": {c.customerID},
+		"user_id":          {userID},
+		"integral":         {fmt.Sprintf("%v", integral)},
+		"batchcode":        {batchcode},
+	}
+	if changeType != "" {
+		form.Set("change_type", changeType)
+	}
+	if unionID != "" {
+		form.Set("union_id", unionID)
+	}
+
+	body, err := c.postForm(endpoint, form)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		ErrCode       int    `json:"errcode"`
+		ErrMsg        string `json:"errmsg"`
+		AfterIntegral string `json:"after_integral"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, fmt.Errorf("WSY integral_reduce 解析失败: %w, body: %s", err, string(body))
+	}
+	if result.ErrCode != 0 {
+		return 0, fmt.Errorf("WSY integral_reduce 失败: errcode=%d, errmsg=%s", result.ErrCode, result.ErrMsg)
+	}
+
+	var afterIntegral float64
+	fmt.Sscanf(result.AfterIntegral, "%f", &afterIntegral)
+	return afterIntegral, nil
+}
+
+// generateBatchcode 生成 batchcode：前10位时间戳 + businessID，总长度 ≤ 30
+func generateBatchcode(businessID string) string {
+	ts := fmt.Sprintf("%d", time.Now().Unix())
+	combined := ts + businessID
+	if len(combined) > 30 {
+		combined = combined[:30]
+	}
+	return combined
+}
+
+// 零钱接口 act 常量（待 WSY 文档确认后替换）
+const (
+	ActWalletBalance = "TBD_wallet_balance"
+	ActWalletAdd     = "TBD_wallet_add"
+	ActWalletReduce  = "TBD_wallet_reduce"
+)
+
+// GetUserWallet 查询用户零钱余额（act 待确认）
+func (c *WSYClient) GetUserWallet(userID string) (float64, error) {
+	token, err := c.GetAccessToken()
+	if err != nil {
+		return 0, err
+	}
+
+	endpoint := fmt.Sprintf("%s/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function", c.baseURL)
+	form := url.Values{
+		"access_token":     {token},
+		"act":              {ActWalletBalance},
+		"customer_id_lock": {c.customerID},
+		"user_id":          {userID},
+	}
+
+	body, err := c.postForm(endpoint, form)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		ErrCode int             `json:"errcode"`
+		ErrMsg  string           `json:"errmsg"`
+		Data    json.RawMessage  `json:"data"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, fmt.Errorf("WSY wallet_balance 解析失败: %w, body: %s", err, string(body))
+	}
+	if result.ErrCode != 0 {
+		return 0, fmt.Errorf("WSY wallet_balance 失败: errcode=%d, errmsg=%s", result.ErrCode, result.ErrMsg)
+	}
+
+	var balance float64
+	json.Unmarshal(result.Data, &balance)
+	return balance, nil
+}
+
+// AddUserWallet 增加用户零钱（act 待确认）
+func (c *WSYClient) AddUserWallet(userID string, amount float64, batchcode, unionID string) (float64, error) {
+	token, err := c.GetAccessToken()
+	if err != nil {
+		return 0, err
+	}
+
+	endpoint := fmt.Sprintf("%s/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function", c.baseURL)
+	form := url.Values{
+		"access_token":     {token},
+		"act":              {ActWalletAdd},
+		"customer_id_lock": {c.customerID},
+		"user_id":          {userID},
+		"amount":           {fmt.Sprintf("%v", amount)},
+		"batchcode":        {batchcode},
+	}
+	if unionID != "" {
+		form.Set("union_id", unionID)
+	}
+
+	body, err := c.postForm(endpoint, form)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		ErrCode     int    `json:"errcode"`
+		ErrMsg      string `json:"errmsg"`
+		AfterAmount string `json:"after_amount"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, fmt.Errorf("WSY wallet_add 解析失败: %w, body: %s", err, string(body))
+	}
+	if result.ErrCode != 0 {
+		return 0, fmt.Errorf("WSY wallet_add 失败: errcode=%d, errmsg=%s", result.ErrCode, result.ErrMsg)
+	}
+
+	var afterAmount float64
+	fmt.Sscanf(result.AfterAmount, "%f", &afterAmount)
+	return afterAmount, nil
+}
+
+// ReduceUserWallet 扣除用户零钱（act 待确认）
+func (c *WSYClient) ReduceUserWallet(userID string, amount float64, batchcode, unionID string) (float64, error) {
+	token, err := c.GetAccessToken()
+	if err != nil {
+		return 0, err
+	}
+
+	endpoint := fmt.Sprintf("%s/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function", c.baseURL)
+	form := url.Values{
+		"access_token":     {token},
+		"act":              {ActWalletReduce},
+		"customer_id_lock": {c.customerID},
+		"user_id":          {userID},
+		"amount":           {fmt.Sprintf("%v", amount)},
+		"batchcode":        {batchcode},
+	}
+	if unionID != "" {
+		form.Set("union_id", unionID)
+	}
+
+	body, err := c.postForm(endpoint, form)
+	if err != nil {
+		return 0, err
+	}
+
+	var result struct {
+		ErrCode     int    `json:"errcode"`
+		ErrMsg      string `json:"errmsg"`
+		AfterAmount string `json:"after_amount"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return 0, fmt.Errorf("WSY wallet_reduce 解析失败: %w, body: %s", err, string(body))
+	}
+	if result.ErrCode != 0 {
+		return 0, fmt.Errorf("WSY wallet_reduce 失败: errcode=%d, errmsg=%s", result.ErrCode, result.ErrMsg)
+	}
+
+	var afterAmount float64
+	fmt.Sscanf(result.AfterAmount, "%f", &afterAmount)
+	return afterAmount, nil
+}
+
 // postForm 通用POST表单请求
 func (c *WSYClient) postForm(endpoint string, form url.Values) ([]byte, error) {
 	resp, err := c.httpClient.PostForm(endpoint, form)
