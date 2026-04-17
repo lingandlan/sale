@@ -53,6 +53,7 @@ type RechargeServiceInterface interface {
 	GetCardStats() (map[string]interface{}, error)
 	GetCardInventoryStats() (map[string]interface{}, error)
 	GetAvailableCards(centerID string, keyword string) ([]string, error)
+	GetAvailableCardCount(centerID string) (int64, error)
 	FreezeCard(cardNo, operatorID string) error
 	UnfreezeCard(cardNo, operatorID string) error
 	VoidCard(cardNo, operatorID string) error

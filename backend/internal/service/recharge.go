@@ -601,6 +601,14 @@ func (s *RechargeService) GetAvailableCards(centerID string, keyword string) ([]
 	return s.rechargeRepo.GetAvailableCardNos(centerID, keyword)
 }
 
+// GetAvailableCardCount 获取指定充值中心的可用卡数量
+func (s *RechargeService) GetAvailableCardCount(centerID string) (int64, error) {
+	if centerID == "" {
+		return 0, errors.New("充值中心ID不能为空")
+	}
+	return s.rechargeRepo.GetAvailableCardCount(centerID)
+}
+
 // ========== 充值中心 ==========
 
 // GetCenters 获取充值中心列表（含管理员、累计充值、已消耗）

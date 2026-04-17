@@ -191,6 +191,11 @@ export function getAvailableCards(centerId: string, keyword?: string) {
   return request.get('/card/available', { params: { centerId, keyword } })
 }
 
+// 获取指定充值中心的可用卡数量
+export function getAvailableCardCount(centerId: string) {
+  return request.get('/card/available/count', { params: { centerId } })
+}
+
 // 获取总卡库统计
 export function getCardInventoryStats() {
   return request.get('/card/inventory-stats')

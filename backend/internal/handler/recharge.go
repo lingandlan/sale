@@ -433,6 +433,31 @@ func (h *RechargeHandler) GetAvailableCards(c *gin.Context) {
 	response.Success(c, gin.H{"cardNos": cardNos})
 }
 
+func (h *RechargeHandler) GetAvailableCardCount(c *gin.Context) {
+	centerID := c.Query("centerId")
+	if centerID == "" {
+		response.Error(c, 400, "centerId is required")
+		return
+	}
+
+	_, _, opCenterID, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	if opCenterID != "" {
+		centerID = opCenterID
+	}
+
+	count, err := h.rechargeService.GetAvailableCardCount(centerID)
+	if err != nil {
+		bizError(c, err)
+		return
+	}
+	response.Success(c, gin.H{"count": count})
+}
+
 func (h *RechargeHandler) GetCardList(c *gin.Context) {
 	status, _ := strconv.Atoi(c.Query("status"))
 	cardNo := c.Query("cardNo")

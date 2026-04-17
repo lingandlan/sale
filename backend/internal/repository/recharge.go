@@ -38,6 +38,7 @@ type RechargeRepoInterface interface {
 	GetCardStats() (map[string]int64, error)
 	GetCardInventoryStats() (map[string]int64, error)
 		GetAvailableCardNos(centerID string, keyword string) ([]string, error)
+		GetAvailableCardCount(centerID string) (int64, error)
 	// 充值中心
 	GetCenterByID(id string) (*model.RechargeCenter, error)
 	AddCenterBalance(id string, amount float64) error
@@ -448,8 +449,17 @@ func (r *RechargeRepository) GetAvailableCardNos(centerID string, keyword string
 	if keyword != "" {
 		query = query.Where("card_no LIKE ?", keyword+"%")
 	}
-	err := query.Order("card_no ASC").Limit(50).Pluck("card_no", &cardNos).Error
+	err := query.Order("card_no ASC").Limit(20).Pluck("card_no", &cardNos).Error
 	return cardNos, err
+}
+
+// GetAvailableCardCount 获取指定充值中心的可用卡数量
+func (r *RechargeRepository) GetAvailableCardCount(centerID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&model.StoreCard{}).
+		Where("status = ? AND recharge_center_id = ?", model.CardStatusInStock, centerID).
+		Count(&count).Error
+	return count, err
 }
 
 // ========== 充值中心 ==========

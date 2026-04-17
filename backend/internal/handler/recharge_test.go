@@ -231,6 +231,11 @@ func (m *MockRechargeService) GetAvailableCards(centerID string, keyword string)
 	return args.Get(0).([]string), args.Error(1)
 }
 
+func (m *MockRechargeService) GetAvailableCardCount(centerID string) (int64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 
 
 // MockUserRepo implements repository.UserRepositoryInterface for testing
