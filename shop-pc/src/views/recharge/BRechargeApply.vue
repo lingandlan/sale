@@ -82,6 +82,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { Upload } from '@element-plus/icons-vue'
 import { submitBRechargeApply } from '@/api/recharge'
 
@@ -194,8 +195,8 @@ const handleSubmit = async () => {
     })
     ElMessage.success('充值申请已提交，等待审核')
     router.push('/recharge/b-approval')
-  } catch {
-    // 错误已由 request 拦截器处理
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '提交充值申请失败'))
   }
 }
 </script>

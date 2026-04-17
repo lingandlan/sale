@@ -180,6 +180,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getBRechargeApprovalDetail, approvalAction } from '@/api/recharge'
 
 const router = useRouter()
@@ -261,8 +262,8 @@ const loadDetail = async () => {
         currentBalance: d.currentBalance || 0
       }
     }
-  } catch (error) {
-    ElMessage.error('加载详情失败')
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载详情失败'))
   }
 }
 
@@ -287,8 +288,8 @@ const handleReject = async () => {
     })
     ElMessage.success('已拒绝')
     router.back()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '拒绝失败'))
   }
 }
 
@@ -309,8 +310,8 @@ const handleApprove = async () => {
     })
     ElMessage.success('已通过')
     router.back()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '审批通过失败'))
   }
 }
 

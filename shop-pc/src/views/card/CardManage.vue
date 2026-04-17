@@ -98,6 +98,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getCardList, getCardStats, freezeCard, unfreezeCard, voidCard, CardStatusMap, CardStatusTagType, CardTypeMap, type CardListItem } from '@/api/card'
 
 const router = useRouter()
@@ -151,7 +152,9 @@ const loadData = async () => {
         voidedCards: s.voidedCards || 0
       }
     }
-  } catch { /* empty */ }
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载数据失败'))
+  }
 }
 
 onMounted(() => { loadData() })

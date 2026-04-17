@@ -37,6 +37,9 @@
 - 启动前端/后端前先清理僵尸进程：`lsof -ti:PORT | xargs kill`
 - 后端启动命令：`cd backend && air`（热加载）
 - **各环境统一用 `./start.sh` 一键启动**，脚本内自动清理残留进程、设置正确端口和 Redis DB
+- **新功能开发必须先在 design doc 中确定 service interface 签名（参数+返回值）**，确认后再实现，避免签名反复变更导致多文件同步修改
+- **service 层业务错误用 `pkg/errno` 返回**，handler 层用 `bizError()` 统一处理
+- **前端异步操作用 `extractErrorMessage(err)` 提取错误信息**，不要写空的 catch 块
 
 ### 启动方式
 

@@ -70,6 +70,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getRechargeRecordDetail } from '@/api/recharge'
 
 const router = useRouter()
@@ -100,8 +102,8 @@ const loadData = async () => {
     if (res?.data) {
       record.value = res.data
     }
-  } catch {
-    // fallback
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载充值记录详情失败'))
   }
 }
 

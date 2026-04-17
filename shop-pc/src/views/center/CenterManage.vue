@@ -157,6 +157,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getCenterList, createCenter, updateCenter, type CenterItem } from '@/api/center'
 import { getOperatorList, type OperatorItem } from '@/api/operator'
 import { regionData, getCities, getDistricts } from '@/utils/regionData'
@@ -200,8 +201,8 @@ const loadOperators = async () => {
     if (res?.data) {
       operatorList.value = res.data
     }
-  } catch {
-    // fallback to empty
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载操作员列表失败'))
   }
 }
 
@@ -250,8 +251,8 @@ const loadData = async () => {
       })
       pagination.total = tableData.value.length
     }
-  } catch (error) {
-    // fallback to empty data
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载充值中心列表失败'))
   }
 }
 
@@ -304,8 +305,8 @@ const handleSaveCenter = async () => {
     ElMessage.success(formData.id ? '编辑成功' : '创建成功')
     dialogVisible.value = false
     loadData()
-  } catch (error) {
-    // error handled by interceptor
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, formData.id ? '编辑充值中心失败' : '创建充值中心失败'))
   }
 }
 
@@ -321,7 +322,10 @@ const handleToggleFreeze = async (row: any) => {
     await updateCenter(row.id, { status: newStatus })
     loadData()
     ElMessage.success(`已${action}`)
-  } catch {}
+  } catch (err: any) {
+    if (err === 'cancel' || err?.toString?.().includes('cancel')) return
+    ElMessage.error(extractErrorMessage(err, `${action}失败`))
+  }
 }
 
 const handleDetail = (row: any) => {

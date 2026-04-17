@@ -96,11 +96,20 @@ integration-test-clean: ## Clean integration test database
 	docker exec sale-mysql-test mysql -uroot -proot123 -e "DROP DATABASE IF EXISTS test_db; CREATE DATABASE test_db;"
 
 # =============================================================================
-# Database Migration (GORM AutoMigrate)
+# Database Migration
 # =============================================================================
 
 migrate: ## Run GORM AutoMigrate (creates/updates all tables)
 	go run ./migrations/
+
+migrate-sql: ## Run incremental SQL migrations (tracks in schema_migrations table)
+	go run ./cmd/migrate/
+
+migrate-status: ## Show migration status (executed vs pending)
+	@echo "=== Migration files ==="
+	@ls -1 migrations/sql/*.sql 2>/dev/null || echo "No migration files"
+	@echo "=== Executed ==="
+	@docker exec sale-mysql mysql -u$(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) -e "SELECT * FROM schema_migrations ORDER BY version;" 2>/dev/null || echo "schema_migrations table not found, run 'make migrate-sql' first"
 
 migrate-seed: ## Run migration with seed data (same as migrate, seed is included)
 	go run ./migrations/

@@ -110,6 +110,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import StatCard from '../components/StatCard.vue'
 import QuickAction from '../components/QuickAction.vue'
 import RechargeChart from '../components/RechargeChart.vue'
@@ -247,9 +249,9 @@ const loadDashboardData = async () => {
         color: index === trendsRes.data.values.length - 1 ? '#FFD700' : '#C00000'
       }))
     }
-  } catch (error) {
+  } catch (err: any) {
     if (!isUnmounted) {
-      console.error('加载Dashboard数据失败', error)
+      ElMessage.error(extractErrorMessage(err, '加载Dashboard数据失败'))
     }
   }
 }

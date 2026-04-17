@@ -688,7 +688,7 @@ func TestRechargeHandler_VerifyCard(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
-		assertResponseCode(t, w.Body.Bytes(), 404)
+		assertResponseCode(t, w.Body.Bytes(), 500)
 		mockSvc.AssertExpectations(t)
 	})
 }

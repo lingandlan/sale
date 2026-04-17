@@ -74,6 +74,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { PieChart, BarChart } from 'echarts/charts'
@@ -159,8 +161,8 @@ onMounted(async () => {
     if (res?.data) {
       stats.value = res.data
     }
-  } catch (error) {
-    // fallback to default
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载门店卡统计失败'))
   }
 })
 </script>

@@ -129,6 +129,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getAdminUsers, createAdminUser, updateAdminUser, toggleUserStatus, resetUserPassword } from '@/api/admin'
 import { getCenterList } from '@/api/center'
 
@@ -174,8 +175,8 @@ const loadCenters = async () => {
       const items = Array.isArray(res.data) ? res.data : []
       centers.value = items.map((c: any) => ({ id: Number(c.id), name: c.name }))
     }
-  } catch {
-    // fallback to empty
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载充值中心失败'))
   }
 }
 
@@ -203,8 +204,8 @@ const loadData = async () => {
       }))
       pagination.total = res.data.total || 0
     }
-  } catch {
-    // fallback to empty
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载用户列表失败'))
   }
 }
 
@@ -260,8 +261,8 @@ const handleSaveUser = async () => {
     ElMessage.success(formData.id ? '编辑成功' : '创建成功')
     drawerVisible.value = false
     loadData()
-  } catch {
-    // error handled by interceptor
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, formData.id ? '编辑用户失败' : '创建用户失败'))
   }
 }
 
@@ -285,8 +286,8 @@ const handleConfirmAction = async () => {
       await toggleUserStatus(editingUser.value.id, confirmAction.value === 'disable' ? 0 : 1)
       loadData()
       ElMessage.success(confirmAction.value === 'disable' ? '已禁用' : '已启用')
-    } catch {
-      // error handled by interceptor
+    } catch (err: any) {
+      ElMessage.error(extractErrorMessage(err, '操作失败'))
     }
   }
   confirmVisible.value = false
@@ -296,8 +297,8 @@ const handleResetPwd = async (row: any) => {
   try {
     await resetUserPassword(row.id, '123456')
     ElMessage.success(`已重置 ${row.realName} 的密码为默认密码`)
-  } catch {
-    // error handled by interceptor
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '重置密码失败'))
   }
 }
 

@@ -10,6 +10,7 @@ import (
 
 	"marketplace/backend/internal/service"
 	"marketplace/backend/pkg/errmsg"
+	"marketplace/backend/pkg/errno"
 	"marketplace/backend/pkg/response"
 )
 
@@ -19,6 +20,16 @@ type RechargeHandler struct {
 
 func NewRechargeHandler(rechargeService service.RechargeServiceInterface) *RechargeHandler {
 	return &RechargeHandler{rechargeService: rechargeService}
+}
+
+// bizError 统一处理业务错误：业务错误返回400+具体信息，非业务错误返回500
+func bizError(c *gin.Context, err error) {
+	code, msg := errno.Resolve(err)
+	if code != "" {
+		response.Error(c, 400, msg)
+	} else {
+		response.InternalError(c, msg)
+	}
 }
 
 // ========== B端充值申请 ==========
@@ -183,7 +194,7 @@ func (h *RechargeHandler) BatchImportCards(c *gin.Context) {
 
 	count, cardNos, err := h.rechargeService.BatchImportCards(fileBytes, ext, operatorID)
 	if err != nil {
-		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -210,7 +221,7 @@ func (h *RechargeHandler) AllocateCards(c *gin.Context) {
 
 	count, err := h.rechargeService.AllocateCards(req.CenterID, req.Quantity)
 	if err != nil {
-		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -238,7 +249,7 @@ func (h *RechargeHandler) BindCardToUser(c *gin.Context) {
 	operatorID := "op123"
 
 	if err := h.rechargeService.BindCardToUser(req.CardNo, req.UserPhone, req.IssueReason, req.IssueType, req.RechargeCenterID, operatorID, req.RelatedUserPhone, req.Remark); err != nil {
-		response.InternalError(c, errmsg.Get("card.issue_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -250,7 +261,7 @@ func (h *RechargeHandler) VerifyCard(c *gin.Context) {
 
 	result, err := h.rechargeService.VerifyCard(cardNo)
 	if err != nil {
-		response.NotFound(c, errmsg.Get("card.verify_not_found")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -284,7 +295,7 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 	operatorID := "op123"
 
 	if err := h.rechargeService.ConsumeCard(cardNo, amount, operatorID, remark); err != nil {
-		response.InternalError(c, errmsg.Get("card.consume_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -298,7 +309,7 @@ func (h *RechargeHandler) FreezeCard(c *gin.Context) {
 	operatorID := "op123"
 
 	if err := h.rechargeService.FreezeCard(cardNo, operatorID); err != nil {
-		response.InternalError(c, errmsg.Get("card.status_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -312,7 +323,7 @@ func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
 	operatorID := "op123"
 
 	if err := h.rechargeService.UnfreezeCard(cardNo, operatorID); err != nil {
-		response.InternalError(c, errmsg.Get("card.status_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 
@@ -326,7 +337,7 @@ func (h *RechargeHandler) VoidCard(c *gin.Context) {
 	operatorID := "op123"
 
 	if err := h.rechargeService.VoidCard(cardNo, operatorID); err != nil {
-		response.InternalError(c, errmsg.Get("card.status_failed")+":"+err.Error())
+		bizError(c, err)
 		return
 	}
 

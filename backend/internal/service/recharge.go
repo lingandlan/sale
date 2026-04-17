@@ -10,6 +10,7 @@ import (
 
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/repository"
+	"marketplace/backend/pkg/errno"
 
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
@@ -99,10 +100,10 @@ func (s *RechargeService) GetRechargeApplicationDetail(id string) (*model.Rechar
 func (s *RechargeService) ApproveRechargeApplication(id, action, approvedBy, remark string) error {
 	app, err := s.rechargeRepo.GetRechargeApplicationByID(id)
 	if err != nil {
-		return errors.New("充值申请不存在")
+		return errno.New(errno.CodeRechargeNotFound, "充值申请不存在")
 	}
 	if app.Status != "pending" {
-		return errors.New("该申请已被处理")
+		return errno.New(errno.CodeAlreadyProcessed, "该申请已被处理")
 	}
 
 	var status string
@@ -133,10 +134,10 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 	// 获取充值中心信息及余额
 	center, err := s.rechargeRepo.GetCenterByID(centerID)
 	if err != nil {
-		return nil, errors.New("充值中心不存在")
+		return nil, errno.New(errno.CodeCenterNotFound, "充值中心不存在")
 	}
 	if center.Balance < amount {
-		return nil, errors.New("充值中心余额不足")
+		return nil, errno.New(errno.CodeCenterNoBalance, "充值中心余额不足")
 	}
 
 	// TODO: 获取会员当前余额
@@ -354,7 +355,7 @@ func (s *RechargeService) AllocateCards(centerID string, quantity int) (int, err
 	// 校验充值中心存在
 	center, err := s.rechargeRepo.GetCenterByID(centerID)
 	if err != nil || center == nil {
-		return 0, errors.New("充值中心不存在")
+		return 0, errno.New(errno.CodeCenterNotFound, "充值中心不存在")
 	}
 
 	// 校验库存充足
@@ -363,7 +364,7 @@ func (s *RechargeService) AllocateCards(centerID string, quantity int) (int, err
 		return 0, err
 	}
 	if available < int64(quantity) {
-		return 0, fmt.Errorf("库存不足，当前可划拨%d张，需要%d张", available, quantity)
+		return 0, errno.Newf(errno.CodeInsufficientStock, "库存不足，当前可划拨%d张，需要%d张", available, quantity)
 	}
 
 	count, err := s.rechargeRepo.AllocateCardsByQuantity(centerID, quantity)
@@ -381,13 +382,13 @@ func (s *RechargeService) BindCardToUser(cardNo, userPhone, issueReason string, 
 	// 查卡
 	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
 	if err != nil {
-		return errors.New("卡号不存在")
+		return errno.New(errno.CodeCardNotFound, "卡号不存在")
 	}
 	if card.Status != model.CardStatusInStock {
-		return errors.New("该卡不在库存中，无法发放")
+		return errno.New(errno.CodeCardNotInStock, "该卡不在库存中，无法发放")
 	}
 	if card.RechargeCenterID != rechargeCenterID {
-		return errors.New("该卡不在本中心库存中")
+		return errno.New(errno.CodeCardNotInCenter, "该卡不在本中心库存中")
 	}
 
 	// TODO: 调商城接口验证用户存在
@@ -437,26 +438,26 @@ func (s *RechargeService) BindCardToUser(cardNo, userPhone, issueReason string, 
 func (s *RechargeService) VerifyCard(cardNo string) (*model.StoreCard, error) {
 	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
 	if err != nil {
-		return nil, errors.New("卡号不存在")
+		return nil, errno.New(errno.CodeCardNotFound, "卡号不存在")
 	}
 	if card.Status == model.CardStatusFrozen {
-		return nil, errors.New("卡已冻结")
+		return nil, errno.New(errno.CodeCardFrozen, "卡已冻结")
 	}
 	if card.Status == model.CardStatusExpired {
-		return nil, errors.New("卡已过期")
+		return nil, errno.New(errno.CodeCardExpired, "卡已过期")
 	}
 	if card.Status == model.CardStatusVoided {
-		return nil, errors.New("卡已作废")
+		return nil, errno.New(errno.CodeCardVoided, "卡已作废")
 	}
 	if card.Status == model.CardStatusInStock {
-		return nil, errors.New("卡未发放")
+		return nil, errno.New(errno.CodeCardNotIssued, "卡未发放")
 	}
 	// 已发放(2)和已激活(3)的卡可以查询
 	// 已激活的卡检查是否过期
 	if card.Status == model.CardStatusActive && card.ExpiredAt != nil && time.Now().After(*card.ExpiredAt) {
 		// 自动标记为过期
 		s.rechargeRepo.UpdateCardByMap(cardNo, map[string]interface{}{"status": model.CardStatusExpired})
-		return nil, errors.New("卡已过期")
+		return nil, errno.New(errno.CodeCardExpired, "卡已过期")
 	}
 	return card, nil
 }
@@ -483,7 +484,7 @@ func (s *RechargeService) GetCardList(status int, cardNo, centerID string, page,
 func (s *RechargeService) GetCardDetail(cardNo string) (map[string]interface{}, error) {
 	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
 	if err != nil {
-		return nil, errors.New("卡号不存在")
+		return nil, errno.New(errno.CodeCardNotFound, "卡号不存在")
 	}
 	transactions, _, err := s.rechargeRepo.GetCardTransactions(cardNo, 1, 50)
 	if err != nil {
@@ -525,13 +526,13 @@ func (s *RechargeService) GetCardInventoryStats() (map[string]interface{}, error
 func (s *RechargeService) transitionCardStatus(cardNo string, targetStatus int, operatorID, txnType, remark string) error {
 	card, err := s.rechargeRepo.GetCardByCardNo(cardNo)
 	if err != nil {
-		return errors.New("卡号不存在")
+		return errno.New(errno.CodeCardNotFound, "卡号不存在")
 	}
 
 	// 校验状态转换合法性
 	allowed, ok := allowedTransitions[card.Status]
 	if !ok {
-		return errors.New("当前状态不允许操作")
+		return errno.New(errno.CodeInvalidAction, "当前状态不允许操作")
 	}
 	valid := false
 	for _, s := range allowed {

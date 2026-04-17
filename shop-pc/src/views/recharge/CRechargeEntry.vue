@@ -163,6 +163,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { submitCRechargeEntry, getCenterDetail, searchMember } from '@/api/recharge'
 import { getCenterList } from '@/api/center'
 import { useUserStore } from '@/stores/user'
@@ -196,7 +197,8 @@ const loadCenterOptions = async () => {
     try {
       const res = await getCenterList()
       centerOptions.value = (res.data || []).map(c => ({ id: c.id, name: c.name }))
-    } catch {
+    } catch (err: any) {
+      ElMessage.error(extractErrorMessage(err, '加载充值中心列表失败'))
       centerOptions.value = []
     }
   } else {
@@ -228,7 +230,8 @@ const loadStoreBalance = async () => {
   try {
     const res = await getCenterDetail(selectedCenterId.value)
     storeBalance.value = res.data.balance ?? 0
-  } catch {
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载中心余额失败'))
     storeBalance.value = 0
   }
 }
@@ -272,9 +275,9 @@ const handleSearch = async () => {
       }
       ElMessage.success('查询成功')
     }
-  } catch {
+  } catch (err: any) {
     memberInfo.value = null
-    ElMessage.error('未找到该会员')
+    ElMessage.error(extractErrorMessage(err, '未找到该会员'))
   }
 }
 
@@ -328,9 +331,7 @@ const handleSubmit = async () => {
   } catch (err: any) {
     // 用户取消确认框
     if (err === 'cancel' || err?.toString?.().includes('cancel')) return
-    // 展示后端返回的具体错误信息
-    const msg = err?.message || '充值失败，请稍后重试'
-    ElMessage.error(msg)
+    ElMessage.error(extractErrorMessage(err, '充值失败，请稍后重试'))
   }
 }
 

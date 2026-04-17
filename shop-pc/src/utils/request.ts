@@ -221,3 +221,8 @@ function clearAuthAndRedirect() {
 }
 
 export default service
+
+// extractErrorMessage 统一从错误对象中提取可展示的错误信息
+export function extractErrorMessage(err: any, fallback = '操作失败'): string {
+  return err?.response?.data?.message || err?.message || fallback
+}

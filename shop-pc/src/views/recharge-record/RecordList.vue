@@ -74,6 +74,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getRechargeRecordList, getCenterList } from '@/api/recharge'
 import type { CenterItem } from '@/api/recharge'
 
@@ -135,8 +137,8 @@ const loadData = async () => {
       tableData.value = res.data.list || []
       total.value = res.data.total || 0
     }
-  } catch {
-    // fallback to empty
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载充值记录失败'))
   }
 }
 
@@ -146,8 +148,8 @@ const loadCenters = async () => {
     if (res?.data) {
       centerList.value = res.data
     }
-  } catch {
-    // ignore
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载充值中心列表失败'))
   }
 }
 

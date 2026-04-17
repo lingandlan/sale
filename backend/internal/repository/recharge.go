@@ -12,6 +12,7 @@ import (
 )
 
 // RechargeRepoInterface 充值仓库接口
+//go:generate mockgen -destination=mock_recharge_repo.go -package=repository marketplace/backend/internal/repository RechargeRepoInterface
 type RechargeRepoInterface interface {
 	CreateRechargeApplication(app *model.RechargeApplication) error
 	GetRechargeApplications(status string, page, pageSize int) ([]model.RechargeApplication, int64, error)

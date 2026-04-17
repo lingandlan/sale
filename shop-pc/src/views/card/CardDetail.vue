@@ -91,6 +91,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { getCardDetail, CardStatusMap, CardStatusTagType, CardTypeMap } from '@/api/card'
 
 const router = useRouter()
@@ -114,8 +115,8 @@ const loadDetail = async () => {
     const data = res?.data || res
     card.value = data.card
     transactions.value = data.transactions || []
-  } catch {
-    ElMessage.error('加载详情失败')
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载详情失败'))
   }
 }
 

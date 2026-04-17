@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
 import { bindCard } from '@/api/card'
 import request from '@/utils/request'
 
@@ -119,8 +120,8 @@ const handleSubmit = async () => {
     await bindCard(formData.value)
     ElMessage.success('绑定成功')
     formRef.value.resetFields()
-  } catch (error: any) {
-    ElMessage.error(error?.message || '绑定失败')
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '绑定失败'))
   }
 }
 
