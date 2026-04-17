@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
 	"strconv"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"marketplace/backend/internal/model"
+	"marketplace/backend/internal/repository"
 	"marketplace/backend/internal/service"
 	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/errno"
@@ -16,10 +19,43 @@ import (
 
 type RechargeHandler struct {
 	rechargeService service.RechargeServiceInterface
+	userRepo        repository.UserRepositoryInterface
 }
 
-func NewRechargeHandler(rechargeService service.RechargeServiceInterface) *RechargeHandler {
-	return &RechargeHandler{rechargeService: rechargeService}
+func NewRechargeHandler(rechargeService service.RechargeServiceInterface, userRepo repository.UserRepositoryInterface) *RechargeHandler {
+	return &RechargeHandler{rechargeService: rechargeService, userRepo: userRepo}
+}
+
+// getOperatorCenter 从 JWT context 获取操作员信息并查 DB 获取 center_id
+// 返回: userID, role, centerID (string), error
+// 对于 super_admin/hq_admin，centerID 返回 ""（不限制中心）
+func (h *RechargeHandler) getOperatorCenter(c *gin.Context) (int64, string, string, error) {
+	userIDRaw, exists := c.Get("user_id")
+	if !exists {
+		return 0, "", "", fmt.Errorf("未获取到用户身份")
+	}
+	userID, ok := userIDRaw.(int64)
+	if !ok {
+		return 0, "", "", fmt.Errorf("用户ID类型错误")
+	}
+	roleRaw, _ := c.Get("role")
+	role, _ := roleRaw.(string)
+
+	// super_admin/hq_admin 不需要 center 限制
+	if role == model.RoleSuperAdmin || role == model.RoleHQAdmin || role == model.RoleFinance {
+		return userID, role, "", nil
+	}
+
+	// center_admin/operator 需要查 DB 获取 center_id
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
+	if err != nil || user == nil {
+		return 0, "", "", fmt.Errorf("用户信息查询失败")
+	}
+	if user.CenterID == nil {
+		return 0, "", "", fmt.Errorf("当前用户未分配充值中心")
+	}
+	centerID := strconv.FormatUint(uint64(*user.CenterID), 10)
+	return userID, role, centerID, nil
 }
 
 // bizError 统一处理业务错误：业务错误返回400+具体信息，非业务错误返回500
@@ -189,8 +225,12 @@ func (h *RechargeHandler) BatchImportCards(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从JWT获取操作员信息
-	operatorID := "op123"
+	userID, _, _, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	operatorID := fmt.Sprintf("%d", userID)
 
 	count, cardNos, err := h.rechargeService.BatchImportCards(fileBytes, ext, operatorID)
 	if err != nil {
@@ -245,8 +285,18 @@ func (h *RechargeHandler) BindCardToUser(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从JWT获取操作员信息
-	operatorID := "op123"
+	userID, _, centerID, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	operatorID := fmt.Sprintf("%d", userID)
+
+	// center permission check: center_admin/operator can only bind cards from their own center
+	if centerID != "" && req.RechargeCenterID != centerID {
+		response.Error(c, 403, "无权操作其他充值中心的卡片")
+		return
+	}
 
 	if err := h.rechargeService.BindCardToUser(req.CardNo, req.UserPhone, req.IssueReason, req.IssueType, req.RechargeCenterID, operatorID, req.RelatedUserPhone, req.Remark); err != nil {
 		bizError(c, err)
@@ -291,8 +341,12 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 		remark, _ = req["remark"].(string)
 	}
 
-	// TODO: 从JWT获取操作员ID
-	operatorID := "op123"
+	userID, _, _, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	operatorID := fmt.Sprintf("%d", userID)
 
 	if err := h.rechargeService.ConsumeCard(cardNo, amount, operatorID, remark); err != nil {
 		bizError(c, err)
@@ -305,8 +359,12 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 func (h *RechargeHandler) FreezeCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
 
-	// TODO: 从JWT获取操作员ID
-	operatorID := "op123"
+	userID, _, _, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	operatorID := fmt.Sprintf("%d", userID)
 
 	if err := h.rechargeService.FreezeCard(cardNo, operatorID); err != nil {
 		bizError(c, err)
@@ -319,8 +377,12 @@ func (h *RechargeHandler) FreezeCard(c *gin.Context) {
 func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
 
-	// TODO: 从JWT获取操作员ID
-	operatorID := "op123"
+	userID, _, _, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	operatorID := fmt.Sprintf("%d", userID)
 
 	if err := h.rechargeService.UnfreezeCard(cardNo, operatorID); err != nil {
 		bizError(c, err)
@@ -333,8 +395,12 @@ func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
 func (h *RechargeHandler) VoidCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
 
-	// TODO: 从JWT获取操作员ID
-	operatorID := "op123"
+	userID, _, _, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	operatorID := fmt.Sprintf("%d", userID)
 
 	if err := h.rechargeService.VoidCard(cardNo, operatorID); err != nil {
 		bizError(c, err)
@@ -342,6 +408,29 @@ func (h *RechargeHandler) VoidCard(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"success": true})
+}
+
+func (h *RechargeHandler) GetAvailableCards(c *gin.Context) {
+	centerID := c.Query("centerId")
+	keyword := c.Query("keyword")
+
+	_, _, opCenterID, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	// center_admin/operator: force use own center_id
+	if opCenterID != "" {
+		centerID = opCenterID
+	}
+
+	cardNos, err := h.rechargeService.GetAvailableCards(centerID, keyword)
+	if err != nil {
+		bizError(c, err)
+		return
+	}
+	response.Success(c, gin.H{"cardNos": cardNos})
 }
 
 func (h *RechargeHandler) GetCardList(c *gin.Context) {

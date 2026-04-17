@@ -82,6 +82,7 @@ func SetupRouter(
 		{
 			card.GET("/verify/:cardNo", rechargeHandler.VerifyCard)
 			card.POST("/consume", rechargeHandler.ConsumeCard)
+			card.GET("/available", rechargeHandler.GetAvailableCards)
 			card.GET("/list", rechargeHandler.GetCardList)
 			card.GET("/detail/:cardNo", rechargeHandler.GetCardDetail)
 			card.GET("/stats", rechargeHandler.GetCardStats)

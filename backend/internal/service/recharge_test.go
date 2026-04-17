@@ -106,8 +106,8 @@ func (m *MockRechargeRepo) AllocateCardsByQuantity(centerID string, quantity int
 	return args.Get(0).(int), args.Error(1)
 }
 
-func (m *MockRechargeRepo) BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error {
-	args := m.Called(cardNo, updates, record)
+func (m *MockRechargeRepo) BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord, txn *model.CardTransaction) error {
+	args := m.Called(cardNo, updates, record, txn)
 	return args.Error(0)
 }
 
@@ -134,6 +134,14 @@ func (m *MockRechargeRepo) GetCardStats() (map[string]int64, error) {
 func (m *MockRechargeRepo) GetCardInventoryStats() (map[string]int64, error) {
 	args := m.Called()
 	return args.Get(0).(map[string]int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetAvailableCardNos(centerID string, keyword string) ([]string, error) {
+	args := m.Called(centerID, keyword)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
 }
 
 // 充值中心 mock methods

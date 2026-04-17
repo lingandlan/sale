@@ -415,12 +415,8 @@ func (s *RechargeService) BindCardToUser(cardNo, userPhone, issueReason string, 
 		Remark:           remark,
 	}
 
-	if err := s.rechargeRepo.BindCardToUser(cardNo, updates, record); err != nil {
-		return err
-	}
-
-	// 创建发放交易记录
-	s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
+	// 发放交易记录（在同一事务中创建）
+	txn := &model.CardTransaction{
 		ID:            uuid.New().String(),
 		CardNo:        cardNo,
 		Type:          "issue",
@@ -429,7 +425,11 @@ func (s *RechargeService) BindCardToUser(cardNo, userPhone, issueReason string, 
 		BalanceAfter:  card.Balance,
 		Remark:        fmt.Sprintf("发放给用户 %s（%s）", userPhone, issueReason),
 		OperatorID:    operatorID,
-	})
+	}
+
+	if err := s.rechargeRepo.BindCardToUser(cardNo, updates, record, txn); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -575,6 +575,14 @@ func (s *RechargeService) UnfreezeCard(cardNo, operatorID string) error {
 // VoidCard 作废卡
 func (s *RechargeService) VoidCard(cardNo, operatorID string) error {
 	return s.transitionCardStatus(cardNo, model.CardStatusVoided, operatorID, "void", "作废卡")
+}
+
+// GetAvailableCards 获取指定充值中心的可用卡号列表
+func (s *RechargeService) GetAvailableCards(centerID string, keyword string) ([]string, error) {
+	if centerID == "" {
+		return nil, errors.New("充值中心ID不能为空")
+	}
+	return s.rechargeRepo.GetAvailableCardNos(centerID, keyword)
 }
 
 // ========== 充值中心 ==========

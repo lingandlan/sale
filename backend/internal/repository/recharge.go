@@ -30,12 +30,13 @@ type RechargeRepoInterface interface {
 	UpdateCardByMap(cardNo string, updates map[string]interface{}) error
 	GetAllocatableCardCount() (int64, error)
 	AllocateCardsByQuantity(centerID string, quantity int) (int, error)
-	BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error
+	BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord, txn *model.CardTransaction) error
 	ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error
 	CreateCardTransaction(transaction *model.CardTransaction) error
 	GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error)
 	GetCardStats() (map[string]int64, error)
 	GetCardInventoryStats() (map[string]int64, error)
+		GetAvailableCardNos(centerID string, keyword string) ([]string, error)
 	// 充值中心
 	GetCenterByID(id string) (*model.RechargeCenter, error)
 	AddCenterBalance(id string, amount float64) error
@@ -262,7 +263,7 @@ func (r *RechargeRepository) AllocateCardsByQuantity(centerID string, quantity i
 }
 
 // BindCardToUser 绑定卡号到用户，同时创建发放记录（在一个事务中）
-func (r *RechargeRepository) BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord) error {
+func (r *RechargeRepository) BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord, txn *model.CardTransaction) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 更新卡状态和绑定信息
 		if err := tx.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Updates(updates).Error; err != nil {
@@ -271,6 +272,12 @@ func (r *RechargeRepository) BindCardToUser(cardNo string, updates map[string]in
 		// 创建发放记录
 		if err := tx.Create(record).Error; err != nil {
 			return err
+		}
+		// 创建发放交易记录
+		if txn != nil {
+			if err := tx.Create(txn).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -425,6 +432,18 @@ func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
 	stats["inStockCards"] = inStock
 
 	return stats, nil
+}
+
+// GetAvailableCardNos 获取指定充值中心的可用卡号列表
+func (r *RechargeRepository) GetAvailableCardNos(centerID string, keyword string) ([]string, error) {
+	var cardNos []string
+	query := r.db.Model(&model.StoreCard{}).
+		Where("status = ? AND recharge_center_id = ?", model.CardStatusInStock, centerID)
+	if keyword != "" {
+		query = query.Where("card_no LIKE ?", keyword+"%")
+	}
+	err := query.Order("card_no ASC").Limit(50).Pluck("card_no", &cardNos).Error
+	return cardNos, err
 }
 
 // ========== 充值中心 ==========

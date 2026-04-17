@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"mime/multipart"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -222,6 +223,50 @@ func (m *MockRechargeService) DeleteOperator(id string) error {
 	return args.Error(0)
 }
 
+func (m *MockRechargeService) GetAvailableCards(centerID string, keyword string) ([]string, error) {
+	args := m.Called(centerID, keyword)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
+}
+
+
+
+// MockUserRepo implements repository.UserRepositoryInterface for testing
+type MockUserRepo struct{}
+
+func (m *MockUserRepo) GetByID(_ context.Context, _ int64) (*model.User, error) {
+	centerID := uint(1)
+	return &model.User{ID: 1, Role: "super_admin", CenterID: &centerID}, nil
+}
+func (m *MockUserRepo) GetByPhone(_ context.Context, _ string) (*model.User, error) {
+	return nil, nil
+}
+func (m *MockUserRepo) Create(_ context.Context, _ *model.User) (int64, error) {
+	return 1, nil
+}
+func (m *MockUserRepo) Update(_ context.Context, _ *model.User) error {
+	return nil
+}
+func (m *MockUserRepo) UpdatePassword(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+func (m *MockUserRepo) List(_ context.Context, _, _ int) ([]*model.User, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockUserRepo) ListWithFilters(_ context.Context, _, _ int, _, _ string, _ *int8) ([]*model.User, int64, error) {
+	return nil, 0, nil
+}
+func (m *MockUserRepo) UpdateStatus(_ context.Context, _ int64, _ int8) error {
+	return nil
+}
+func (m *MockUserRepo) UpdateLoginInfo(_ context.Context, _ int64, _ string) error {
+	return nil
+}
+func (m *MockUserRepo) Delete(_ context.Context, _ int64) error {
+	return nil
+}
 // setupRechargeRouter creates a test router matching actual router.go routes
 func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
@@ -257,11 +302,17 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 		records.GET("/:id", h.GetCRechargeDetail)
 	}
 
-	// 门店卡
+	// 门店卡（带测试认证中间件）
 	card := v1.Group("/card")
+	card.Use(func(c *gin.Context) {
+		c.Set("user_id", int64(1))
+		c.Set("role", "super_admin")
+		c.Next()
+	})
 	{
 		card.GET("/verify/:cardNo", h.VerifyCard)
 		card.POST("/consume", h.ConsumeCard)
+		card.GET("/available", h.GetAvailableCards)
 		card.GET("/list", h.GetCardList)
 		card.GET("/detail/:cardNo", h.GetCardDetail)
 		card.GET("/stats", h.GetCardStats)
@@ -309,7 +360,7 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 func TestRechargeHandler_CreateBRechargeApplication(t *testing.T) {
 	t.Run("success with all required fields", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		app := &model.RechargeApplication{ID: "app-001", Status: "pending"}
@@ -337,7 +388,7 @@ func TestRechargeHandler_CreateBRechargeApplication(t *testing.T) {
 
 	t.Run("invalid json returns params error", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("POST", "/api/v1/recharge/b-apply", bytes.NewBufferString("{invalid}"))
@@ -351,7 +402,7 @@ func TestRechargeHandler_CreateBRechargeApplication(t *testing.T) {
 
 	t.Run("response contains id and status", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		app := &model.RechargeApplication{ID: "app-002", Status: "pending"}
@@ -381,7 +432,7 @@ func TestRechargeHandler_CreateBRechargeApplication(t *testing.T) {
 func TestRechargeHandler_GetRechargeApplicationList(t *testing.T) {
 	t.Run("success with status filter", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"list": []interface{}{}, "total": 0}
@@ -398,7 +449,7 @@ func TestRechargeHandler_GetRechargeApplicationList(t *testing.T) {
 
 	t.Run("default pagination", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"list": []interface{}{}, "total": 0}
@@ -417,7 +468,7 @@ func TestRechargeHandler_GetRechargeApplicationList(t *testing.T) {
 func TestRechargeHandler_GetRechargeApplicationDetail(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		app := &model.RechargeApplication{ID: "app-001", CenterName: "北京朝阳中心", Amount: 50000}
@@ -434,7 +485,7 @@ func TestRechargeHandler_GetRechargeApplicationDetail(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("GetRechargeApplicationDetail", "not-exist").Return(nil, assert.AnError).Once()
@@ -452,7 +503,7 @@ func TestRechargeHandler_GetRechargeApplicationDetail(t *testing.T) {
 func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 	t.Run("approve success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("ApproveRechargeApplication", "app-001", "approve", "admin", "ok").Return(nil).Once()
@@ -471,7 +522,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 
 	t.Run("reject success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("ApproveRechargeApplication", "app-002", "reject", "admin", "金额不对").Return(nil).Once()
@@ -490,7 +541,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 
 	t.Run("invalid json returns params error", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("POST", "/api/v1/recharge/b-approval/action", bytes.NewBufferString("{invalid}"))
@@ -508,7 +559,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 func TestRechargeHandler_CreateCRecharge(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		recharge := &model.CRecharge{ID: "rec-001"}
@@ -532,7 +583,7 @@ func TestRechargeHandler_CreateCRecharge(t *testing.T) {
 
 	t.Run("invalid json", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("POST", "/api/v1/recharge/c-entry", bytes.NewBufferString("{bad}"))
@@ -547,7 +598,7 @@ func TestRechargeHandler_CreateCRecharge(t *testing.T) {
 func TestRechargeHandler_GetCRechargeList(t *testing.T) {
 	t.Run("success with filters", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"list": []interface{}{}, "total": 0}
@@ -566,7 +617,7 @@ func TestRechargeHandler_GetCRechargeList(t *testing.T) {
 func TestRechargeHandler_GetCRechargeDetail(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		rec := &model.CRecharge{ID: "rec-001", MemberName: "张三"}
@@ -583,7 +634,7 @@ func TestRechargeHandler_GetCRechargeDetail(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("GetCRechargeDetail", "not-exist").Return(nil, assert.AnError).Once()
@@ -602,7 +653,7 @@ func TestRechargeHandler_GetCRechargeDetail(t *testing.T) {
 func TestRechargeHandler_RecordsList(t *testing.T) {
 	t.Run("records route reuses C端 handler", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"list": []interface{}{}, "total": 0}
@@ -623,11 +674,11 @@ func TestRechargeHandler_RecordsList(t *testing.T) {
 func TestRechargeHandler_BatchImportCards(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		cardNos := []string{"TJ00000001", "TJ00000002"}
-		mockSvc.On("BatchImportCards", mock.AnythingOfType("[]uint8"), mock.AnythingOfType("string"), "op123").Return(2, cardNos, nil).Once()
+		mockSvc.On("BatchImportCards", mock.AnythingOfType("[]uint8"), mock.AnythingOfType("string"), "1").Return(2, cardNos, nil).Once()
 
 		var buf bytes.Buffer
 		writer := multipart.NewWriter(&buf)
@@ -647,7 +698,7 @@ func TestRechargeHandler_BatchImportCards(t *testing.T) {
 
 	t.Run("no file", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("POST", "/api/v1/card/batch-import", bytes.NewBufferString(""))
@@ -662,7 +713,7 @@ func TestRechargeHandler_BatchImportCards(t *testing.T) {
 func TestRechargeHandler_VerifyCard(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		card := &model.StoreCard{ID: "card-001", CardNo: "TJ2612345", Status: model.CardStatusActive, Balance: 1000}
@@ -679,7 +730,7 @@ func TestRechargeHandler_VerifyCard(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("VerifyCard", "BAD").Return(nil, assert.AnError).Once()
@@ -696,10 +747,10 @@ func TestRechargeHandler_VerifyCard(t *testing.T) {
 func TestRechargeHandler_ConsumeCard(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("ConsumeCard", "TJ2612345", 100, "op123", "消费").Return(nil).Once()
+		mockSvc.On("ConsumeCard", "TJ2612345", 100, "1", "消费").Return(nil).Once()
 
 		body := map[string]interface{}{"cardNo": "TJ2612345", "amount": 100.0, "remark": "消费"}
 		jsonBody, _ := json.Marshal(body)
@@ -715,7 +766,7 @@ func TestRechargeHandler_ConsumeCard(t *testing.T) {
 
 	t.Run("missing cardNo", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		body := map[string]interface{}{"amount": 100.0}
@@ -730,7 +781,7 @@ func TestRechargeHandler_ConsumeCard(t *testing.T) {
 
 	t.Run("missing amount", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		body := map[string]interface{}{"cardNo": "TJ2612345"}
@@ -747,10 +798,10 @@ func TestRechargeHandler_ConsumeCard(t *testing.T) {
 func TestRechargeHandler_FreezeCard(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("FreezeCard", "TJ2612345", "op123").Return(nil).Once()
+		mockSvc.On("FreezeCard", "TJ2612345", "1").Return(nil).Once()
 
 		req, _ := http.NewRequest("POST", "/api/v1/card/TJ2612345/freeze", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -766,7 +817,7 @@ func TestRechargeHandler_FreezeCard(t *testing.T) {
 func TestRechargeHandler_GetCardList(t *testing.T) {
 	t.Run("with filters", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"list": []interface{}{}, "total": 0}
@@ -785,7 +836,7 @@ func TestRechargeHandler_GetCardList(t *testing.T) {
 func TestRechargeHandler_GetCardDetail(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"card": map[string]interface{}{}, "transactions": []interface{}{}}
@@ -804,7 +855,7 @@ func TestRechargeHandler_GetCardDetail(t *testing.T) {
 func TestRechargeHandler_GetCardStats(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"totalCards": 100, "activeCards": 80}
@@ -825,7 +876,7 @@ func TestRechargeHandler_GetCardStats(t *testing.T) {
 func TestRechargeHandler_GetCenters(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		centers := []map[string]interface{}{{"id": "c1", "name": "北京"}}
@@ -844,7 +895,7 @@ func TestRechargeHandler_GetCenters(t *testing.T) {
 func TestRechargeHandler_CreateCenter(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		center := &model.RechargeCenter{ID: "c1", Name: "北京", Code: "BJ"}
@@ -864,7 +915,7 @@ func TestRechargeHandler_CreateCenter(t *testing.T) {
 
 	t.Run("invalid json", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("POST", "/api/v1/center", bytes.NewBufferString("{bad}"))
@@ -879,7 +930,7 @@ func TestRechargeHandler_CreateCenter(t *testing.T) {
 func TestRechargeHandler_UpdateCenter(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		center := &model.RechargeCenter{ID: "c1", Name: "北京(更新)"}
@@ -901,7 +952,7 @@ func TestRechargeHandler_UpdateCenter(t *testing.T) {
 func TestRechargeHandler_DeleteCenter(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("DeleteCenter", "c1").Return(nil).Once()
@@ -921,7 +972,7 @@ func TestRechargeHandler_DeleteCenter(t *testing.T) {
 func TestRechargeHandler_GetOperators(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		ops := []model.RechargeOperator{{ID: "op1", Name: "小李"}}
@@ -940,7 +991,7 @@ func TestRechargeHandler_GetOperators(t *testing.T) {
 func TestRechargeHandler_CreateOperator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		op := &model.RechargeOperator{ID: "op1", Name: "小李"}
@@ -962,7 +1013,7 @@ func TestRechargeHandler_CreateOperator(t *testing.T) {
 func TestRechargeHandler_UpdateOperator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		op := &model.RechargeOperator{ID: "op1", Name: "小李(更新)"}
@@ -984,7 +1035,7 @@ func TestRechargeHandler_UpdateOperator(t *testing.T) {
 func TestRechargeHandler_DeleteOperator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		mockSvc.On("DeleteOperator", "op1").Return(nil).Once()
@@ -1004,7 +1055,7 @@ func TestRechargeHandler_DeleteOperator(t *testing.T) {
 func TestRechargeHandler_GetDashboardStatistics(t *testing.T) {
 	t.Run("verify response structure", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("GET", "/api/v1/dashboard/statistics", nil)
@@ -1028,7 +1079,7 @@ func TestRechargeHandler_GetDashboardStatistics(t *testing.T) {
 func TestRechargeHandler_GetDashboardTodos(t *testing.T) {
 	t.Run("verify response structure", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("GET", "/api/v1/dashboard/todos", nil)
@@ -1048,7 +1099,7 @@ func TestRechargeHandler_GetDashboardTodos(t *testing.T) {
 func TestRechargeHandler_GetDashboardRechargeTrends(t *testing.T) {
 	t.Run("verify response structure", func(t *testing.T) {
 		mockSvc := new(MockRechargeService)
-		h := NewRechargeHandler(mockSvc)
+		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
 		req, _ := http.NewRequest("GET", "/api/v1/dashboard/recharge-trends?days=7", nil)

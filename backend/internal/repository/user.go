@@ -51,6 +51,9 @@ type UserRepository struct {
 
 var _ UserRepoInterface = (*UserRepository)(nil)
 
+// UserRepositoryInterface is an alias for UserRepoInterface, used by handler layer
+type UserRepositoryInterface = UserRepoInterface
+
 // NewUserRepository 创建用户 Repository
 func NewUserRepository(db *sqlx.DB) *UserRepository {
 	return &UserRepository{db: db}

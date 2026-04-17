@@ -186,6 +186,11 @@ export function getCardStats() {
   return request.get('/card/stats')
 }
 
+// 获取可发放卡号列表（已入库、未绑定的卡）
+export function getAvailableCards(centerId: string, keyword?: string) {
+  return request.get('/card/available', { params: { centerId, keyword } })
+}
+
 // 获取总卡库统计
 export function getCardInventoryStats() {
   return request.get('/card/inventory-stats')

@@ -87,7 +87,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authSvc, userSvc)
 	userHandler := handler.NewUserHandler(userSvc, memberSvc)
 	adminHandler := handler.NewAdminHandler(userSvc)
-	rechargeHandler := handler.NewRechargeHandler(rechargeSvc)
+	rechargeHandler := handler.NewRechargeHandler(rechargeSvc, userRepo)
 
 	// 10. 初始化中间件
 	authMiddleware := middleware.NewAuthMiddleware(cfg.JWT.Secret)

@@ -144,7 +144,7 @@ const confirmMessage = ref('')
 const confirmAction = ref<'disable' | 'enable'>('disable')
 const editingUser = ref<any>(null)
 
-const centers = ref<{ id: number; name: string }[]>([])
+const centers = ref<{ id: string; name: string }[]>([])
 
 const formData = reactive({
   id: null as number | null,
@@ -152,7 +152,7 @@ const formData = reactive({
   phone: '',
   realName: '',
   role: '',
-  centerId: null as number | null,
+  centerId: null as string | null,
   password: ''
 })
 
@@ -173,7 +173,7 @@ const loadCenters = async () => {
     const res = await getCenterList()
     if (res?.data) {
       const items = Array.isArray(res.data) ? res.data : []
-      centers.value = items.map((c: any) => ({ id: Number(c.id), name: c.name }))
+      centers.value = items.map((c: any) => ({ id: String(c.id), name: c.name }))
     }
   } catch (err: any) {
     ElMessage.error(extractErrorMessage(err, '加载充值中心失败'))
@@ -198,7 +198,7 @@ const loadData = async () => {
         realName: u.name,
         role: u.role,
         centerId: u.center_id,
-        center: centers.value.find(c => c.id === Number(u.center_id))?.name || '-',
+        center: centers.value.find(c => c.id === String(u.center_id))?.name || '-',
         status: u.status === 1 ? 'active' : 'disabled',
         lastLogin: u.last_login_at || '-'
       }))
@@ -246,7 +246,7 @@ const handleSaveUser = async () => {
         name: formData.realName,
         phone: formData.phone,
         role: formData.role,
-        center_id: formData.centerId ? Number(formData.centerId) : undefined
+        center_id: formData.centerId || undefined
       })
     } else {
       await createAdminUser({
@@ -254,7 +254,7 @@ const handleSaveUser = async () => {
         phone: formData.phone,
         name: formData.realName,
         role: formData.role,
-        center_id: formData.centerId ? Number(formData.centerId) : undefined,
+        center_id: formData.centerId || undefined,
         password: formData.password || '123456'
       })
     }
