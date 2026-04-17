@@ -80,8 +80,8 @@ func main() {
 	// 8. 初始化 Service
 	authSvc := service.NewAuthService(&cfg.JWT, redisClient, userRepo)
 	userSvc := service.NewUserService(userRepo)
-	rechargeSvc := service.NewRechargeService(rechargeRepo)
 	memberSvc := service.NewMemberService(wsyClient)
+	rechargeSvc := service.NewRechargeService(rechargeRepo, memberSvc)
 
 	// 9. 初始化 Handler
 	authHandler := handler.NewAuthHandler(authSvc, userSvc)

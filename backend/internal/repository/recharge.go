@@ -21,6 +21,7 @@ type RechargeRepoInterface interface {
 	CreateCRecharge(recharge *model.CRecharge) error
 	GetCRechargeList(memberPhone, centerID, startDate, endDate string, page, pageSize int) ([]model.CRecharge, int64, error)
 	GetCRechargeByID(id string) (*model.CRecharge, error)
+	UpdateCRecharge(id string, updates map[string]interface{}) error
 	// 门店卡
 	CreateCard(card *model.StoreCard) error
 	BatchCreateCards(cards []*model.StoreCard) error
@@ -154,6 +155,11 @@ func (r *RechargeRepository) GetCRechargeByID(id string) (*model.CRecharge, erro
 	var recharge model.CRecharge
 	err := r.db.Where("id = ?", id).First(&recharge).Error
 	return &recharge, err
+}
+
+// UpdateCRecharge 更新C端充值记录
+func (r *RechargeRepository) UpdateCRecharge(id string, updates map[string]interface{}) error {
+	return r.db.Model(&model.CRecharge{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // ========== 门店卡 ==========

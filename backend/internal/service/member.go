@@ -19,6 +19,7 @@ type MemberInfo struct {
 // MemberServiceInterface 会员服务接口
 type MemberServiceInterface interface {
 	SearchByPhone(phone string) (*MemberInfo, error)
+	AddIntegral(phone string, integral float64, batchcode, remark string) (float64, error)
 }
 
 var _ MemberServiceInterface = (*MemberService)(nil)
@@ -60,4 +61,24 @@ func (s *MemberService) SearchByPhone(phone string) (*MemberInfo, error) {
 		Level:    "普通会员",
 		NickName: "",
 	}, nil
+}
+
+// AddIntegral 通过手机号为会员添加积分
+// 内部流程：PhoneToUserID → AddUserIntegral
+func (s *MemberService) AddIntegral(phone string, integral float64, batchcode, remark string) (float64, error) {
+	if phone == "" {
+		return 0, fmt.Errorf("手机号不能为空")
+	}
+
+	userID, err := s.wsyClient.PhoneToUserID(phone)
+	if err != nil {
+		return 0, fmt.Errorf("查询会员失败: %w", err)
+	}
+
+	afterIntegral, err := s.wsyClient.AddUserIntegral(userID, integral, "recharge", batchcode, remark, "")
+	if err != nil {
+		return 0, fmt.Errorf("添加积分失败: %w", err)
+	}
+
+	return afterIntegral, nil
 }
