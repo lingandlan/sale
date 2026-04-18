@@ -42,10 +42,6 @@
             <span class="info-value text-green">{{ record.balanceAfter != null ? `${Number(record.balanceAfter).toLocaleString()} 积分` : '-' }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">支付方式</span>
-            <span class="info-value">{{ paymentMethodMap[record.paymentMethod] || record.paymentMethod || '-' }}</span>
-          </div>
-          <div class="info-row">
             <span class="info-label">充值中心</span>
             <span class="info-value">{{ record.centerName || '-' }}</span>
           </div>
@@ -76,13 +72,6 @@ import { getRechargeRecordDetail } from '@/api/recharge'
 
 const router = useRouter()
 const route = useRoute()
-
-const paymentMethodMap: Record<string, string> = {
-  cash: '现金',
-  wechat: '微信',
-  alipay: '支付宝',
-  card: '门店卡',
-}
 
 const formatTime = (t: string) => {
   if (!t) return '-'
