@@ -156,7 +156,15 @@
       "Bash(kill 28873)",
       "Bash(git status:*)",
       "Bash(lsof -i:5175 -sTCP:LISTEN)",
-      "Bash(go install:*)"
+      "Bash(go install:*)",
+      "Bash(./start.sh)",
+      "Bash(lsof -ti:8082)",
+      "Bash(lsof -ti:5179)",
+      "Bash(VITE_PORT=5179 VITE_API_PORT=8082 npx vite)",
+      "Bash(./start-beta.sh:*)",
+      "Bash(openspec list:*)",
+      "Bash(npx openspec:*)",
+      "Bash(openspec init:*)"
     ],
     "disableAutoMode": "disable"
   }
