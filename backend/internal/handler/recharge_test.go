@@ -302,8 +302,13 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 		bApproval.POST("/action", h.ApprovalRechargeApplication)
 	}
 
-	// C端充值
+	// C端充值（带测试认证中间件）
 	cEntry := v1.Group("/recharge/c-entry")
+	cEntry.Use(func(c *gin.Context) {
+		c.Set("user_id", int64(1))
+		c.Set("role", "super_admin")
+		c.Next()
+	})
 	{
 		cEntry.POST("", h.CreateCRecharge)
 		cEntry.GET("", h.GetCRechargeList)
