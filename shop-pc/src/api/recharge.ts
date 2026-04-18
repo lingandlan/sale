@@ -103,7 +103,8 @@ export interface RechargeRecordItem {
   memberPhone: string
   centerName: string
   amount: number
-  paymentMethod: string
+  operatorId: string
+  operatorName: string
   createdAt: string
 }
 
@@ -125,19 +126,15 @@ export interface RechargeRecordListResponse {
 export interface RechargeRecordDetail {
   id: string
   transactionNo: string
-  member: {
-    id: string
-    name: string
-    phone: string
-  }
-  center: {
-    id: string
-    name: string
-  }
+  memberId: string
+  memberName: string
+  memberPhone: string
+  centerId: string
+  centerName: string
   amount: number
   points: number
-  paymentMethod: string
-  operator: string
+  operatorId: string
+  operatorName: string
   remark?: string
   balanceBefore: number
   balanceAfter: number

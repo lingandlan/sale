@@ -42,9 +42,7 @@
               <span class="amount-value">{{ row.amount != null ? `¥${Number(row.amount).toLocaleString()}` : '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="支付方式" width="100">
-            <template #default="{ row }">{{ paymentMethodMap[row.paymentMethod] || row.paymentMethod || '-' }}</template>
-          </el-table-column>
+          <el-table-column prop="operatorName" label="操作员" width="120" />
           <el-table-column label="充值时间" width="180">
             <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
           </el-table-column>
@@ -89,13 +87,6 @@ const centerList = ref<CenterItem[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-
-const paymentMethodMap: Record<string, string> = {
-  cash: '现金',
-  wechat: '微信',
-  alipay: '支付宝',
-  card: '门店卡',
-}
 
 const formatTime = (t: string) => {
   if (!t) return '-'

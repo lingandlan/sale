@@ -26,36 +26,48 @@ func NewRechargeHandler(rechargeService service.RechargeServiceInterface, userRe
 	return &RechargeHandler{rechargeService: rechargeService, userRepo: userRepo}
 }
 
-// getOperatorCenter 从 JWT context 获取操作员信息并查 DB 获取 center_id
-// 返回: userID, role, centerID (string), error
-// 对于 super_admin/hq_admin，centerID 返回 ""（不限制中心）
-func (h *RechargeHandler) getOperatorCenter(c *gin.Context) (int64, string, string, error) {
+// getOperatorInfo 从 JWT context 获取操作员信息（userID, role, centerID, name）
+// 对于 super_admin/hq_admin/finance，centerID 返回 ""
+func (h *RechargeHandler) getOperatorInfo(c *gin.Context) (int64, string, string, string, error) {
 	userIDRaw, exists := c.Get("user_id")
 	if !exists {
-		return 0, "", "", fmt.Errorf("未获取到用户身份")
+		return 0, "", "", "", fmt.Errorf("未获取到用户身份")
 	}
 	userID, ok := userIDRaw.(int64)
 	if !ok {
-		return 0, "", "", fmt.Errorf("用户ID类型错误")
+		return 0, "", "", "", fmt.Errorf("用户ID类型错误")
 	}
 	roleRaw, _ := c.Get("role")
 	role, _ := roleRaw.(string)
 
-	// super_admin/hq_admin 不需要 center 限制
-	if role == model.RoleSuperAdmin || role == model.RoleHQAdmin || role == model.RoleFinance {
-		return userID, role, "", nil
-	}
-
-	// center_admin/operator 需要查 DB 获取 center_id
+	// 先尝试查 DB 获取用户名（所有角色都需要）
 	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
 	if err != nil || user == nil {
-		return 0, "", "", fmt.Errorf("用户信息查询失败")
+		// 查不到时降级为用户名未知
+		userName := "未知用户"
+		// super_admin/hq_admin/finance 不需要 center 限制
+		if role == model.RoleSuperAdmin || role == model.RoleHQAdmin || role == model.RoleFinance {
+			return userID, role, "", userName, nil
+		}
+		return userID, role, "", userName, nil
 	}
+
+	userName := user.Name
+	if userName == "" {
+		userName = user.Username
+	}
+
+	// super_admin/hq_admin/finance 不需要 center 限制
+	if role == model.RoleSuperAdmin || role == model.RoleHQAdmin || role == model.RoleFinance {
+		return userID, role, "", userName, nil
+	}
+
+	// center_admin/operator 需要 center_id
 	if user.CenterID == nil {
-		return 0, "", "", fmt.Errorf("当前用户未分配充值中心")
+		return userID, role, "", userName, fmt.Errorf("当前用户未分配充值中心")
 	}
 	centerID := strconv.FormatUint(uint64(*user.CenterID), 10)
-	return userID, role, centerID, nil
+	return userID, role, centerID, userName, nil
 }
 
 // bizError 统一处理业务错误：业务错误返回400+具体信息，非业务错误返回500
@@ -150,9 +162,13 @@ func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从JWT获取操作员信息
-	req["operatorId"] = "op123"
-	req["operatorName"] = "张出纳"
+	operatorID, _, _, operatorName, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	req["operatorId"] = fmt.Sprintf("%d", operatorID)
+	req["operatorName"] = operatorName
 
 	recharge, err := h.rechargeService.CreateCRecharge(req)
 	if err != nil {
@@ -225,7 +241,7 @@ func (h *RechargeHandler) BatchImportCards(c *gin.Context) {
 		return
 	}
 
-	userID, _, _, err := h.getOperatorCenter(c)
+	userID, _, _, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -285,7 +301,7 @@ func (h *RechargeHandler) BindCardToUser(c *gin.Context) {
 		return
 	}
 
-	userID, _, centerID, err := h.getOperatorCenter(c)
+	userID, _, centerID, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -341,7 +357,7 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 		remark, _ = req["remark"].(string)
 	}
 
-	userID, _, _, err := h.getOperatorCenter(c)
+	userID, _, _, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -359,7 +375,7 @@ func (h *RechargeHandler) ConsumeCard(c *gin.Context) {
 func (h *RechargeHandler) FreezeCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
 
-	userID, _, _, err := h.getOperatorCenter(c)
+	userID, _, _, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -377,7 +393,7 @@ func (h *RechargeHandler) FreezeCard(c *gin.Context) {
 func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
 
-	userID, _, _, err := h.getOperatorCenter(c)
+	userID, _, _, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -395,7 +411,7 @@ func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
 func (h *RechargeHandler) VoidCard(c *gin.Context) {
 	cardNo := c.Param("cardNo")
 
-	userID, _, _, err := h.getOperatorCenter(c)
+	userID, _, _, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -414,7 +430,7 @@ func (h *RechargeHandler) GetAvailableCards(c *gin.Context) {
 	centerID := c.Query("centerId")
 	keyword := c.Query("keyword")
 
-	_, _, opCenterID, err := h.getOperatorCenter(c)
+	_, _, opCenterID, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
