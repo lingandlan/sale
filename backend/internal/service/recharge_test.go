@@ -126,8 +126,8 @@ func (m *MockRechargeRepo) GetCardTransactions(cardNo string, page, pageSize int
 	return args.Get(0).([]model.CardTransaction), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *MockRechargeRepo) GetCardStats() (map[string]int64, error) {
-	args := m.Called()
+func (m *MockRechargeRepo) GetCardStats(centerID string) (map[string]int64, error) {
+	args := m.Called(centerID)
 	return args.Get(0).(map[string]int64), args.Error(1)
 }
 
@@ -136,12 +136,38 @@ func (m *MockRechargeRepo) GetCardInventoryStats() (map[string]int64, error) {
 	return args.Get(0).(map[string]int64), args.Error(1)
 }
 
+func (m *MockRechargeRepo) GetMonthlyTrend(centerID string) ([]repository.MonthlyTrendItem, error) {
+	args := m.Called(centerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.MonthlyTrendItem), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetCenterCardStats(centerID string) ([]repository.CenterCardStatsItem, error) {
+	args := m.Called(centerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.CenterCardStatsItem), args.Error(1)
+}
+
 func (m *MockRechargeRepo) GetAvailableCardNos(centerID string, keyword string) ([]string, error) {
 	args := m.Called(centerID, keyword)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetAvailableCardCount(centerID string) (int64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) UpdateCRecharge(id string, updates map[string]interface{}) error {
+	args := m.Called(id, updates)
+	return args.Error(0)
 }
 
 // 充值中心 mock methods
@@ -228,8 +254,25 @@ func (m *MockRechargeRepo) GetOperatorByUsername(username string) (*model.Rechar
 // Verify interface compliance
 var _ repository.RechargeRepoInterface = (*MockRechargeRepo)(nil)
 
+type MockMemberService struct {
+	mock.Mock
+}
+
+func (m *MockMemberService) SearchByPhone(phone string) (*MemberInfo, error) {
+	args := m.Called(phone)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*MemberInfo), args.Error(1)
+}
+
+func (m *MockMemberService) AddIntegral(phone string, integral float64, batchCode, remark string) (float64, error) {
+	args := m.Called(phone, integral, batchCode, remark)
+	return args.Get(0).(float64), args.Error(1)
+}
+
 func newTestRechargeService(repo *MockRechargeRepo) *RechargeService {
-	return NewRechargeService(repo)
+	return NewRechargeService(repo, new(MockMemberService))
 }
 
 // ========== Tests ==========
@@ -704,9 +747,9 @@ func TestRechargeService_GetCardStats(t *testing.T) {
 			"totalCards":  10,
 			"activeCards": 5,
 		}
-		repo.On("GetCardStats").Return(stats, nil)
+		repo.On("GetCardStats", "").Return(stats, nil)
 
-		result, err := svc.GetCardStats()
+		result, err := svc.GetCardStats("")
 		require.NoError(t, err)
 		assert.Equal(t, int64(10), result["totalCards"])
 		assert.Equal(t, int64(5), result["activeCards"])
