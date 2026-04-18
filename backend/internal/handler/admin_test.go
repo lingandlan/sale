@@ -41,7 +41,7 @@ func assertResponseCode(t *testing.T, body []byte, expectedCode float64) {
 func TestAdminHandler_ListUsers(t *testing.T) {
 	t.Run("success with filters", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -64,7 +64,7 @@ func TestAdminHandler_ListUsers(t *testing.T) {
 
 	t.Run("default pagination", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -83,7 +83,7 @@ func TestAdminHandler_ListUsers(t *testing.T) {
 func TestAdminHandler_CreateUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -110,7 +110,7 @@ func TestAdminHandler_CreateUser(t *testing.T) {
 
 	t.Run("invalid json returns error code", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 
 		req, _ := http.NewRequest("POST", "/admin/users", bytes.NewBufferString("{invalid}"))
@@ -126,7 +126,7 @@ func TestAdminHandler_CreateUser(t *testing.T) {
 func TestAdminHandler_UpdateUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -148,7 +148,7 @@ func TestAdminHandler_UpdateUser(t *testing.T) {
 
 	t.Run("invalid user id returns error code", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 
 		req, _ := http.NewRequest("PUT", "/admin/users/abc", bytes.NewBufferString(`{"name":"test"}`))
@@ -162,7 +162,7 @@ func TestAdminHandler_UpdateUser(t *testing.T) {
 
 	t.Run("user not found", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -182,7 +182,7 @@ func TestAdminHandler_UpdateUser(t *testing.T) {
 func TestAdminHandler_ResetPassword(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -202,7 +202,7 @@ func TestAdminHandler_ResetPassword(t *testing.T) {
 
 	t.Run("user not found", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -222,7 +222,7 @@ func TestAdminHandler_ResetPassword(t *testing.T) {
 func TestAdminHandler_UpdateUserStatus(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -244,7 +244,7 @@ func TestAdminHandler_UpdateUserStatus(t *testing.T) {
 
 	t.Run("user not found", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -264,7 +264,7 @@ func TestAdminHandler_UpdateUserStatus(t *testing.T) {
 func TestAdminHandler_DeleteUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
@@ -281,7 +281,7 @@ func TestAdminHandler_DeleteUser(t *testing.T) {
 
 	t.Run("invalid id returns error code", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 
 		req, _ := http.NewRequest("DELETE", "/admin/users/abc", nil)
@@ -294,7 +294,7 @@ func TestAdminHandler_DeleteUser(t *testing.T) {
 
 	t.Run("user not found", func(t *testing.T) {
 		mockSvc := new(MockUserService)
-		h := NewAdminHandler(mockSvc)
+		h := NewAdminHandler(mockSvc, nil)
 		router := setupAdminRouter(h)
 		ctx := context.Background()
 
