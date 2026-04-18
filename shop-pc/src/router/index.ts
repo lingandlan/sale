@@ -19,154 +19,103 @@ const routes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),
-        meta: {
-          title: '首页仪表盘',
-          icon: '📊'
-        }
+        meta: { title: '首页仪表盘', icon: '📊', permission: 'dashboard' }
       },
       {
         path: 'recharge/b-apply',
         name: 'BRechargeApply',
         component: () => import('../views/recharge/BRechargeApply.vue'),
-        meta: {
-          title: 'B端充值申请',
-          icon: '💰'
-        }
+        meta: { title: 'B端充值申请', icon: '💰', permission: 'recharge:b' }
       },
       {
         path: 'recharge/b-approval',
         name: 'BRechargeList',
         component: () => import('../views/recharge/BRechargeList.vue'),
-        meta: {
-          title: 'B端充值审批',
-          icon: '💰'
-        }
+        meta: { title: 'B端充值审批', icon: '💰', permission: 'recharge:b' }
       },
       {
         path: 'recharge/b-approval/:id',
         name: 'BRechargeDetail',
         component: () => import('../views/recharge/BRechargeDetail.vue'),
-        meta: {
-          title: 'B端充值审批详情',
-          icon: '💰'
-        }
+        meta: { title: 'B端充值审批详情', icon: '💰', permission: 'recharge:b' }
       },
       {
         path: 'recharge/c-entry',
         name: 'CRechargeEntry',
         component: () => import('../views/recharge/CRechargeEntry.vue'),
-        meta: {
-          title: 'C端充值录入',
-          icon: '💰'
-        }
+        meta: { title: 'C端充值录入', icon: '💰', permission: 'recharge:c' }
       },
       {
         path: 'card/inventory',
         name: 'CardInventory',
         component: () => import('../views/card/CardInventory.vue'),
-        meta: {
-          title: '总卡库管理',
-          icon: '🎫'
-        }
+        meta: { title: '总卡库管理', icon: '🎫', permission: 'card:inventory' }
       },
       {
         path: 'card/issue',
         name: 'CardIssue',
         component: () => import('../views/card/CardIssue.vue'),
-        meta: {
-          title: '绑定卡号',
-          icon: '🎫'
-        }
+        meta: { title: '绑定卡号', icon: '🎫', permission: 'card:issue' }
       },
       {
         path: 'card/verify',
         name: 'CardVerify',
         component: () => import('../views/card/CardVerify.vue'),
-        meta: {
-          title: '门店卡核销',
-          icon: '🎫'
-        }
+        meta: { title: '门店卡核销', icon: '🎫', permission: 'card:verify' }
       },
       {
         path: 'card/manage',
         name: 'CardManage',
         component: () => import('../views/card/CardManage.vue'),
-        meta: {
-          title: '门店卡管理',
-          icon: '🎫'
-        }
+        meta: { title: '门店卡管理', icon: '🎫', permission: 'card:manage' }
       },
       {
         path: 'card/detail/:cardNo',
         name: 'CardDetail',
         component: () => import('../views/card/CardDetail.vue'),
-        meta: {
-          title: '门店卡详情',
-          icon: '🎫'
-        }
+        meta: { title: '门店卡详情', icon: '🎫', permission: 'card:manage' }
       },
       {
         path: 'card/stats',
         name: 'CardStats',
         component: () => import('../views/card/CardStats.vue'),
-        meta: {
-          title: '门店卡统计',
-          icon: '🎫'
-        }
+        meta: { title: '门店卡统计', icon: '🎫', permission: 'card:stats' }
       },
       {
         path: 'recharge/records',
         name: 'RechargeRecordList',
         component: () => import('../views/recharge-record/RecordList.vue'),
-        meta: {
-          title: '充值记录',
-          icon: '💰'
-        }
+        meta: { title: '充值记录', icon: '💰', permission: 'recharge:records' }
       },
       {
         path: 'recharge/records/:id',
         name: 'RechargeRecordDetail',
         component: () => import('../views/recharge-record/RecordDetail.vue'),
-        meta: {
-          title: '充值记录详情',
-          icon: '💰'
-        }
+        meta: { title: '充值记录详情', icon: '💰', permission: 'recharge:records' }
       },
       {
         path: 'user/manage',
         name: 'UserManage',
         component: () => import('../views/user/UserManage.vue'),
-        meta: {
-          title: '用户管理',
-          icon: '👥'
-        }
+        meta: { title: '用户管理', icon: '👥', permission: 'user:manage' }
       },
       {
         path: 'center/manage',
         name: 'CenterManage',
         component: () => import('../views/center/CenterManage.vue'),
-        meta: {
-          title: '充值中心管理',
-          icon: '🏢'
-        }
+        meta: { title: '充值中心管理', icon: '🏢', permission: 'center:manage' }
       },
       {
         path: 'operator/manage',
         name: 'OperatorManage',
         component: () => import('../views/operator/OperatorManage.vue'),
-        meta: {
-          title: '充值操作员管理',
-          icon: '👔'
-        }
+        meta: { title: '充值操作员管理', icon: '👔', permission: 'operator:manage' }
       },
       {
         path: 'system/config',
         name: 'SystemConfig',
         component: () => import('../views/system/SystemConfig.vue'),
-        meta: {
-          title: '系统设置',
-          icon: '⚙️'
-        }
+        meta: { title: '系统设置', icon: '⚙️', permission: 'system:config' }
       }
     ]
   }
@@ -198,6 +147,12 @@ router.beforeEach(async (to, from, next) => {
           next('/login')
           return
         }
+      }
+      // 权限检查：路由 meta.permission 不在当前角色权限中则跳转 dashboard
+      const requiredPermission = to.meta?.permission as string | undefined
+      if (requiredPermission && !userStore.hasPermission(requiredPermission)) {
+        next('/dashboard')
+        return
       }
     }
     next()

@@ -137,52 +137,27 @@ let isUnmounted = false
 
 // 统计数据
 const statistics = ref<StatisticsType>({
-  memberCount: 1234,
-  memberTrend: '+12%',
-  todayRecharge: 56780,
-  rechargeTrend: '+8%',
-  todayConsumption: 23450,
-  consumptionTrend: '+15%',
-  activeCenters: 5,
-  centerTrend: '+3%'
+  memberCount: 0,
+  memberTrend: '—',
+  todayRecharge: 0,
+  rechargeTrend: '—',
+  todayConsumption: 0,
+  consumptionTrend: '—',
+  activeCenters: 0,
+  centerTrend: '—'
 })
 
 // 待办事项
-const todos = ref([
-  {
-    id: '1',
-    title: '待审批充值申请',
-    description: '3笔申请等待审批',
-    type: 'warning',
-    icon: '⏰',
-    count: 3
-  },
-  {
-    id: '2',
-    title: '即将过期的门店卡',
-    description: '12张门店卡7天内过期',
-    type: 'error',
-    icon: '⚠️',
-    count: 12
-  }
-])
+const todos = ref([] as { id: string; title: string; description: string; type: string; icon: string; count: number }[])
 
 // 充值趋势数据
-const chartData = ref([
-  { label: '4/3', value: 12000, color: '#C00000' },
-  { label: '4/4', value: 9000, color: '#C00000' },
-  { label: '4/5', value: 15000, color: '#C00000' },
-  { label: '4/6', value: 18000, color: '#C00000' },
-  { label: '4/7', value: 14000, color: '#C00000' },
-  { label: '4/8', value: 16000, color: '#C00000' },
-  { label: '4/9', value: 20000, color: '#FFD700' }
-])
+const chartData = ref([] as { label: string; value: number; color: string }[])
 
 // 快捷操作
 const quickActions = ref([
   {
     icon: '💵',
-    text: 'C端充值',
+    text: 'C端充值录入',
     route: '/recharge/c-entry',
     background: '#FFF7E6',
     border: '#FFD700'
@@ -196,14 +171,14 @@ const quickActions = ref([
   },
   {
     icon: '🎁',
-    text: '门店卡发放',
+    text: '绑定卡号',
     route: '/card/issue',
     background: '#F6FFED',
     border: '#52C41A'
   },
   {
     icon: '📝',
-    text: '充值申请',
+    text: 'B端充值申请',
     route: '/recharge/b-apply',
     background: '#FFF1F0',
     border: '#FF4D4F'
