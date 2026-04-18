@@ -73,7 +73,6 @@
         <div class="section-card todo-card">
           <div class="section-header">
             <h3 class="section-title">📋 待办事项</h3>
-            <span class="more-link">查看更多 &gt;</span>
           </div>
           <el-divider />
           <div class="todo-list">
@@ -81,11 +80,12 @@
               v-for="todo in todos"
               :key="todo.id"
               class="todo-item"
-              :class="todo.type"
+              :class="[todo.type, { clickable: todo.route }]"
+              @click="todo.route && $router.push(todo.route)"
             >
               <span class="todo-icon">{{ todo.icon }}</span>
               <div class="todo-content">
-                <p class="todo-title">{{ todo.title }}</p>
+                <p class="todo-title">{{ todo.title }}<span v-if="todo.route" class="todo-link">去处理 &gt;</span></p>
                 <p class="todo-desc">{{ todo.count }}{{ todo.description }}</p>
               </div>
             </div>
@@ -148,7 +148,7 @@ const statistics = ref<StatisticsType>({
 })
 
 // 待办事项
-const todos = ref([] as { id: string; title: string; description: string; type: string; icon: string; count: number }[])
+const todos = ref([] as { id: string; title: string; description: string; type: string; icon: string; count: number; route?: string }[])
 
 // 充值趋势数据
 const chartData = ref([] as { label: string; value: number; color: string }[])
@@ -203,7 +203,8 @@ const loadDashboardData = async () => {
           description: d.pendingApprovals?.description || '',
           type: 'warning',
           icon: '⏰',
-          count: d.pendingApprovals?.count || 0
+          count: d.pendingApprovals?.count || 0,
+          route: '/recharge/b-approval'
         },
         {
           id: '2',
@@ -387,6 +388,14 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.todo-item.clickable {
+  cursor: pointer;
+}
+
+.todo-item.clickable:hover {
+  opacity: 0.8;
+}
+
 .todo-item.warning {
   background-color: #FFF7E6;
 }
@@ -411,6 +420,12 @@ onUnmounted(() => {
   font-weight: 500;
   color: #262626;
   margin: 0;
+}
+
+.todo-link {
+  font-size: 12px;
+  color: #1677FF;
+  margin-left: 8px;
 }
 
 .todo-desc {
