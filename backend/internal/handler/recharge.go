@@ -465,6 +465,15 @@ func (h *RechargeHandler) GetCardList(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
+	_, _, opCenterID, err := h.getOperatorCenter(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	if opCenterID != "" {
+		centerID = opCenterID
+	}
+
 	result, err := h.rechargeService.GetCardList(status, cardNo, centerID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.list_failed"))

@@ -49,6 +49,7 @@ export interface CardListItem {
   balance: number
   status: number
   rechargeCenterId: string
+  rechargeCenterName: string
   userId: string
   batchNo: string
   issueReason: string

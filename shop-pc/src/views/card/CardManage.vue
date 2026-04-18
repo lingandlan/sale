@@ -46,6 +46,12 @@
             </el-select>
           </div>
           <div class="filter-item">
+            <span class="filter-label">充值中心：</span>
+            <el-select v-model="filterCenterId" placeholder="全部" clearable style="width: 180px" :disabled="!userStore.canSelectAllCenters">
+              <el-option v-for="c in centerOptions" :key="c.id" :label="c.name" :value="c.id" />
+            </el-select>
+          </div>
+          <div class="filter-item">
             <span class="filter-label">卡号：</span>
             <el-input v-model="filterCardNo" placeholder="输入卡号" style="width: 200px" />
           </div>
@@ -57,6 +63,7 @@
       <div class="list-card">
         <el-table :data="tableData" style="width: 100%">
           <el-table-column prop="cardNo" label="卡号" width="160" />
+          <el-table-column prop="rechargeCenterName" label="充值中心" min-width="140" />
           <el-table-column prop="cardType" label="类型" width="80">
             <template #default="{ row }">{{ CardTypeMap[row.cardType] || '-' }}</template>
           </el-table-column>
@@ -100,7 +107,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import { getCardList, getCardStats, freezeCard, unfreezeCard, voidCard, CardStatusMap, CardStatusTagType, CardTypeMap, type CardListItem } from '@/api/card'
+import { getCenterList } from '@/api/center'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const router = useRouter()
 
 const stats = ref({
@@ -109,7 +119,9 @@ const stats = ref({
 })
 
 const filterStatus = ref<number | undefined>(undefined)
+const filterCenterId = ref('')
 const filterCardNo = ref('')
+const centerOptions = ref<{ id: string; name: string }[]>([])
 const tableData = ref<CardListItem[]>([])
 
 const handleRefresh = () => { loadData(); ElMessage.success('已刷新') }
@@ -138,7 +150,7 @@ const handleVoid = async (row: CardListItem) => {
 const loadData = async () => {
   try {
     const [listRes, statsRes] = await Promise.all([
-      getCardList({ status: filterStatus.value, cardNo: filterCardNo.value || undefined, page: 1, pageSize: 50 }),
+      getCardList({ status: filterStatus.value, cardNo: filterCardNo.value || undefined, centerId: filterCenterId.value || undefined, page: 1, pageSize: 50 }),
       getCardStats()
     ])
     const listData = listRes?.data || listRes
@@ -157,7 +169,32 @@ const loadData = async () => {
   }
 }
 
-onMounted(() => { loadData() })
+const loadCenterOptions = async () => {
+  if (userStore.canSelectAllCenters) {
+    try {
+      const res = await getCenterList()
+      centerOptions.value = (res.data || []).map((c: any) => ({ id: c.id, name: c.name }))
+    } catch {
+      centerOptions.value = []
+    }
+  } else {
+    const cid = userStore.userCenterId
+    const cname = userStore.userCenterName
+    if (cid) {
+      centerOptions.value = [{ id: String(cid), name: cname || '' }]
+      filterCenterId.value = String(cid)
+    }
+  }
+}
+
+onMounted(() => {
+  if (!userStore.userInfo) {
+    userStore.fetchUserInfo().then(() => loadCenterOptions())
+  } else {
+    loadCenterOptions()
+  }
+  loadData()
+})
 </script>
 
 <style scoped>

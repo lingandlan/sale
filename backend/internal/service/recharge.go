@@ -490,8 +490,30 @@ func (s *RechargeService) GetCardList(status int, cardNo, centerID string, page,
 		return nil, err
 	}
 
+	// 附加充值中心名称
+	type CardWithCenter struct {
+		model.StoreCard
+		RechargeCenterName string `json:"rechargeCenterName"`
+	}
+	centerCache := make(map[string]string)
+	resultList := make([]CardWithCenter, 0, len(list))
+	for _, card := range list {
+		name := ""
+		if card.RechargeCenterID != "" {
+			if n, ok := centerCache[card.RechargeCenterID]; ok {
+				name = n
+			} else {
+				if c, err := s.rechargeRepo.GetCenterByID(card.RechargeCenterID); err == nil && c != nil {
+					name = c.Name
+					centerCache[card.RechargeCenterID] = name
+				}
+			}
+		}
+		resultList = append(resultList, CardWithCenter{StoreCard: card, RechargeCenterName: name})
+	}
+
 	return map[string]interface{}{
-		"list":  list,
+		"list":  resultList,
 		"total": total,
 	}, nil
 }
