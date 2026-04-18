@@ -251,6 +251,46 @@ func (m *MockRechargeRepo) GetOperatorByUsername(username string) (*model.Rechar
 	return args.Get(0).(*model.RechargeOperator), args.Error(1)
 }
 
+func (m *MockRechargeRepo) CountExpiringCards(centerID string) (int64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) CountPendingApprovals(centerID string) (int64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetActiveCenterCount(centerID string) (int64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetTodayRechargeTotal(centerID string) (float64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetTodayConsumptionTotal(centerID string) (float64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetYesterdayRechargeTotal(centerID string) (float64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetYesterdayConsumptionTotal(centerID string) (float64, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockRechargeRepo) GetRechargeTrends(days int, centerID string) ([]string, []float64, error) {
+	args := m.Called(days, centerID)
+	return args.Get(0).([]string), args.Get(1).([]float64), args.Error(2)
+}
+
 // Verify interface compliance
 var _ repository.RechargeRepoInterface = (*MockRechargeRepo)(nil)
 

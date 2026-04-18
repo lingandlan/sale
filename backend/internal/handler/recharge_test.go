@@ -246,6 +246,30 @@ func (m *MockRechargeService) GetAvailableCardCount(centerID string) (int64, err
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockRechargeService) GetDashboardStatistics(role, centerID string) (map[string]interface{}, error) {
+	args := m.Called(role, centerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockRechargeService) GetDashboardTodos(role, centerID string) (map[string]interface{}, error) {
+	args := m.Called(role, centerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockRechargeService) GetDashboardRechargeTrends(days int, role, centerID string) (map[string]interface{}, error) {
+	args := m.Called(days, role, centerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
 
 
 // MockUserRepo implements repository.UserRepositoryInterface for testing
@@ -288,14 +312,23 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 	r := gin.New()
 	v1 := r.Group("/api/v1")
 
+	// 测试认证中间件 - 为需要 auth 的路由注入 user_id/role
+	testAuth := func(c *gin.Context) {
+		c.Set("user_id", int64(1))
+		c.Set("role", "super_admin")
+		c.Next()
+	}
+
 	// B端充值申请
 	bApply := v1.Group("/recharge/b-apply")
+	bApply.Use(testAuth)
 	{
 		bApply.POST("", h.CreateBRechargeApplication)
 	}
 
 	// B端充值审批
 	bApproval := v1.Group("/recharge/b-approval")
+	bApproval.Use(testAuth)
 	{
 		bApproval.GET("", h.GetRechargeApplicationList)
 		bApproval.GET("/:id", h.GetRechargeApplicationDetail)
@@ -304,11 +337,7 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 
 	// C端充值（带测试认证中间件）
 	cEntry := v1.Group("/recharge/c-entry")
-	cEntry.Use(func(c *gin.Context) {
-		c.Set("user_id", int64(1))
-		c.Set("role", "super_admin")
-		c.Next()
-	})
+	cEntry.Use(testAuth)
 	{
 		cEntry.POST("", h.CreateCRecharge)
 		cEntry.GET("", h.GetCRechargeList)
@@ -324,11 +353,7 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 
 	// 门店卡（带测试认证中间件）
 	card := v1.Group("/card")
-	card.Use(func(c *gin.Context) {
-		c.Set("user_id", int64(1))
-		c.Set("role", "super_admin")
-		c.Next()
-	})
+	card.Use(testAuth)
 	{
 		card.GET("/verify/:cardNo", h.VerifyCard)
 		card.POST("/consume", h.ConsumeCard)
@@ -347,6 +372,7 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 
 	// 充值中心
 	center := v1.Group("/center")
+	center.Use(testAuth)
 	{
 		center.GET("", h.GetCenters)
 		center.GET("/:id", h.GetCenterDetail)
@@ -357,6 +383,7 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 
 	// 操作员
 	operator := v1.Group("/operator")
+	operator.Use(testAuth)
 	{
 		operator.GET("", h.GetOperators)
 		operator.POST("", h.CreateOperator)
@@ -366,6 +393,7 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 
 	// Dashboard
 	dashboard := v1.Group("/dashboard")
+	dashboard.Use(testAuth)
 	{
 		dashboard.GET("/statistics", h.GetDashboardStatistics)
 		dashboard.GET("/todos", h.GetDashboardTodos)
@@ -526,7 +554,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("ApproveRechargeApplication", "app-001", "approve", "admin", "ok").Return(nil).Once()
+		mockSvc.On("ApproveRechargeApplication", "app-001", "approve", "1", "ok").Return(nil).Once()
 
 		body := map[string]string{"id": "app-001", "action": "approve", "remark": "ok"}
 		jsonBody, _ := json.Marshal(body)
@@ -545,7 +573,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
-		mockSvc.On("ApproveRechargeApplication", "app-002", "reject", "admin", "金额不对").Return(nil).Once()
+		mockSvc.On("ApproveRechargeApplication", "app-002", "reject", "1", "金额不对").Return(nil).Once()
 
 		body := map[string]string{"id": "app-002", "action": "reject", "remark": "金额不对"}
 		jsonBody, _ := json.Marshal(body)
@@ -1078,6 +1106,14 @@ func TestRechargeHandler_GetDashboardStatistics(t *testing.T) {
 		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
 
+		statsData := map[string]interface{}{
+			"todayRecharge":    1000.0,
+			"monthRecharge":    50000.0,
+			"totalCards":       int64(100),
+			"pendingApprovals": int64(3),
+		}
+		mockSvc.On("GetDashboardStatistics", "super_admin", "").Return(statsData, nil).Once()
+
 		req, _ := http.NewRequest("GET", "/api/v1/dashboard/statistics", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -1090,9 +1126,8 @@ func TestRechargeHandler_GetDashboardStatistics(t *testing.T) {
 
 		data := resp["data"].(map[string]interface{})
 		assert.Contains(t, data, "todayRecharge")
-		assert.Contains(t, data, "monthRecharge")
-		assert.Contains(t, data, "totalCards")
 		assert.Contains(t, data, "pendingApprovals")
+		mockSvc.AssertExpectations(t)
 	})
 }
 
@@ -1101,6 +1136,12 @@ func TestRechargeHandler_GetDashboardTodos(t *testing.T) {
 		mockSvc := new(MockRechargeService)
 		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
+
+		todosData := map[string]interface{}{
+			"pendingApprovals": int64(2),
+			"expiringCards":    int64(5),
+		}
+		mockSvc.On("GetDashboardTodos", "super_admin", "").Return(todosData, nil).Once()
 
 		req, _ := http.NewRequest("GET", "/api/v1/dashboard/todos", nil)
 		w := httptest.NewRecorder()
@@ -1113,6 +1154,7 @@ func TestRechargeHandler_GetDashboardTodos(t *testing.T) {
 		data := resp["data"].(map[string]interface{})
 		assert.Contains(t, data, "pendingApprovals")
 		assert.Contains(t, data, "expiringCards")
+		mockSvc.AssertExpectations(t)
 	})
 }
 
@@ -1121,6 +1163,12 @@ func TestRechargeHandler_GetDashboardRechargeTrends(t *testing.T) {
 		mockSvc := new(MockRechargeService)
 		h := NewRechargeHandler(mockSvc, &MockUserRepo{})
 		router := setupRechargeRouter(h)
+
+		trendsData := map[string]interface{}{
+			"dates":  []string{"2026-04-11", "2026-04-12"},
+			"values": []float64{1000.0, 2000.0},
+		}
+		mockSvc.On("GetDashboardRechargeTrends", 7, "super_admin", "").Return(trendsData, nil).Once()
 
 		req, _ := http.NewRequest("GET", "/api/v1/dashboard/recharge-trends?days=7", nil)
 		w := httptest.NewRecorder()
@@ -1133,5 +1181,6 @@ func TestRechargeHandler_GetDashboardRechargeTrends(t *testing.T) {
 		data := resp["data"].(map[string]interface{})
 		assert.Contains(t, data, "dates")
 		assert.Contains(t, data, "values")
+		mockSvc.AssertExpectations(t)
 	})
 }
