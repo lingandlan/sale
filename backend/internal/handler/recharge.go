@@ -89,9 +89,13 @@ func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从JWT获取申请人信息
-	req["applicantId"] = "user123"
-	req["applicantName"] = "张财务"
+	applicantID, _, _, applicantName, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	req["applicantId"] = fmt.Sprintf("%d", applicantID)
+	req["applicantName"] = applicantName
 
 	app, err := h.rechargeService.CreateBRechargeApplication(req)
 	if err != nil {
@@ -142,8 +146,12 @@ func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
 	action := req["action"]
 	remark := req["remark"]
 
-	// TODO: 从JWT获取审批人信息
-	approvedBy := "admin"
+	approvedByID, _, _, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	approvedBy := fmt.Sprintf("%d", approvedByID)
 
 	if err := h.rechargeService.ApproveRechargeApplication(id, action, approvedBy, remark); err != nil {
 		response.InternalError(c, errmsg.Get("recharge.approval_failed"))
