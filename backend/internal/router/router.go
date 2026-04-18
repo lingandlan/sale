@@ -88,6 +88,8 @@ func SetupRouter(
 			card.GET("/detail/:cardNo", rechargeHandler.GetCardDetail)
 			card.GET("/stats", rechargeHandler.GetCardStats)
 			card.GET("/inventory-stats", rechargeHandler.GetCardInventoryStats)
+			card.GET("/monthly-trend", rechargeHandler.GetMonthlyTrend)
+			card.GET("/center-stats", rechargeHandler.GetCenterCardStats)
 			card.POST("/batch-import", rechargeHandler.BatchImportCards)
 			card.POST("/allocate", rechargeHandler.AllocateCards)
 			card.POST("/bind", rechargeHandler.BindCardToUser)

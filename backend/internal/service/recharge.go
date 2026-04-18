@@ -535,8 +535,8 @@ func (s *RechargeService) GetCardDetail(cardNo string) (map[string]interface{}, 
 }
 
 // GetCardStats 获取门店卡统计
-func (s *RechargeService) GetCardStats() (map[string]interface{}, error) {
-	stats, err := s.rechargeRepo.GetCardStats()
+func (s *RechargeService) GetCardStats(centerID string) (map[string]interface{}, error) {
+	stats, err := s.rechargeRepo.GetCardStats(centerID)
 	if err != nil {
 		return nil, err
 	}
@@ -558,6 +558,16 @@ func (s *RechargeService) GetCardInventoryStats() (map[string]interface{}, error
 		result[k] = v
 	}
 	return result, nil
+}
+
+// GetMonthlyTrend 获取月度发放/核销趋势
+func (s *RechargeService) GetMonthlyTrend(centerID string) (interface{}, error) {
+	return s.rechargeRepo.GetMonthlyTrend(centerID)
+}
+
+// GetCenterCardStats 获取充值中心维度卡统计
+func (s *RechargeService) GetCenterCardStats(centerID string) (interface{}, error) {
+	return s.rechargeRepo.GetCenterCardStats(centerID)
 }
 
 // transitionCardStatus 卡状态转换通用方法

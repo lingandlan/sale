@@ -50,8 +50,10 @@ type RechargeServiceInterface interface {
 	ConsumeCard(cardNo string, amount int, operatorID, remark string) error
 	GetCardList(status int, cardNo, centerID string, page, pageSize int) (map[string]interface{}, error)
 	GetCardDetail(cardNo string) (map[string]interface{}, error)
-	GetCardStats() (map[string]interface{}, error)
+	GetCardStats(centerID string) (map[string]interface{}, error)
 	GetCardInventoryStats() (map[string]interface{}, error)
+	GetMonthlyTrend(centerID string) (interface{}, error)
+	GetCenterCardStats(centerID string) (interface{}, error)
 	GetAvailableCards(centerID string, keyword string) ([]string, error)
 	GetAvailableCardCount(centerID string) (int64, error)
 	FreezeCard(cardNo, operatorID string) error

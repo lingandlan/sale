@@ -35,8 +35,10 @@ type RechargeRepoInterface interface {
 	ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error
 	CreateCardTransaction(transaction *model.CardTransaction) error
 	GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error)
-	GetCardStats() (map[string]int64, error)
+	GetCardStats(centerID string) (map[string]int64, error)
 	GetCardInventoryStats() (map[string]int64, error)
+	GetMonthlyTrend(centerID string) ([]MonthlyTrendItem, error)
+	GetCenterCardStats(centerID string) ([]CenterCardStatsItem, error)
 		GetAvailableCardNos(centerID string, keyword string) ([]string, error)
 		GetAvailableCardCount(centerID string) (int64, error)
 	// 充值中心
@@ -370,12 +372,18 @@ func (r *RechargeRepository) GetCardTransactions(cardNo string, page, pageSize i
 }
 
 // GetCardStats 获取门店卡统计
-func (r *RechargeRepository) GetCardStats() (map[string]int64, error) {
+func (r *RechargeRepository) GetCardStats(centerID string) (map[string]int64, error) {
 	stats := make(map[string]int64)
+
+	// 基础 query，按中心过滤
+	baseQuery := r.db.Model(&model.StoreCard{})
+	if centerID != "" {
+		baseQuery = baseQuery.Where("recharge_center_id = ?", centerID)
+	}
 
 	// 总卡数
 	var total int64
-	r.db.Model(&model.StoreCard{}).Count(&total)
+	baseQuery.Count(&total)
 	stats["totalCards"] = total
 
 	// 按6种状态统计
@@ -389,31 +397,45 @@ func (r *RechargeRepository) GetCardStats() (map[string]int64, error) {
 	}
 	for field, status := range statusFields {
 		var count int64
-		r.db.Model(&model.StoreCard{}).Where("status = ?", status).Count(&count)
+		q := r.db.Model(&model.StoreCard{}).Where("status = ?", status)
+		if centerID != "" {
+			q = q.Where("recharge_center_id = ?", centerID)
+		}
+		q.Count(&count)
 		stats[field] = count
 	}
 
 	// 总余额（活跃+已冻结+已发放的卡）
 	var totalBalance struct{ Total int }
-	r.db.Model(&model.StoreCard{}).
-		Where("status IN ?", []int{model.CardStatusActive, model.CardStatusFrozen, model.CardStatusIssued}).
-		Select("COALESCE(SUM(balance), 0) as total").Scan(&totalBalance)
+	q := r.db.Model(&model.StoreCard{}).
+		Where("status IN ?", []int{model.CardStatusActive, model.CardStatusFrozen, model.CardStatusIssued})
+	if centerID != "" {
+		q = q.Where("recharge_center_id = ?", centerID)
+	}
+	q.Select("COALESCE(SUM(balance), 0) as total").Scan(&totalBalance)
 	stats["totalBalance"] = int64(totalBalance.Total)
 
-	// 今日消费
+	// 今日消费（按中心过滤需 JOIN store_cards）
 	today := time.Now().Format("2006-01-02")
 	var todayConsume struct{ Total int }
-	r.db.Model(&model.CardTransaction{}).
-		Where("type = ? AND DATE(created_at) = ?", "consume", today).
-		Select("COALESCE(SUM(amount), 0) as total").Scan(&todayConsume)
+	tq := r.db.Model(&model.CardTransaction{}).
+		Where("type = ? AND DATE(created_at) = ?", "consume", today)
+	if centerID != "" {
+		tq = tq.Joins("JOIN store_cards ON store_cards.card_no = card_transactions.card_no").
+			Where("store_cards.recharge_center_id = ?", centerID)
+	}
+	tq.Select("COALESCE(SUM(amount), 0) as total").Scan(&todayConsume)
 	stats["todayConsume"] = int64(todayConsume.Total)
 
 	// 7天内过期
 	sevenDaysLater := time.Now().AddDate(0, 0, 7)
 	var expireIn7Days int64
-	r.db.Model(&model.StoreCard{}).
-		Where("status = ? AND expired_at IS NOT NULL AND expired_at <= ?", model.CardStatusActive, sevenDaysLater).
-		Count(&expireIn7Days)
+	eq := r.db.Model(&model.StoreCard{}).
+		Where("status = ? AND expired_at IS NOT NULL AND expired_at <= ?", model.CardStatusActive, sevenDaysLater)
+	if centerID != "" {
+		eq = eq.Where("recharge_center_id = ?", centerID)
+	}
+	eq.Count(&expireIn7Days)
 	stats["expireIn7Days"] = expireIn7Days
 
 	return stats, nil
@@ -439,6 +461,102 @@ func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
 	stats["inStockCards"] = inStock
 
 	return stats, nil
+}
+
+// MonthlyTrendItem 月度趋势数据
+type MonthlyTrendItem struct {
+	Month   string `json:"month"`
+	Issue   int64  `json:"issue"`
+	Consume int64  `json:"consume"`
+}
+
+// GetMonthlyTrend 获取月度发放/核销趋势
+func (r *RechargeRepository) GetMonthlyTrend(centerID string) ([]MonthlyTrendItem, error) {
+	// 生成最近6个月的月份列表
+	months := make([]string, 6)
+	now := time.Now()
+	for i := 5; i >= 0; i-- {
+		t := now.AddDate(0, -i, 0)
+		months[5-i] = t.Format("2006-01")
+	}
+
+	// 查询发放数据
+	type monthCount struct {
+		Month string
+		Cnt   int64
+	}
+	var issueCounts []monthCount
+	iq := r.db.Model(&model.CardTransaction{}).
+		Where("type = ?", "issue").
+		Where("DATE_FORMAT(created_at, '%Y-%m') IN ?", months)
+	if centerID != "" {
+		iq = iq.Joins("JOIN store_cards ON store_cards.card_no = card_transactions.card_no").
+			Where("store_cards.recharge_center_id = ?", centerID)
+	}
+	iq.Select("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as cnt").
+		Group("DATE_FORMAT(created_at, '%Y-%m')").Scan(&issueCounts)
+
+	var consumeCounts []monthCount
+	cq := r.db.Model(&model.CardTransaction{}).
+		Where("type = ?", "consume").
+		Where("DATE_FORMAT(created_at, '%Y-%m') IN ?", months)
+	if centerID != "" {
+		cq = cq.Joins("JOIN store_cards ON store_cards.card_no = card_transactions.card_no").
+			Where("store_cards.recharge_center_id = ?", centerID)
+	}
+	cq.Select("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as cnt").
+		Group("DATE_FORMAT(created_at, '%Y-%m')").Scan(&consumeCounts)
+
+	issueMap := make(map[string]int64)
+	for _, ic := range issueCounts {
+		issueMap[ic.Month] = ic.Cnt
+	}
+	consumeMap := make(map[string]int64)
+	for _, cc := range consumeCounts {
+		consumeMap[cc.Month] = cc.Cnt
+	}
+
+	result := make([]MonthlyTrendItem, 0, 6)
+	for _, m := range months {
+		result = append(result, MonthlyTrendItem{
+			Month:   m,
+			Issue:   issueMap[m],
+			Consume: consumeMap[m],
+		})
+	}
+	return result, nil
+}
+
+// CenterCardStatsItem 充值中心卡统计
+type CenterCardStatsItem struct {
+	CenterName   string `json:"centerName"`
+	TotalCards   int64  `json:"totalCards"`
+	IssuedCards  int64  `json:"issuedCards"`
+	ActiveCards  int64  `json:"activeCards"`
+	FrozenCards  int64  `json:"frozenCards"`
+	ExpiredCards int64  `json:"expiredCards"`
+	TotalBalance int64  `json:"totalBalance"`
+}
+
+// GetCenterCardStats 按充值中心分组统计
+func (r *RechargeRepository) GetCenterCardStats(centerID string) ([]CenterCardStatsItem, error) {
+	var results []CenterCardStatsItem
+	query := r.db.Model(&model.StoreCard{}).
+		Select("rc.name as center_name, COUNT(*) as total_cards, "+
+			"SUM(CASE WHEN sc.status = 2 THEN 1 ELSE 0 END) as issued_cards, "+
+			"SUM(CASE WHEN sc.status = 3 THEN 1 ELSE 0 END) as active_cards, "+
+			"SUM(CASE WHEN sc.status = 4 THEN 1 ELSE 0 END) as frozen_cards, "+
+			"SUM(CASE WHEN sc.status = 5 THEN 1 ELSE 0 END) as expired_cards, "+
+			"COALESCE(SUM(CASE WHEN sc.status IN (2,3,4) THEN sc.balance ELSE 0 END), 0) as total_balance").
+		Joins("JOIN recharge_centers rc ON rc.id = sc.recharge_center_id").
+		Table("store_cards sc").
+		Where("sc.recharge_center_id IS NOT NULL AND sc.recharge_center_id != ''")
+
+	if centerID != "" {
+		query = query.Where("sc.recharge_center_id = ?", centerID)
+	}
+	query.Group("rc.name").Scan(&results)
+	return results, nil
 }
 
 // GetAvailableCardNos 获取指定充值中心的可用卡号列表

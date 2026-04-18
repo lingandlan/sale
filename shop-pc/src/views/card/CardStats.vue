@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import VChart from 'vue-echarts'
@@ -86,7 +86,7 @@ import {
   GridComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import { getCardStats } from '@/api/card'
+import { getCardStats, getMonthlyTrend, getCenterCardStats } from '@/api/card'
 
 use([
   PieChart, BarChart,
@@ -94,15 +94,24 @@ use([
   CanvasRenderer
 ])
 
-const stats = ref({
+const stats = ref<Record<string, number>>({
   totalCards: 0,
+  inStockCards: 0,
+  issuedCards: 0,
   activeCards: 0,
+  frozenCards: 0,
+  expiredCards: 0,
+  voidedCards: 0,
   totalBalance: 0,
   todayConsume: 0,
   expireIn7Days: 0
 })
 
-const pieOption = ref({
+const centerStats = ref<any[]>([])
+const monthlyData = ref<{ month: string; issue: number; consume: number }[]>([])
+
+// 饼图 - 从 stats 动态生成
+const pieOption = computed(() => ({
   tooltip: { trigger: 'item', formatter: '{b}: {c}张 ({d}%)' },
   legend: { bottom: 0, left: 'center' },
   series: [{
@@ -113,58 +122,78 @@ const pieOption = ref({
     itemStyle: { borderRadius: 4 },
     label: { show: true, formatter: '{b}\n{c}张' },
     data: [
-      { value: 120, name: '已入库', itemStyle: { color: '#8C8C8C' } },
-      { value: 180, name: '已发放', itemStyle: { color: '#1677FF' } },
-      { value: 150, name: '已激活', itemStyle: { color: '#52C41A' } },
-      { value: 20, name: '已冻结', itemStyle: { color: '#FF4D4F' } },
-      { value: 30, name: '已过期', itemStyle: { color: '#BFBFBF' } }
+      { value: stats.value.inStockCards || 0, name: '已入库', itemStyle: { color: '#8C8C8C' } },
+      { value: stats.value.issuedCards || 0, name: '已发放', itemStyle: { color: '#1677FF' } },
+      { value: stats.value.activeCards || 0, name: '已激活', itemStyle: { color: '#52C41A' } },
+      { value: stats.value.frozenCards || 0, name: '已冻结', itemStyle: { color: '#FF4D4F' } },
+      { value: stats.value.expiredCards || 0, name: '已过期', itemStyle: { color: '#BFBFBF' } }
     ]
   }]
-})
+}))
 
-const barOption = ref({
+// 柱状图 - 从 monthlyData 动态生成
+const barOption = computed(() => ({
   tooltip: { trigger: 'axis' },
   legend: { data: ['发放', '核销'], bottom: 0 },
   grid: { left: 50, right: 20, top: 20, bottom: 40 },
   xAxis: {
     type: 'category',
-    data: ['2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03']
+    data: monthlyData.value.map(d => d.month)
   },
   yAxis: { type: 'value', name: '张数' },
   series: [
     {
       name: '发放',
       type: 'bar',
-      data: [45, 52, 38, 60, 55, 48],
+      data: monthlyData.value.map(d => d.issue),
       itemStyle: { color: '#C00000', borderRadius: [4, 4, 0, 0] }
     },
     {
       name: '核销',
       type: 'bar',
-      data: [30, 42, 35, 48, 50, 40],
+      data: monthlyData.value.map(d => d.consume),
       itemStyle: { color: '#FFD700', borderRadius: [4, 4, 0, 0] }
     }
   ]
-})
+}))
 
-const centerStats = ref([
-  { centerName: '北京子公司合伙人', totalCards: 120, issuedCards: 80, activeCards: 65, frozenCards: 5, expiredCards: 10, totalBalance: 180000 },
-  { centerName: '上海子公司合伙人', totalCards: 100, issuedCards: 75, activeCards: 60, frozenCards: 3, expiredCards: 12, totalBalance: 150000 },
-  { centerName: '广州服务中心合伙人', totalCards: 80, issuedCards: 50, activeCards: 40, frozenCards: 2, expiredCards: 8, totalBalance: 95000 },
-  { centerName: '深圳子公司合伙人', totalCards: 100, issuedCards: 65, activeCards: 55, frozenCards: 4, expiredCards: 6, totalBalance: 120000 },
-  { centerName: '成都服务中心合伙人', totalCards: 100, issuedCards: 50, activeCards: 38, frozenCards: 6, expiredCards: 6, totalBalance: 85000 }
-])
-
-onMounted(async () => {
+const loadData = async () => {
   try {
-    const res = await getCardStats()
-    if (res?.data) {
-      stats.value = res.data
+    const [statsRes, trendRes, centerRes] = await Promise.all([
+      getCardStats(),
+      getMonthlyTrend(),
+      getCenterCardStats()
+    ])
+
+    if (statsRes?.data) {
+      const d = statsRes.data as any
+      stats.value = {
+        totalCards: d.totalCards || 0,
+        inStockCards: d.inStockCards || 0,
+        issuedCards: d.issuedCards || 0,
+        activeCards: d.activeCards || 0,
+        frozenCards: d.frozenCards || 0,
+        expiredCards: d.expiredCards || 0,
+        voidedCards: d.voidedCards || 0,
+        totalBalance: d.totalBalance || 0,
+        todayConsume: d.todayConsume || 0,
+        expireIn7Days: d.expireIn7Days || 0
+      }
+    }
+
+    if (trendRes?.data) {
+      monthlyData.value = (trendRes.data as any[]) || []
+    }
+
+    if (centerRes?.data) {
+      centerStats.value = (centerRes.data as any[]) || []
     }
   } catch (err: any) {
     ElMessage.error(extractErrorMessage(err, '加载门店卡统计失败'))
   }
-})
+}
+
+onMounted(() => { loadData() })
 </script>
 
 <style scoped>

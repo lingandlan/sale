@@ -183,8 +183,8 @@ export function voidCard(cardNo: string) {
 }
 
 // 获取卡统计
-export function getCardStats() {
-  return request.get('/card/stats')
+export function getCardStats(centerId?: string) {
+  return request.get('/card/stats', { params: centerId ? { centerId } : undefined })
 }
 
 // 获取可发放卡号列表（已入库、未绑定的卡）
@@ -200,4 +200,14 @@ export function getAvailableCardCount(centerId: string) {
 // 获取总卡库统计
 export function getCardInventoryStats() {
   return request.get('/card/inventory-stats')
+}
+
+// 获取月度发放/核销趋势
+export function getMonthlyTrend(centerId?: string) {
+  return request.get('/card/monthly-trend', { params: centerId ? { centerId } : undefined })
+}
+
+// 获取充值中心维度卡统计
+export function getCenterCardStats() {
+  return request.get('/card/center-stats')
 }
