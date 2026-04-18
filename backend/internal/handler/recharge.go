@@ -456,7 +456,7 @@ func (h *RechargeHandler) GetAvailableCardCount(c *gin.Context) {
 		return
 	}
 
-	_, _, opCenterID, err := h.getOperatorCenter(c)
+	_, _, opCenterID, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
@@ -481,7 +481,7 @@ func (h *RechargeHandler) GetCardList(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
-	_, _, opCenterID, err := h.getOperatorCenter(c)
+	_, _, opCenterID, _, err := h.getOperatorInfo(c)
 	if err != nil {
 		response.Error(c, 401, err.Error())
 		return
