@@ -770,3 +770,89 @@ func (s *RechargeService) UpdateOperator(id string, data map[string]interface{})
 func (s *RechargeService) DeleteOperator(id string) error {
 	return s.rechargeRepo.DeleteOperator(id)
 }
+
+// ========== Dashboard ==========
+
+func calcTrend(current, yesterday float64) string {
+	if yesterday == 0 {
+		if current > 0 {
+			return "+100%"
+		}
+		return "—"
+	}
+	pct := (current - yesterday) / yesterday * 100
+	if pct >= 0 {
+		return fmt.Sprintf("+%.0f%%", pct)
+	}
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func (s *RechargeService) GetDashboardStatistics(role, centerID string) (map[string]interface{}, error) {
+	todayRecharge, err := s.rechargeRepo.GetTodayRechargeTotal(centerID)
+	if err != nil {
+		return nil, fmt.Errorf("统计数据加载失败: %w", err)
+	}
+	todayConsumption, err := s.rechargeRepo.GetTodayConsumptionTotal(centerID)
+	if err != nil {
+		return nil, fmt.Errorf("统计数据加载失败: %w", err)
+	}
+	activeCenters, err := s.rechargeRepo.GetActiveCenterCount(centerID)
+	if err != nil {
+		return nil, fmt.Errorf("统计数据加载失败: %w", err)
+	}
+	yesterdayRecharge, _ := s.rechargeRepo.GetYesterdayRechargeTotal(centerID)
+	yesterdayConsumption, _ := s.rechargeRepo.GetYesterdayConsumptionTotal(centerID)
+
+	return map[string]interface{}{
+		"memberCount":       0,
+		"memberTrend":       "—",
+		"todayRecharge":     todayRecharge,
+		"rechargeTrend":     calcTrend(todayRecharge, yesterdayRecharge),
+		"todayConsumption":  todayConsumption,
+		"consumptionTrend":  calcTrend(todayConsumption, yesterdayConsumption),
+		"activeCenters":     activeCenters,
+		"centerTrend":       "—",
+	}, nil
+}
+
+func (s *RechargeService) GetDashboardTodos(role, centerID string) (map[string]interface{}, error) {
+	pendingCount, err := s.rechargeRepo.CountPendingApprovals(centerID)
+	if err != nil {
+		return nil, fmt.Errorf("待办事项加载失败: %w", err)
+	}
+	expiringCount, err := s.rechargeRepo.CountExpiringCards(centerID)
+	if err != nil {
+		return nil, fmt.Errorf("待办事项加载失败: %w", err)
+	}
+
+	pendingDesc := ""
+	if pendingCount > 0 {
+		pendingDesc = fmt.Sprintf("%d笔充值申请待审批", pendingCount)
+	}
+	expiringDesc := ""
+	if expiringCount > 0 {
+		expiringDesc = fmt.Sprintf("%d张门店卡将在7天内到期", expiringCount)
+	}
+
+	return map[string]interface{}{
+		"pendingApprovals": map[string]interface{}{
+			"count":       pendingCount,
+			"description": pendingDesc,
+		},
+		"expiringCards": map[string]interface{}{
+			"count":       expiringCount,
+			"description": expiringDesc,
+		},
+	}, nil
+}
+
+func (s *RechargeService) GetDashboardRechargeTrends(days int, role, centerID string) (map[string]interface{}, error) {
+	dates, values, err := s.rechargeRepo.GetRechargeTrends(days, centerID)
+	if err != nil {
+		return nil, fmt.Errorf("趋势数据加载失败: %w", err)
+	}
+	return map[string]interface{}{
+		"dates":  dates,
+		"values": values,
+	}, nil
+}

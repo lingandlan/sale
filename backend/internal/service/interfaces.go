@@ -67,6 +67,10 @@ type RechargeServiceInterface interface {
 	CreateOperator(data map[string]interface{}) (*model.RechargeOperator, error)
 	UpdateOperator(id string, data map[string]interface{}) (*model.RechargeOperator, error)
 	DeleteOperator(id string) error
+		// Dashboard
+		GetDashboardStatistics(role, centerID string) (map[string]interface{}, error)
+		GetDashboardTodos(role, centerID string) (map[string]interface{}, error)
+		GetDashboardRechargeTrends(days int, role, centerID string) (map[string]interface{}, error)
 }
 
 var _ RechargeServiceInterface = (*RechargeService)(nil)
