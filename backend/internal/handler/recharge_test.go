@@ -141,8 +141,8 @@ func (m *MockRechargeService) GetCardDetail(cardNo string) (map[string]interface
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
-func (m *MockRechargeService) GetCardStats() (map[string]interface{}, error) {
-	args := m.Called()
+func (m *MockRechargeService) GetCardStats(centerID string) (map[string]interface{}, error) {
+	args := m.Called(centerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -155,6 +155,16 @@ func (m *MockRechargeService) GetCardInventoryStats() (map[string]interface{}, e
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockRechargeService) GetMonthlyTrend(centerID string) (interface{}, error) {
+	args := m.Called(centerID)
+	return args.Get(0), args.Error(1)
+}
+
+func (m *MockRechargeService) GetCenterCardStats(centerID string) (interface{}, error) {
+	args := m.Called(centerID)
+	return args.Get(0), args.Error(1)
 }
 
 func (m *MockRechargeService) GetCenters() ([]map[string]interface{}, error) {
@@ -242,7 +252,7 @@ func (m *MockRechargeService) GetAvailableCardCount(centerID string) (int64, err
 type MockUserRepo struct{}
 
 func (m *MockUserRepo) GetByID(_ context.Context, _ int64) (*model.User, error) {
-	centerID := uint(1)
+	centerID := "center-1"
 	return &model.User{ID: 1, Role: "super_admin", CenterID: &centerID}, nil
 }
 func (m *MockUserRepo) GetByPhone(_ context.Context, _ string) (*model.User, error) {
@@ -864,7 +874,7 @@ func TestRechargeHandler_GetCardStats(t *testing.T) {
 		router := setupRechargeRouter(h)
 
 		result := map[string]interface{}{"totalCards": 100, "activeCards": 80}
-		mockSvc.On("GetCardStats").Return(result, nil).Once()
+		mockSvc.On("GetCardStats", "").Return(result, nil).Once()
 
 		req, _ := http.NewRequest("GET", "/api/v1/card/stats", nil)
 		w := httptest.NewRecorder()

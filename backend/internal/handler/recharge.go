@@ -63,10 +63,10 @@ func (h *RechargeHandler) getOperatorInfo(c *gin.Context) (int64, string, string
 	}
 
 	// center_admin/operator 需要 center_id
-	if user.CenterID == nil {
+	if user.CenterID == nil || *user.CenterID == "" {
 		return userID, role, "", userName, fmt.Errorf("当前用户未分配充值中心")
 	}
-	centerID := strconv.FormatUint(uint64(*user.CenterID), 10)
+	centerID := *user.CenterID
 	return userID, role, centerID, userName, nil
 }
 
@@ -512,7 +512,22 @@ func (h *RechargeHandler) GetCardDetail(c *gin.Context) {
 }
 
 func (h *RechargeHandler) GetCardStats(c *gin.Context) {
-	result, err := h.rechargeService.GetCardStats()
+	_, role, opCenterID, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	centerID := c.Query("centerId")
+	// 中心角色强制使用自己的中心
+	if opCenterID != "" {
+		centerID = opCenterID
+	} else if centerID == "" && (role == model.RoleSuperAdmin || role == model.RoleHQAdmin || role == model.RoleFinance) {
+		// 总部角色不传 centerId 则看全部
+		_ = role
+	}
+
+	result, err := h.rechargeService.GetCardStats(centerID)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.stats_failed"))
 		return
@@ -522,6 +537,42 @@ func (h *RechargeHandler) GetCardStats(c *gin.Context) {
 
 func (h *RechargeHandler) GetCardInventoryStats(c *gin.Context) {
 	result, err := h.rechargeService.GetCardInventoryStats()
+	if err != nil {
+		response.InternalError(c, errmsg.Get("card.stats_failed"))
+		return
+	}
+	response.Success(c, result)
+}
+
+func (h *RechargeHandler) GetMonthlyTrend(c *gin.Context) {
+	_, _, opCenterID, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	centerID := c.Query("centerId")
+	if opCenterID != "" {
+		centerID = opCenterID
+	}
+	result, err := h.rechargeService.GetMonthlyTrend(centerID)
+	if err != nil {
+		response.InternalError(c, errmsg.Get("card.stats_failed"))
+		return
+	}
+	response.Success(c, result)
+}
+
+func (h *RechargeHandler) GetCenterCardStats(c *gin.Context) {
+	_, _, opCenterID, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	centerID := ""
+	if opCenterID != "" {
+		centerID = opCenterID
+	}
+	result, err := h.rechargeService.GetCenterCardStats(centerID)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("card.stats_failed"))
 		return

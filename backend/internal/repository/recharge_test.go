@@ -358,7 +358,7 @@ func TestRechargeRepository_StoreCard(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		stats, err := repo.GetCardStats()
+		stats, err := repo.GetCardStats("")
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, stats["totalCards"], int64(4))
 		assert.GreaterOrEqual(t, stats["activeCards"], int64(2))

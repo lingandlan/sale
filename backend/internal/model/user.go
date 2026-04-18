@@ -14,7 +14,7 @@ type User struct {
 	Password     string         `gorm:"size:255;not null;comment:密码（bcrypt加密）" json:"-" db:"password"`
 	Name         string         `gorm:"size:50;not null;comment:姓名" json:"name" db:"name"`
 	Role         string         `gorm:"size:20;default:'operator';comment:角色：super_admin=超管, admin=管理员, operator=操作员" json:"role" db:"role"`
-	CenterID     *uint          `gorm:"comment:所属充值中心ID" json:"center_id" db:"center_id"`
+	CenterID     *string        `gorm:"size:64;comment:所属充值中心ID" json:"center_id" db:"center_id"`
 	CenterName   *string        `gorm:"size:100;comment:所属充值中心名称（冗余字段）" json:"center_name" db:"center_name"`
 	Status       int8           `gorm:"default:1;comment:状态：1=启用, 0=禁用" json:"status" db:"status"`
 	LastLoginAt  *time.Time     `gorm:"comment:最后登录时间" json:"last_login_at" db:"last_login_at"`
@@ -69,7 +69,7 @@ type CreateUserRequest struct {
 	Password  string `json:"password" binding:"required,min=6,max=32"`
 	Name      string `json:"name" binding:"required,min=2,max=50"`
 	Role      string `json:"role" binding:"required,oneof=super_admin hq_admin finance center_admin operator"`
-	CenterID  *uint  `json:"center_id" binding:"omitempty,min=1"`
+	CenterID  *string `json:"center_id" binding:"omitempty"`
 }
 
 // UpdateUserRequest 更新用户请求
@@ -78,7 +78,7 @@ type UpdateUserRequest struct {
 	Name       *string `json:"name" binding:"omitempty,min=2,max=50"`
 	Phone      *string `json:"phone" binding:"omitempty,len=11"`
 	Role       *string `json:"role" binding:"omitempty,oneof=super_admin hq_admin finance center_admin operator"`
-	CenterID   *uint   `json:"center_id" binding:"omitempty,min=1"`
+	CenterID   *string `json:"center_id" binding:"omitempty"`
 	CenterName *string `json:"center_name" binding:"omitempty,max=100"`
 }
 

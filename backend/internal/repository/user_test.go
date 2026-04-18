@@ -25,7 +25,7 @@ func setupTestDB(t *testing.T) (*sqlx.DB, func()) {
 			password TEXT NOT NULL,
 			name TEXT NOT NULL,
 			role TEXT DEFAULT 'operator',
-			center_id INTEGER DEFAULT NULL,
+			center_id TEXT DEFAULT NULL,
 			center_name TEXT DEFAULT NULL,
 			status INTEGER DEFAULT 1,
 			last_login_at DATETIME DEFAULT NULL,
