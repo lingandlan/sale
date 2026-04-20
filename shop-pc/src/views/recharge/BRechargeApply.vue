@@ -207,21 +207,21 @@ const handleSubmit = async () => {
   justify-content: center;
   padding: 24px;
   min-height: calc(100vh - 64px);
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
 }
 
 .page-card {
   width: 720px;
-  background-color: #FFFFFF;
-  border-radius: 8px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
   padding: 32px;
 }
 
 .page-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 24px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0 0 24px 0;
 }
 
@@ -232,14 +232,14 @@ const handleSubmit = async () => {
 }
 
 .apply-form :deep(.el-form-item__label) {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .points-box {
   background-color: #FFF9E6;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -247,16 +247,16 @@ const handleSubmit = async () => {
 }
 
 .points-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .points-detail {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 12px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .payment-section {
@@ -266,9 +266,9 @@ const handleSubmit = async () => {
 }
 
 .payment-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #262626;
+  color: var(--color-text-primary);
   margin-bottom: -8px;
 }
 
@@ -279,9 +279,9 @@ const handleSubmit = async () => {
 .upload-area :deep(.el-upload-dragger) {
   width: 100%;
   height: 100px;
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,13 +296,13 @@ const handleSubmit = async () => {
 
 .upload-icon {
   font-size: 32px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
 }
 
 .upload-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 13px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
 }
 
 .button-group {
@@ -315,19 +315,19 @@ const handleSubmit = async () => {
 .cancel-btn {
   width: 100px;
   height: 40px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .submit-btn {
   width: 120px;
   height: 40px;
-  border-radius: 4px;
-  background-color: #C00000;
-  border-color: #C00000;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .submit-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 </style>

@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div class="filter-bar">
+    <div class="filter-card">
       <div class="filter-item">
         <span class="filter-label">申请日期</span>
         <el-date-picker
@@ -55,17 +55,11 @@
       </el-button>
     </div>
 
-    <div class="table-card">
+    <div class="list-card">
       <el-table
         ref="tableRef"
         :data="tableData"
         style="width: 100%"
-        :header-cell-style="{
-          backgroundColor: '#FAFAFA',
-          color: '#262626',
-          fontWeight: '600',
-          fontSize: '14px'
-        }"
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="60" align="center" />
@@ -133,15 +127,16 @@
       <el-button type="danger" @click="handleBatchReject">批量拒绝</el-button>
     </div>
 
-    <div class="pagination">
-      <span class="page-info">共 {{ total }} 条，每页 {{ pageSize }} 条</span>
-      <el-button :disabled="currentPage === 1" @click="handlePageChange(currentPage - 1)">
-        上一页
-      </el-button>
-      <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
-      <el-button :disabled="currentPage === totalPages" @click="handlePageChange(currentPage + 1)">
-        下一页
-      </el-button>
+    <div class="pagination-row">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </div>
   </div>
 </template>
@@ -324,6 +319,12 @@ const handlePageChange = (page: number) => {
   loadData()
 }
 
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  loadData()
+}
+
 onMounted(() => {
   loadData()
 })
@@ -332,7 +333,7 @@ onMounted(() => {
 <style scoped>
 .brecharge-list {
   padding: 24px;
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
@@ -346,10 +347,10 @@ onMounted(() => {
 }
 
 .page-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
-  color: #C00000;
+  color: var(--color-primary);
   margin: 0;
 }
 
@@ -357,8 +358,8 @@ onMounted(() => {
   display: flex;
   gap: 4px;
   padding: 4px;
-  background-color: #FFFFFF;
-  border-radius: 4px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-sm);
   width: fit-content;
 }
 
@@ -368,30 +369,31 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #262626;
-  border-radius: 4px;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .tab-item.active {
-  background-color: #C00000;
-  color: #FFFFFF;
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
 }
 
 .tab-item:hover:not(.active) {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
 }
 
-.filter-bar {
+.filter-card {
   display: flex;
   gap: 12px;
   align-items: center;
-  background-color: #FFFFFF;
-  border-radius: 8px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
   padding: 16px;
+  border: 1px solid var(--color-border);
 }
 
 .filter-item {
@@ -401,28 +403,30 @@ onMounted(() => {
 }
 
 .filter-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .search-btn {
-  background-color: #C00000;
-  border-color: #C00000;
-  border-radius: 4px;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
   height: 40px;
 }
 
 .search-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
-.table-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
+.list-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
   overflow: hidden;
+  border: 1px solid var(--color-border);
+  padding: 24px;
 }
 
 .action-buttons {
@@ -435,37 +439,21 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   align-items: center;
-  background-color: #FFFFFF;
-  border-radius: 8px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
   padding: 16px;
   height: 56px;
 }
 
 .selected-info {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
-.pagination {
+.pagination-row {
   display: flex;
-  gap: 16px;
-  align-items: center;
   justify-content: center;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  padding: 16px;
-  height: 48px;
-}
-
-.page-info,
-.page-indicator {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #595959;
-}
-
-.page-indicator {
-  color: #262626;
+  margin-top: 16px;
 }
 </style>

@@ -99,7 +99,7 @@
               <el-image
                 :src="detailData.screenshot"
                 fit="cover"
-                style="width: 160px; height: 100px; border-radius: 4px"
+                style="width: 160px; height: 100px; border-radius: var(--radius-sm)"
                 :preview-src-list="[detailData.screenshot]"
               />
             </div>
@@ -322,7 +322,7 @@ onMounted(() => {
 
 <style scoped>
 .brecharge-detail {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
 }
 
@@ -331,8 +331,8 @@ onMounted(() => {
   gap: 16px;
   align-items: center;
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
 }
 
@@ -350,21 +350,21 @@ onMounted(() => {
 
 .back-icon {
   font-size: 20px;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .back-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .page-title {
   flex: 1;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -376,9 +376,9 @@ onMounted(() => {
 }
 
 .info-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 
@@ -393,10 +393,10 @@ onMounted(() => {
 }
 
 .header-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -414,39 +414,39 @@ onMounted(() => {
 
 .info-row.with-border {
   padding-top: 12px;
-  border-top: 1px solid #E5E5E5;
+  border-top: 1px solid var(--color-border);
 }
 
 .info-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .info-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .amount-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 24px;
   font-weight: 700;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .balance-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #52C41A;
+  color: var(--color-success);
 }
 
 .points-box {
-  background-color: #FFF7E6;
-  border-radius: 8px;
+  background-color: var(--color-warning-bg);
+  border-radius: var(--radius-md);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -455,10 +455,10 @@ onMounted(() => {
 }
 
 .points-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .points-number {
@@ -470,16 +470,16 @@ onMounted(() => {
 }
 
 .points-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 32px;
   font-weight: 700;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .points-unit {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .points-details {
@@ -489,14 +489,14 @@ onMounted(() => {
 }
 
 .detail-line {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 13px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .detail-line.highlight {
   font-weight: 600;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .payment-info {
@@ -512,16 +512,16 @@ onMounted(() => {
 }
 
 .payment-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .payment-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .screenshot-preview {
@@ -532,9 +532,9 @@ onMounted(() => {
 .no-screenshot {
   width: 160px;
   height: 100px;
-  background-color: #F5F5F5;
-  border: 1px solid #D9D9D9;
-  border-radius: 4px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -547,25 +547,25 @@ onMounted(() => {
 }
 
 .no-screenshot-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 12px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
 }
 
 .remark-content {
-  background-color: #F9F9F9;
-  border-radius: 4px;
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-sm);
   padding: 16px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #262626;
+  color: var(--color-text-primary);
   line-height: 1.6;
 }
 
 .approval-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 2px solid #C00000;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-primary);
   padding: 24px;
 }
 
@@ -580,7 +580,7 @@ onMounted(() => {
 .approve-btn {
   width: 140px;
   height: 48px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .approval-result {
@@ -596,15 +596,15 @@ onMounted(() => {
 }
 
 .result-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .result-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 </style>

@@ -75,12 +75,12 @@ const handleCommand = (command: string) => {
 <style scoped>
 .header {
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 var(--spacing-lg);
   flex-shrink: 0;
 }
 
@@ -92,36 +92,36 @@ const handleCommand = (command: string) => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: var(--spacing-lg);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md);
   cursor: pointer;
 }
 
 .user-name {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #262626;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8C8C8C;
-  font-size: 16px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
   transition: all 0.3s;
 }
 
 .user-avatar:hover {
-  background-color: #E5E5E5;
+  background-color: var(--color-border);
 }
 </style>
