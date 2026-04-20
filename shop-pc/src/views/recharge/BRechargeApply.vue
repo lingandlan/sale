@@ -84,7 +84,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import { Upload } from '@element-plus/icons-vue'
-import { submitBRechargeApply } from '@/api/recharge'
+import { submitBRechargeApply, getCenterList } from '@/api/recharge'
 
 interface RechargeCenter {
   id: string
@@ -94,11 +94,17 @@ interface RechargeCenter {
 const router = useRouter()
 const formRef = ref<FormInstance>()
 
-const centers = ref<RechargeCenter[]>([
-  { id: '1', name: '北京朝阳中心' },
-  { id: '2', name: '北京海淀中心' },
-  { id: '3', name: '上海浦东中心' }
-])
+const centers = ref<RechargeCenter[]>([])
+
+const loadCenters = async () => {
+  try {
+    const res = await getCenterList()
+    if (res?.data) {
+      centers.value = res.data.map((c: any) => ({ id: c.id, name: c.name }))
+    }
+  } catch {}
+}
+loadCenters()
 
 const formData = ref({
   centerId: '',

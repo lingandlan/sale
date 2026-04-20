@@ -141,17 +141,13 @@ type RechargeOperator struct {
 
 // CreateBRechargeApplicationRequest B端充值申请
 type CreateBRechargeApplicationRequest struct {
-	MemberID           string  `json:"memberId" binding:"required"`
-	CenterID           string  `json:"centerId" binding:"required"`
-	Amount             float64 `json:"amount" binding:"required,gt=0"`
-	PaymentMethod      string  `json:"paymentMethod" binding:"required,oneof=cash card transfer"`
-	Remark             string  `json:"remark"`
+	CenterID             string  `json:"centerId" binding:"required"`
+	CenterName           string  `json:"centerName"`
+	Amount               float64 `json:"amount" binding:"required,gt=0"`
 	LastMonthConsumption float64 `json:"lastMonthConsumption"`
-	CenterName         string  `json:"centerName"`
-	TransactionNo      string  `json:"transactionNo"`
-	Screenshot         string  `json:"screenshot"`
-	MemberName         string  `json:"memberName"`
-	MemberPhone        string  `json:"memberPhone"`
+	TransactionNo        string  `json:"transactionNo"`
+	Screenshot           string  `json:"screenshot"`
+	Remark               string  `json:"remark"`
 }
 
 // ApprovalRechargeApplicationRequest B端充值审批

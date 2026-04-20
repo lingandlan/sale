@@ -213,20 +213,19 @@ func isDynamicSegment(segment string) bool {
 	if allDigits && len(segment) > 0 {
 		return true
 	}
-	// UUID 格式（包含连字符，如 abc-123-def）
-	hasLetter := false
-	hasDash := false
-	for _, c := range segment {
-		if c == '-' {
-			hasDash = true
-		} else if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
-			hasLetter = true
-		} else if c < '0' || c > '9' {
-			return false
+	// UUID 标准格式（8-4-4-4-12，如 3c767a06-4808-49b6-a6b0-7254c72df23a）
+	if len(segment) == 36 && segment[8] == '-' && segment[13] == '-' && segment[18] == '-' && segment[23] == '-' {
+		return true
+	}
+	// 中心 ID 格式（前缀-短码，如 center-bj-cy、op-001）
+	// 只匹配以已知前缀开头的 ID 格式，避免将 b-apply、c-entry 等路由段误判
+	idPrefixes := []string{"center-", "op-", "user-", "card-", "recharge-"}
+	for _, prefix := range idPrefixes {
+		if strings.HasPrefix(segment, prefix) {
+			return true
 		}
 	}
-	// 只有包含连字符且有字母的才视为动态 ID（如 center-bj-cy）
-	return hasDash && hasLetter
+	return false
 }
 
 // ReloadPolicy 重新加载策略

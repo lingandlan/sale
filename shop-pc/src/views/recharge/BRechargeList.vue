@@ -150,8 +150,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getBRechargeApprovalList, approvalAction } from '@/api/recharge'
+import { getBRechargeApprovalList, approvalAction, getCenterList } from '@/api/recharge'
 import type { BRechargeApprovalItem } from '@/api/recharge'
+import { extractErrorMessage } from '@/utils/request'
 
 const router = useRouter()
 
@@ -160,11 +161,16 @@ interface Center {
   name: string
 }
 
-const centers = ref<Center[]>([
-  { id: '1', name: '北京朝阳中心' },
-  { id: '2', name: '北京海淀中心' },
-  { id: '3', name: '上海浦东中心' }
-])
+const centers = ref<Center[]>([])
+
+const loadCenters = async () => {
+  try {
+    const res = await getCenterList()
+    if (res?.data) {
+      centers.value = res.data.map((c: any) => ({ id: c.id, name: c.name }))
+    }
+  } catch {}
+}
 
 const activeTab = ref<'pending' | 'approved'>('pending')
 const filterDate = ref<[Date, Date] | null>(null)
@@ -289,12 +295,21 @@ const handleBatchApprove = async () => {
         type: 'success'
       }
     )
+    const failed: string[] = []
     for (const row of selectedRows.value) {
-      await approvalAction({ id: row.id, action: 'approve' })
+      try {
+        await approvalAction({ id: row.id, action: 'approve' })
+      } catch (err) {
+        failed.push(row.centerName || row.id)
+      }
     }
     selectedRows.value = []
     loadData()
-    ElMessage.success('批量通过成功')
+    if (failed.length > 0) {
+      ElMessage.warning(`${failed.length} 条审批失败：${failed.join(', ')}`)
+    } else {
+      ElMessage.success('批量通过成功')
+    }
   } catch {
     // 用户取消
   }
@@ -308,12 +323,21 @@ const handleBatchReject = async () => {
       inputPattern: /.+/,
       inputErrorMessage: '请输入拒绝原因'
     })
+    const failed: string[] = []
     for (const row of selectedRows.value) {
-      await approvalAction({ id: row.id, action: 'reject', remark: value })
+      try {
+        await approvalAction({ id: row.id, action: 'reject', remark: value })
+      } catch (err) {
+        failed.push(row.centerName || row.id)
+      }
     }
     selectedRows.value = []
     loadData()
-    ElMessage.success('批量拒绝成功')
+    if (failed.length > 0) {
+      ElMessage.warning(`${failed.length} 条拒绝失败：${failed.join(', ')}`)
+    } else {
+      ElMessage.success('批量拒绝成功')
+    }
   } catch {
     // 用户取消
   }
@@ -325,6 +349,7 @@ const handlePageChange = (page: number) => {
 }
 
 onMounted(() => {
+  loadCenters()
   loadData()
 })
 </script>
