@@ -56,7 +56,7 @@ func TestRecovery_HandlerPanics(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 500, body.Code)
 	assert.Equal(t, "internal server error", body.Message)
-	assert.Equal(t, "something went wrong", body.Detail)
+	assert.Empty(t, body.Detail)
 }
 
 func TestRecovery_HandlerPanicsWithRuntimeError(t *testing.T) {
@@ -82,7 +82,7 @@ func TestRecovery_HandlerPanicsWithRuntimeError(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 500, body.Code)
 	assert.Equal(t, "internal server error", body.Message)
-	assert.NotEmpty(t, body.Detail)
+	assert.Empty(t, body.Detail)
 }
 
 func TestRecovery_MultipleRequests(t *testing.T) {

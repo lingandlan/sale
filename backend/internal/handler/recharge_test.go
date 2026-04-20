@@ -415,9 +415,11 @@ func TestRechargeHandler_CreateBRechargeApplication(t *testing.T) {
 		mockSvc.On("CreateBRechargeApplication", mock.Anything).Return(app, nil).Once()
 
 		body := map[string]interface{}{
+			"memberId": "m1",
 			"centerId":             "center-001",
 			"centerName":           "北京朝阳中心",
 			"amount":               50000,
+			"paymentMethod":      "cash",
 			"lastMonthConsumption": 0,
 			"transactionNo":        "BK20260413001",
 			"screenshot":           "",
@@ -457,7 +459,9 @@ func TestRechargeHandler_CreateBRechargeApplication(t *testing.T) {
 		mockSvc.On("CreateBRechargeApplication", mock.Anything).Return(app, nil).Once()
 
 		body := map[string]interface{}{
+			"memberId": "m1",
 			"centerId": "c1", "centerName": "中心", "amount": 1000,
+			"paymentMethod":      "cash",
 			"lastMonthConsumption": 0, "transactionNo": "T1", "screenshot": "", "remark": "",
 		}
 		jsonBody, _ := json.Marshal(body)
@@ -556,7 +560,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 
 		mockSvc.On("ApproveRechargeApplication", "app-001", "approve", "1", "ok").Return(nil).Once()
 
-		body := map[string]string{"id": "app-001", "action": "approve", "remark": "ok"}
+		body := map[string]string{"id": "app-001", "action": "approve", "reason": "ok"}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/api/v1/recharge/b-approval/action", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -575,7 +579,7 @@ func TestRechargeHandler_ApprovalRechargeApplication(t *testing.T) {
 
 		mockSvc.On("ApproveRechargeApplication", "app-002", "reject", "1", "金额不对").Return(nil).Once()
 
-		body := map[string]string{"id": "app-002", "action": "reject", "remark": "金额不对"}
+		body := map[string]string{"id": "app-002", "action": "reject", "reason": "金额不对"}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/api/v1/recharge/b-approval/action", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -1045,7 +1049,7 @@ func TestRechargeHandler_CreateOperator(t *testing.T) {
 		op := &model.RechargeOperator{ID: "op1", Name: "小李"}
 		mockSvc.On("CreateOperator", mock.Anything).Return(op, nil).Once()
 
-		body := map[string]interface{}{"name": "小李", "phone": "138", "password": "123", "centerId": "c1", "role": "operator"}
+		body := map[string]interface{}{"name": "小李", "phone": "13800138000", "password": "123456", "centerId": "c1", "role": "operator"}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/api/v1/operator", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -1067,7 +1071,7 @@ func TestRechargeHandler_UpdateOperator(t *testing.T) {
 		op := &model.RechargeOperator{ID: "op1", Name: "小李(更新)"}
 		mockSvc.On("UpdateOperator", "op1", mock.Anything).Return(op, nil).Once()
 
-		body := map[string]interface{}{"name": "小李(更新)", "phone": "138", "centerId": "c1", "role": "admin", "status": "active"}
+		body := map[string]interface{}{"name": "小李(更新)", "phone": "13800138000", "centerId": "c1", "role": "center_admin", "status": "active"}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("PUT", "/api/v1/operator/op1", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")

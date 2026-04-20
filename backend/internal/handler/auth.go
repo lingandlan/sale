@@ -37,7 +37,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	result, err := h.authSvc.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
-		fmt.Printf("登录失败: phone=%s, error=%v\n", req.Phone, err)
+		fmt.Printf("登录失败: error=%v\n", err)
 		switch err {
 		case apperrors.ErrNotFound:
 			response.Unauthorized(c, errmsg.Get("auth.login_failed"))

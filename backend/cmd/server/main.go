@@ -104,10 +104,10 @@ func main() {
 	// 13. 注册中间件
 	r.Use(middleware.Recovery())
 	r.Use(middleware.ZapLogger())
-	r.Use(middleware.CORS())
+	r.Use(middleware.CORS(cfg.CORS.AllowedOrigins))
 
 	// 14. 注册路由
-	router.SetupRouter(r, authHandler, userHandler, adminHandler, rechargeHandler, authMiddleware, rbacMiddleware)
+	router.SetupRouter(r, authHandler, userHandler, adminHandler, rechargeHandler, authMiddleware, rbacMiddleware, redisClient)
 
 	// 15. 创建 HTTP Server
 	srv := &http.Server{

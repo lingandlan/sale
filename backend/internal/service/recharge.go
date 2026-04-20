@@ -751,11 +751,17 @@ func (s *RechargeService) GetOperators() ([]model.RechargeOperator, error) {
 
 // CreateOperator 创建操作员
 func (s *RechargeService) CreateOperator(data map[string]interface{}) (*model.RechargeOperator, error) {
+	// 密码哈希存储
+	hashedPwd, err := HashPassword(data["password"].(string))
+	if err != nil {
+		return nil, fmt.Errorf("密码加密失败: %w", err)
+	}
+
 	operator := &model.RechargeOperator{
 		ID:       uuid.New().String(),
 		Name:     data["name"].(string),
 		Phone:    data["phone"].(string),
-		Password: data["password"].(string),
+		Password: hashedPwd,
 		CenterID: data["centerId"].(string),
 		Role:     data["role"].(string),
 		Status:   "active",
@@ -785,7 +791,11 @@ func (s *RechargeService) UpdateOperator(id string, data map[string]interface{})
 		updates["status"] = v
 	}
 	if v, ok := data["password"].(string); ok && v != "" {
-		updates["password"] = v
+		hashed, err := HashPassword(v)
+		if err != nil {
+			return nil, fmt.Errorf("密码加密失败: %w", err)
+		}
+		updates["password"] = hashed
 	}
 	// 前端发 center_id，数据库字段 center_id
 	if v, ok := data["center_id"].(string); ok && v != "" {

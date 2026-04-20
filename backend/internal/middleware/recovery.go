@@ -18,20 +18,15 @@ func Recovery() gin.HandlerFunc {
 				// 获取堆栈信息
 				stack := debug.Stack()
 
-				// 返回 500
+				// 返回 500 - 不暴露内部错误详情
 				c.JSON(http.StatusInternalServerError, response.ErrorResponse{
 					Code:    500,
 					Message: "internal server error",
-					Detail:  fmt.Sprintf("%v", err),
 				})
 
-				// 打印日志
-				// logger.Error("panic recovered",
-				// 	logger.String("error", fmt.Sprintf("%v", err)),
-				// 	logger.String("stack", string(stack)),
-				// )
+				// 打印日志（含完整堆栈）
+				fmt.Printf("[PANIC] %v\n%s\n", err, stack)
 
-				_ = stack // 避免未使用警告
 				c.Abort()
 			}
 		}()

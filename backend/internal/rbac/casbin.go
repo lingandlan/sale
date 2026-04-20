@@ -250,8 +250,25 @@ func (s *CasbinService) initDefaultPolicies() error {
 		{"center_admin", "/api/v1/dashboard/*", "GET"},
 		{"operator", "/api/v1/dashboard/*", "GET"},
 		// 充值相关 - C端充值 + 充值记录
-		{"center_admin", "/api/v1/recharge/c-entry/*", "*"},
+		// B端充值申请
+		{"center_admin", "/api/v1/recharge/b-apply", "POST"},
+		{"operator", "/api/v1/recharge/b-apply", "POST"},
+		// B端充值审批
+		{"center_admin", "/api/v1/recharge/b-approval", "GET"},
+		{"center_admin", "/api/v1/recharge/b-approval/*", "GET"},
+		{"center_admin", "/api/v1/recharge/b-approval/action", "POST"},
+		// C端充值 + 充值记录
+		{"center_admin", "/api/v1/recharge/c-entry", "GET"},
+		{"center_admin", "/api/v1/recharge/c-entry", "POST"},
+		{"center_admin", "/api/v1/recharge/c-entry/search-member", "GET"},
+		{"center_admin", "/api/v1/recharge/c-entry/*", "GET"},
+		{"center_admin", "/api/v1/recharge/records", "GET"},
 		{"center_admin", "/api/v1/recharge/records/*", "GET"},
+		{"operator", "/api/v1/recharge/c-entry", "GET"},
+		{"operator", "/api/v1/recharge/c-entry", "POST"},
+		{"operator", "/api/v1/recharge/c-entry/search-member", "GET"},
+		{"operator", "/api/v1/recharge/c-entry/*", "GET"},
+		{"operator", "/api/v1/recharge/records", "GET"},
 		{"operator", "/api/v1/recharge/records/*", "GET"},
 		// 门店卡（不含 batch-import/allocate 总卡库操作）
 		{"center_admin", "/api/v1/card/verify/*", "*"},

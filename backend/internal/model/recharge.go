@@ -138,6 +138,78 @@ type RechargeOperator struct {
 	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
+// CreateBRechargeApplicationRequest B端充值申请
+type CreateBRechargeApplicationRequest struct {
+	MemberID           string  `json:"memberId" binding:"required"`
+	CenterID           string  `json:"centerId" binding:"required"`
+	Amount             float64 `json:"amount" binding:"required,gt=0"`
+	PaymentMethod      string  `json:"paymentMethod" binding:"required,oneof=cash card transfer"`
+	Remark             string  `json:"remark"`
+	LastMonthConsumption float64 `json:"lastMonthConsumption"`
+	CenterName         string  `json:"centerName"`
+	TransactionNo      string  `json:"transactionNo"`
+	Screenshot         string  `json:"screenshot"`
+	MemberName         string  `json:"memberName"`
+	MemberPhone        string  `json:"memberPhone"`
+}
+
+// ApprovalRechargeApplicationRequest B端充值审批
+type ApprovalRechargeApplicationRequest struct {
+	ID     string `json:"id" binding:"required"`
+	Action string `json:"action" binding:"required,oneof=approve reject"`
+	Reason string `json:"reason"`
+}
+
+// CreateCRechargeRequest C端充值
+type CreateCRechargeRequest struct {
+	MemberID      string  `json:"memberId" binding:"required"`
+	CenterID      string  `json:"centerId" binding:"required"`
+	Amount        float64 `json:"amount" binding:"required,gt=0"`
+	PaymentMethod string  `json:"paymentMethod"`
+	Remark        string  `json:"remark"`
+	MemberName    string  `json:"memberName"`
+	MemberPhone   string  `json:"memberPhone"`
+	CenterName    string  `json:"centerName"`
+}
+
+// CreateCenterRequest 创建充值中心
+type CreateCenterRequest struct {
+	Name      string `json:"name" binding:"required,min=1,max=100"`
+	Code      string `json:"code"`
+	Address   string `json:"address"`
+	Phone     string `json:"phone"`
+	Province  string `json:"province"`
+	City      string `json:"city"`
+	District  string `json:"district"`
+	ManagerID string `json:"managerId"`
+}
+
+// UpdateCenterRequest 更新充值中心
+type UpdateCenterRequest struct {
+	Name    string `json:"name" binding:"omitempty,min=1,max=100"`
+	Address string `json:"address" binding:"omitempty"`
+	Phone   string `json:"phone" binding:"omitempty"`
+}
+
+// CreateOperatorRequest 创建操作员
+type CreateOperatorRequest struct {
+	Name     string `json:"name" binding:"required,min=1,max=50"`
+	Phone    string `json:"phone" binding:"required,len=11"`
+	Password string `json:"password" binding:"required,min=6,max=32"`
+	CenterID string `json:"centerId" binding:"required"`
+	Role     string `json:"role" binding:"required,oneof=center_admin operator"`
+}
+
+// UpdateOperatorRequest 更新操作员
+type UpdateOperatorRequest struct {
+	Name     string `json:"name" binding:"omitempty,min=1,max=50"`
+	Phone    string `json:"phone" binding:"omitempty,len=11"`
+	Password string `json:"password" binding:"omitempty,min=6,max=32"`
+	Role     string `json:"role" binding:"omitempty,oneof=center_admin operator"`
+	Status   string `json:"status" binding:"omitempty,oneof=active inactive"`
+	CenterID string `json:"centerId" binding:"omitempty"`
+}
+
 // TableName 显式指定表名
 func (RechargeApplication) TableName() string { return "recharge_applications" }
 func (CRecharge) TableName() string           { return "c_recharges" }

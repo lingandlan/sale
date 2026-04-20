@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 
 	"marketplace/backend/internal/handler"
 	"marketplace/backend/internal/middleware"
@@ -16,6 +17,7 @@ func SetupRouter(
 	rechargeHandler *handler.RechargeHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	rbacMiddleware *middleware.RBACMiddleware,
+	rdb *redis.Client,
 ) {
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
@@ -28,14 +30,20 @@ func SetupRouter(
 		// ========== 公开接口 ==========
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/login", authHandler.Login)
-			auth.POST("/logout", authHandler.Logout)
+			auth.POST("/login", middleware.LoginRateLimit(rdb), authHandler.Login)
 			auth.POST("/refresh", authHandler.Refresh)
+		}
+
+		// ========== 认证接口（含 API 限速）==========
+		authed := v1.Group("")
+		authed.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb))
+		{
+			authed.POST("/auth/logout", authHandler.Logout)
 		}
 
 		// ========== Dashboard接口 ==========
 		dashboard := v1.Group("/dashboard")
-		dashboard.Use(authMiddleware.Auth())
+		dashboard.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			dashboard.GET("/statistics", rechargeHandler.GetDashboardStatistics)
 			dashboard.GET("/todos", rechargeHandler.GetDashboardTodos)
@@ -44,14 +52,14 @@ func SetupRouter(
 
 		// ========== B端充值申请 ==========
 		bRecharge := v1.Group("/recharge/b-apply")
-		bRecharge.Use(authMiddleware.Auth())
+		bRecharge.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			bRecharge.POST("", rechargeHandler.CreateBRechargeApplication)
 		}
 
 		// ========== B端充值审批 ==========
 		bApproval := v1.Group("/recharge/b-approval")
-		bApproval.Use(authMiddleware.Auth())
+		bApproval.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			bApproval.GET("", rechargeHandler.GetRechargeApplicationList)
 			bApproval.GET("/:id", rechargeHandler.GetRechargeApplicationDetail)
@@ -60,7 +68,7 @@ func SetupRouter(
 
 		// ========== C端充值 ==========
 		cRecharge := v1.Group("/recharge/c-entry")
-		cRecharge.Use(authMiddleware.Auth())
+		cRecharge.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			cRecharge.POST("", rechargeHandler.CreateCRecharge)
 			cRecharge.GET("", rechargeHandler.GetCRechargeList)
@@ -70,7 +78,7 @@ func SetupRouter(
 
 		// ========== 充值记录 ==========
 		records := v1.Group("/recharge/records")
-		records.Use(authMiddleware.Auth())
+		records.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			records.GET("", rechargeHandler.GetCRechargeList)
 			records.GET("/:id", rechargeHandler.GetCRechargeDetail)
@@ -78,7 +86,7 @@ func SetupRouter(
 
 		// ========== 门店卡管理 ==========
 		card := v1.Group("/card")
-		card.Use(authMiddleware.Auth())
+		card.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			card.GET("/verify/:cardNo", rechargeHandler.VerifyCard)
 			card.POST("/consume", rechargeHandler.ConsumeCard)
@@ -100,7 +108,7 @@ func SetupRouter(
 
 		// ========== 充值中心管理 ==========
 		center := v1.Group("/center")
-		center.Use(authMiddleware.Auth())
+		center.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			center.GET("", rechargeHandler.GetCenters)
 			center.GET("/:id", rechargeHandler.GetCenterDetail)
@@ -111,7 +119,7 @@ func SetupRouter(
 
 		// ========== 操作员管理 ==========
 		operator := v1.Group("/operator")
-		operator.Use(authMiddleware.Auth())
+		operator.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			operator.GET("", rechargeHandler.GetOperators)
 			operator.POST("", rechargeHandler.CreateOperator)
@@ -121,7 +129,7 @@ func SetupRouter(
 
 		// ========== 系统设置 ==========
 		system := v1.Group("/system")
-		system.Use(authMiddleware.Auth(), rbacMiddleware.Auth())
+		system.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			system.GET("/config", func(c *gin.Context) {
 				c.JSON(200, gin.H{"data": gin.H{
@@ -143,7 +151,7 @@ func SetupRouter(
 
 		// ========== 用户管理 ==========
 		user := v1.Group("/user")
-		user.Use(authMiddleware.Auth(), rbacMiddleware.Auth())
+		user.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			user.GET("/info", userHandler.GetUserInfo)
 			user.PUT("/info", userHandler.UpdateUserInfo)
@@ -152,7 +160,7 @@ func SetupRouter(
 
 		// ========== 管理员接口 ==========
 		admin := v1.Group("/admin")
-		admin.Use(authMiddleware.Auth(), rbacMiddleware.Auth())
+		admin.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
 		{
 			// 用户管理
 			admin.GET("/users", adminHandler.ListUsers)

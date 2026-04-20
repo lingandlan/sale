@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 
 	"marketplace/backend/internal/middleware"
 	"marketplace/backend/internal/model"
@@ -116,7 +117,12 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: 验证旧密码
+	// 验证旧密码
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		response.Error(c, 401, "旧密码错误")
+		return
+	}
+
 	// 更新密码
 	hashedPassword, err := service.HashPassword(req.NewPassword)
 	if err != nil {

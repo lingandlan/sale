@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -83,7 +84,7 @@ func bizError(c *gin.Context, err error) {
 // ========== B端充值申请 ==========
 
 func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
-	var req map[string]interface{}
+	var req model.CreateBRechargeApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
@@ -94,10 +95,24 @@ func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
 		response.Error(c, 401, err.Error())
 		return
 	}
-	req["applicantId"] = fmt.Sprintf("%d", applicantID)
-	req["applicantName"] = applicantName
 
-	app, err := h.rechargeService.CreateBRechargeApplication(req)
+	data := map[string]interface{}{
+		"memberId":             req.MemberID,
+		"centerId":             req.CenterID,
+		"amount":               req.Amount,
+		"paymentMethod":        req.PaymentMethod,
+		"remark":               req.Remark,
+		"lastMonthConsumption": req.LastMonthConsumption,
+		"centerName":           req.CenterName,
+		"transactionNo":        req.TransactionNo,
+		"screenshot":           req.Screenshot,
+		"memberName":           req.MemberName,
+		"memberPhone":          req.MemberPhone,
+		"applicantId":          fmt.Sprintf("%d", applicantID),
+		"applicantName":        applicantName,
+	}
+
+	app, err := h.rechargeService.CreateBRechargeApplication(data)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("recharge.apply_failed"))
 		return
@@ -136,15 +151,11 @@ func (h *RechargeHandler) GetRechargeApplicationDetail(c *gin.Context) {
 }
 
 func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
-	var req map[string]string
+	var req model.ApprovalRechargeApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
-
-	id := req["id"]
-	action := req["action"]
-	remark := req["remark"]
 
 	approvedByID, _, _, _, err := h.getOperatorInfo(c)
 	if err != nil {
@@ -153,7 +164,7 @@ func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
 	}
 	approvedBy := fmt.Sprintf("%d", approvedByID)
 
-	if err := h.rechargeService.ApproveRechargeApplication(id, action, approvedBy, remark); err != nil {
+	if err := h.rechargeService.ApproveRechargeApplication(req.ID, req.Action, approvedBy, req.Reason); err != nil {
 		response.InternalError(c, errmsg.Get("recharge.approval_failed"))
 		return
 	}
@@ -164,7 +175,7 @@ func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
 // ========== C端充值 ==========
 
 func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
-	var req map[string]interface{}
+	var req model.CreateCRechargeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
@@ -175,10 +186,21 @@ func (h *RechargeHandler) CreateCRecharge(c *gin.Context) {
 		response.Error(c, 401, err.Error())
 		return
 	}
-	req["operatorId"] = fmt.Sprintf("%d", operatorID)
-	req["operatorName"] = operatorName
 
-	recharge, err := h.rechargeService.CreateCRecharge(req)
+	data := map[string]interface{}{
+		"memberId":      req.MemberID,
+		"centerId":      req.CenterID,
+		"amount":        req.Amount,
+		"paymentMethod": req.PaymentMethod,
+		"remark":        req.Remark,
+		"memberName":    req.MemberName,
+		"memberPhone":   req.MemberPhone,
+		"centerName":    req.CenterName,
+		"operatorId":    fmt.Sprintf("%d", operatorID),
+		"operatorName":  operatorName,
+	}
+
+	recharge, err := h.rechargeService.CreateCRecharge(data)
 	if err != nil {
 		response.Error(c, 400, err.Error())
 		return
@@ -224,15 +246,31 @@ func (h *RechargeHandler) GetCRechargeDetail(c *gin.Context) {
 // ========== 门店卡 ==========
 
 func (h *RechargeHandler) BatchImportCards(c *gin.Context) {
+	// 限制文件大小 10MB
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 10<<20)
+
 	file, err := c.FormFile("file")
 	if err != nil {
-		response.ParamsError(c, "请上传Excel文件")
+		response.ParamsError(c, "请上传Excel文件（最大10MB）")
 		return
 	}
 
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if ext != ".xlsx" && ext != ".xls" && ext != ".csv" {
 		response.ParamsError(c, "仅支持.xlsx或.csv格式文件")
+		return
+	}
+
+	// MIME type 校验
+	contentType := file.Header.Get("Content-Type")
+	allowedMIME := map[string]bool{
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": true, // .xlsx
+		"application/vnd.ms-excel": true,                                          // .xls
+		"text/csv":                  true,
+		"application/octet-stream":  true, // 部分浏览器上传 .xlsx 时的 MIME
+	}
+	if !allowedMIME[contentType] {
+		response.ParamsError(c, "文件类型不支持")
 		return
 	}
 
@@ -610,13 +648,24 @@ func (h *RechargeHandler) GetCenterDetail(c *gin.Context) {
 }
 
 func (h *RechargeHandler) CreateCenter(c *gin.Context) {
-	var req map[string]interface{}
+	var req model.CreateCenterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
 
-	result, err := h.rechargeService.CreateCenter(req)
+	data := map[string]interface{}{
+		"name":      req.Name,
+		"code":      req.Code,
+		"address":   req.Address,
+		"phone":     req.Phone,
+		"province":  req.Province,
+		"city":      req.City,
+		"district":  req.District,
+		"managerId": req.ManagerID,
+	}
+
+	result, err := h.rechargeService.CreateCenter(data)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("center.create_failed"))
 		return
@@ -627,13 +676,24 @@ func (h *RechargeHandler) CreateCenter(c *gin.Context) {
 
 func (h *RechargeHandler) UpdateCenter(c *gin.Context) {
 	id := c.Param("id")
-	var req map[string]interface{}
+	var req model.UpdateCenterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
 
-	result, err := h.rechargeService.UpdateCenter(id, req)
+	data := map[string]interface{}{}
+	if req.Name != "" {
+		data["name"] = req.Name
+	}
+	if req.Address != "" {
+		data["address"] = req.Address
+	}
+	if req.Phone != "" {
+		data["phone"] = req.Phone
+	}
+
+	result, err := h.rechargeService.UpdateCenter(id, data)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("center.update_failed"))
 		return
@@ -665,13 +725,21 @@ func (h *RechargeHandler) GetOperators(c *gin.Context) {
 }
 
 func (h *RechargeHandler) CreateOperator(c *gin.Context) {
-	var req map[string]interface{}
+	var req model.CreateOperatorRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
 
-	result, err := h.rechargeService.CreateOperator(req)
+	data := map[string]interface{}{
+		"name":     req.Name,
+		"phone":    req.Phone,
+		"password": req.Password,
+		"centerId": req.CenterID,
+		"role":     req.Role,
+	}
+
+	result, err := h.rechargeService.CreateOperator(data)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("operator.create_failed"))
 		return
@@ -682,13 +750,33 @@ func (h *RechargeHandler) CreateOperator(c *gin.Context) {
 
 func (h *RechargeHandler) UpdateOperator(c *gin.Context) {
 	id := c.Param("id")
-	var req map[string]interface{}
+	var req model.UpdateOperatorRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ParamsError(c, err.Error())
 		return
 	}
 
-	result, err := h.rechargeService.UpdateOperator(id, req)
+	data := map[string]interface{}{}
+	if req.Name != "" {
+		data["name"] = req.Name
+	}
+	if req.Phone != "" {
+		data["phone"] = req.Phone
+	}
+	if req.Password != "" {
+		data["password"] = req.Password
+	}
+	if req.Role != "" {
+		data["role"] = req.Role
+	}
+	if req.Status != "" {
+		data["status"] = req.Status
+	}
+	if req.CenterID != "" {
+		data["centerId"] = req.CenterID
+	}
+
+	result, err := h.rechargeService.UpdateOperator(id, data)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("operator.update_failed"))
 		return
