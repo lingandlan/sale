@@ -2,7 +2,7 @@
   <div class="login-container">
     <!-- 左侧品牌区域 -->
     <div class="brand-section">
-      <div class="logo-circle"></div>
+      <img src="@/assets/logo.png" alt="太积堂" class="logo-img" />
       <div class="brand-name">太积堂</div>
       <div class="system-title">充值与门店管理系统</div>
     </div>
@@ -56,9 +56,7 @@
             :loading="loading"
             :style="{
               width: '100%',
-              height: '48px',
-              backgroundColor: '#C00000',
-              borderColor: '#C00000'
+              height: '48px'
             }"
             @click="handleLogin"
           >
@@ -130,41 +128,66 @@ const handleForgot = () => {
   display: flex;
   width: 100%;
   height: 100vh;
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
 }
 
 /* 左侧品牌区域 */
 .brand-section {
   width: 560px;
-  background-color: #C00000;
+  background-color: var(--color-primary);
+  background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 80px;
+  position: relative;
+  overflow: hidden;
 }
 
-.logo-circle {
+.brand-section::before {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border: 2px solid rgba(255, 215, 0, 0.08);
+  border-radius: 50%;
+  top: -120px;
+  right: -80px;
+}
+
+.brand-section::after {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  bottom: -60px;
+  left: -40px;
+}
+
+.logo-img {
   width: 120px;
   height: 120px;
-  background-color: #FFD700;
   border-radius: 50%;
+  object-fit: contain;
 }
 
 .brand-name {
   margin-top: 24px;
-  font-family: 'Inter', sans-serif;
-  font-size: 48px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-4xl);
   font-weight: 600;
-  color: #FFD700;
+  color: var(--color-primary-gold);
 }
 
 .system-title {
   margin-top: 24px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 18px;
   font-weight: 400;
-  color: #FFFFFF;
+  color: var(--color-text-white);
 }
 
 /* 右侧表单区域 */
@@ -178,9 +201,10 @@ const handleForgot = () => {
 
 .login-card {
   width: 480px;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   padding: 40px;
 }
 
@@ -190,10 +214,10 @@ const handleForgot = () => {
 }
 
 .form-header h2 {
-  font-family: 'Inter', sans-serif;
-  font-size: 24px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-2xl);
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
   text-align: left;
 }
@@ -209,15 +233,15 @@ const handleForgot = () => {
 .form-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-sm);
   text-align: left;
 }
 
 .form-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   font-weight: 400;
-  color: #262626;
+  color: var(--color-text-primary);
   text-align: left;
 }
 
@@ -233,36 +257,36 @@ const handleForgot = () => {
 }
 
 .forgot-link {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   font-weight: 400;
-  color: #C00000;
+  color: var(--color-primary);
   cursor: pointer;
 }
 
 .agreement-text {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
   font-weight: 400;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
   text-align: center;
-  margin-top: 8px;
+  margin-top: var(--spacing-sm);
 }
 
 /* Element Plus样式覆盖 */
 :deep(.el-input__wrapper) {
-  background-color: #FFFFFF;
+  background-color: var(--color-bg-card);
 }
 
 :deep(.el-input__inner) {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
 }
 
 :deep(.el-checkbox__label) {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   font-weight: 400;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 </style>

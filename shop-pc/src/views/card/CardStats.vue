@@ -198,7 +198,7 @@ onMounted(() => { loadData() })
 
 <style scoped>
 .card-stats {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
 }
 
@@ -207,16 +207,16 @@ onMounted(() => { loadData() })
   justify-content: space-between;
   align-items: center;
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
 }
 
 .page-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -234,9 +234,9 @@ onMounted(() => { loadData() })
 }
 
 .stat-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -245,33 +245,33 @@ onMounted(() => { loadData() })
 }
 
 .stat-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 32px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .text-green {
-  color: #52C41A;
+  color: var(--color-success);
 }
 
 .text-red {
-  color: #FF4D4F;
+  color: var(--color-danger);
 }
 
 .text-blue {
-  color: #1677FF;
+  color: var(--color-info);
 }
 
 .stat-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .warning-card {
-  background-color: #FFF7E6;
-  border-radius: 8px;
+  background-color: var(--color-warning-bg);
+  border-radius: var(--radius-md);
   border: 1px solid #FFD591;
   padding: 16px 24px;
   display: flex;
@@ -284,7 +284,7 @@ onMounted(() => { loadData() })
 }
 
 .warning-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   color: #8C6000;
 }
@@ -295,18 +295,18 @@ onMounted(() => { loadData() })
 }
 
 .chart-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
   flex: 1;
 }
 
 .chart-header {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .chart-container {

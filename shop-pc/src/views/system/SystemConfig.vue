@@ -222,21 +222,21 @@ const handleSave = (category: string) => {
 
 <style scoped>
 .system-config {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
 }
 
 .page-header {
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
 }
 
 .page-title {
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -248,9 +248,9 @@ const handleSave = (category: string) => {
 
 .sidebar {
   width: 240px;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 16px 0;
   flex-shrink: 0;
 }
@@ -262,20 +262,20 @@ const handleSave = (category: string) => {
   padding: 12px 24px;
   cursor: pointer;
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
   transition: all 0.2s;
 }
 
 .sidebar-item:hover {
-  background-color: #F5F5F5;
-  color: #C00000;
+  background-color: var(--color-bg);
+  color: var(--color-primary);
 }
 
 .sidebar-item.active {
-  background-color: #FFF1F0;
-  color: #C00000;
+  background-color: var(--color-danger-bg);
+  color: var(--color-primary);
   font-weight: 600;
-  border-right: 3px solid #C00000;
+  border-right: 3px solid var(--color-primary);
 }
 
 .sidebar-icon {
@@ -283,7 +283,7 @@ const handleSave = (category: string) => {
 }
 
 .sidebar-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
 }
 
 .main-content {
@@ -291,33 +291,33 @@ const handleSave = (category: string) => {
 }
 
 .config-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 
 .config-header {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .form-hint {
   margin-left: 8px;
   font-size: 12px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
 }
 
 .save-btn {
   width: 120px;
-  background-color: #C00000;
-  border-color: #C00000;
-  border-radius: 4px;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
 }
 
 .save-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 </style>

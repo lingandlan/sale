@@ -416,7 +416,7 @@ onMounted(() => {
 
 <style scoped>
 .card-issue {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
@@ -427,16 +427,16 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
 }
 
 .page-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -449,9 +449,9 @@ onMounted(() => {
 
 .form-card {
   flex: 1;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -463,10 +463,10 @@ onMounted(() => {
 }
 
 .section-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .search-row {
@@ -477,19 +477,19 @@ onMounted(() => {
 }
 
 .search-btn {
-  background-color: #C00000;
-  border-color: #C00000;
-  border-radius: 4px;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
 }
 
 .search-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .member-info-box {
-  background-color: #F9F9F9;
-  border-radius: 4px;
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-sm);
   padding: 16px;
   margin-top: 16px;
 }
@@ -506,27 +506,27 @@ onMounted(() => {
 }
 
 .info-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 12px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
 }
 
 .info-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .card-count-hint {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 13px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
   margin-top: 8px;
 }
 
 .count-num {
-  color: #C00000;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -539,42 +539,42 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  background-color: #FFFFFF;
-  border-top: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
 }
 
 .submit-btn {
-  background-color: #C00000;
-  border-color: #C00000;
-  border-radius: 4px;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
   min-width: 100px;
 }
 
 .submit-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .submit-btn:disabled {
-  background-color: #D9D9D9;
-  border-color: #D9D9D9;
+  background-color: var(--color-border);
+  border-color: var(--color-border);
 }
 
 /* 汇总卡片 */
 .summary-card {
   width: 360px;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
   flex-shrink: 0;
 }
 
 .summary-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .summary-list {
@@ -591,20 +591,20 @@ onMounted(() => {
 }
 
 .summary-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #8C8C8C;
+  color: var(--color-text-muted);
 }
 
 .summary-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .summary-value--highlight {
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .summary-status {

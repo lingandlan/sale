@@ -124,20 +124,20 @@ onMounted(() => { loadDetail() })
 </script>
 
 <style scoped>
-.card-detail { background: #F5F5F5; min-height: calc(100vh - 64px); }
-.page-header { display: flex; gap: 16px; align-items: center; height: 64px; background: #FFF; border-bottom: 1px solid #E5E5E5; padding: 16px 24px; }
+.card-detail { background: var(--color-bg); min-height: calc(100vh - 64px); }
+.page-header { display: flex; gap: 16px; align-items: center; height: 64px; background: var(--color-bg-card); border-bottom: 1px solid var(--color-border); padding: 16px 24px; }
 .back-button { display: flex; gap: 8px; align-items: center; cursor: pointer; }
-.back-icon { font-size: 20px; color: #262626; }
-.back-text { font-size: 14px; color: #262626; }
-.page-title { flex: 1; font-size: 20px; font-weight: 600; color: #262626; margin: 0; }
+.back-icon { font-size: 20px; color: var(--color-text-primary); }
+.back-text { font-size: 14px; color: var(--color-text-primary); }
+.page-title { flex: 1; font-size: 20px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
 .content-area { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-.info-card { background: #FFF; border-radius: 8px; border: 1px solid #E5E5E5; padding: 20px; }
-.card-header { font-size: 16px; font-weight: 600; color: #262626; }
+.info-card { background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid var(--color-border); padding: 20px; }
+.card-header { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
 .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .info-row { display: flex; justify-content: space-between; align-items: center; }
-.info-label { font-size: 14px; color: #595959; }
-.info-value { font-size: 14px; font-weight: 600; color: #262626; }
-.balance-value { font-size: 18px; font-weight: 600; color: #C00000; }
-.text-red { color: #FF4D4F; }
-.text-green { color: #52C41A; }
+.info-label { font-size: 14px; color: var(--color-text-secondary); }
+.info-value { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+.balance-value { font-size: 18px; font-weight: 600; color: var(--color-primary); }
+.text-red { color: var(--color-danger); }
+.text-green { color: var(--color-success); }
 </style>

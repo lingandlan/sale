@@ -43,12 +43,12 @@ const handleToggle = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
 }
 
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: var(--spacing-lg);
 }
 </style>
