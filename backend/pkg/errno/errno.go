@@ -6,6 +6,9 @@ import "fmt"
 type Code string
 
 const (
+	// 通用
+	CodeInvalidParam Code = "INVALID_PARAM"
+
 	// 门店卡
 	CodeCardNotFound      Code = "CARD_NOT_FOUND"
 	CodeCardFrozen        Code = "CARD_FROZEN"

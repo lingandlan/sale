@@ -122,7 +122,10 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 
 	// 同步 Casbin 角色
 	if h.casbinSvc != nil && req.Role != "" {
-		_ = h.casbinSvc.AddRoleForUser(fmt.Sprintf("%d", user.ID), req.Role)
+		if err := h.casbinSvc.AddRoleForUser(fmt.Sprintf("%d", user.ID), req.Role); err != nil {
+			response.InternalError(c, "用户创建成功但角色分配失败，请手动分配角色")
+			return
+		}
 	}
 
 	response.Success(c, user)
@@ -155,7 +158,10 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 
 	// 角色变更时同步 Casbin
 	if h.casbinSvc != nil && req.Role != nil {
-		_ = h.casbinSvc.UpdateUserRole(fmt.Sprintf("%d", id), *req.Role)
+		if err := h.casbinSvc.UpdateUserRole(fmt.Sprintf("%d", id), *req.Role); err != nil {
+			response.InternalError(c, "用户更新成功但角色同步失败")
+			return
+		}
 	}
 
 	response.Success(c, user)

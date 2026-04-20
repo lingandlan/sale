@@ -73,7 +73,12 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 			return
 		}
 
-		role := roleVal.(string)
+		role, ok := roleVal.(string)
+		if !ok {
+			response.Forbidden(c, errmsg.Get("common.forbidden"))
+			c.Abort()
+			return
+		}
 		for _, r := range roles {
 			if role == r {
 				c.Next()
@@ -88,18 +93,39 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 
 // GetUserID 获取当前用户 ID
 func GetUserID(c *gin.Context) int64 {
-	userID, _ := c.Get("user_id")
-	return userID.(int64)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		return 0
+	}
+	val, ok := userID.(int64)
+	if !ok {
+		return 0
+	}
+	return val
 }
 
 // GetPhone 获取当前用户手机号
 func GetPhone(c *gin.Context) string {
-	phone, _ := c.Get("phone")
-	return phone.(string)
+	phone, exists := c.Get("phone")
+	if !exists {
+		return ""
+	}
+	val, ok := phone.(string)
+	if !ok {
+		return ""
+	}
+	return val
 }
 
 // GetRole 获取当前用户角色
 func GetRole(c *gin.Context) string {
-	role, _ := c.Get("role")
-	return role.(string)
+	role, exists := c.Get("role")
+	if !exists {
+		return ""
+	}
+	val, ok := role.(string)
+	if !ok {
+		return ""
+	}
+	return val
 }

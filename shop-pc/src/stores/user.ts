@@ -18,7 +18,7 @@ const RolePermissions: Record<string, string[]> = {
     'card:issue', 'card:verify', 'card:manage', 'card:stats',
   ],
   operator: [
-    'dashboard', 'recharge:records',
+    'dashboard', 'recharge:c', 'recharge:records',
     'card:issue', 'card:verify', 'card:manage', 'card:stats',
   ],
 }

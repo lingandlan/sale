@@ -43,6 +43,7 @@ type CRecharge struct {
 	Remark        string    `json:"remark"`                            // 备注
 	BalanceBefore int       `json:"balanceBefore"`                     // 充值前余额
 	BalanceAfter  int       `json:"balanceAfter"`                      // 充值后余额
+	Status        string    `json:"status" gorm:"default:'success';size:32"` // pending/success/failed
 	CreatedAt     time.Time `json:"createdAt" gorm:"autoCreateTime"`
 }
 
