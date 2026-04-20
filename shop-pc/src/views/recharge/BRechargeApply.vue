@@ -1,15 +1,18 @@
 <template>
   <div class="brecharge-apply">
-    <div class="page-card">
+    <div class="page-header">
       <h1 class="page-title">B端充值申请</h1>
+    </div>
 
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="auto"
-        class="apply-form"
-      >
+    <div class="content-area">
+      <div class="page-card">
+        <el-form
+          ref="formRef"
+          :model="formData"
+          :rules="formRules"
+          label-width="auto"
+          class="apply-form"
+        >
         <el-form-item label="目标充值中心" prop="centerId">
           <el-select
             v-model="formData.centerId"
@@ -74,6 +77,7 @@
           <el-button type="primary" class="submit-btn" @click="handleSubmit">提交申请</el-button>
         </div>
       </el-form>
+    </div>
     </div>
   </div>
 </template>
@@ -209,26 +213,40 @@ const handleSubmit = async () => {
 
 <style scoped>
 .brecharge-apply {
-  display: flex;
-  justify-content: center;
-  padding: 24px;
   min-height: calc(100vh - 64px);
   background-color: var(--color-bg);
 }
 
-.page-card {
-  width: 720px;
+.page-header {
+  height: 64px;
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  padding: 32px;
+  border-bottom: 1px solid var(--color-border);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-title {
-  font-family: var(--font-family);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin: 0 0 24px 0;
+  margin: 0;
+}
+
+.content-area {
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.page-card {
+  width: 800px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  padding: 32px;
 }
 
 .apply-form {
@@ -253,14 +271,12 @@ const handleSubmit = async () => {
 }
 
 .points-label {
-  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
   color: var(--color-primary);
 }
 
 .points-detail {
-  font-family: var(--font-family);
   font-size: 12px;
   color: var(--color-text-secondary);
 }
