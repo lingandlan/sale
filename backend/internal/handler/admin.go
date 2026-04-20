@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"marketplace/backend/internal/model"
+	"marketplace/backend/internal/rbac"
 	"marketplace/backend/internal/service"
 	apperrors "marketplace/backend/pkg/errors"
 	"marketplace/backend/pkg/errmsg"
@@ -14,13 +16,15 @@ import (
 
 // AdminHandler 管理员处理器
 type AdminHandler struct {
-	userSvc service.UserServiceInterface
+	userSvc   service.UserServiceInterface
+	casbinSvc *rbac.CasbinService
 }
 
 // NewAdminHandler 创建 AdminHandler
-func NewAdminHandler(userSvc service.UserServiceInterface) *AdminHandler {
+func NewAdminHandler(userSvc service.UserServiceInterface, casbinSvc *rbac.CasbinService) *AdminHandler {
 	return &AdminHandler{
-		userSvc: userSvc,
+		userSvc:   userSvc,
+		casbinSvc: casbinSvc,
 	}
 }
 
@@ -116,6 +120,11 @@ func (h *AdminHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// 同步 Casbin 角色
+	if h.casbinSvc != nil && req.Role != "" {
+		_ = h.casbinSvc.AddRoleForUser(fmt.Sprintf("%d", user.ID), req.Role)
+	}
+
 	response.Success(c, user)
 }
 
@@ -142,6 +151,11 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 			response.InternalError(c, errmsg.Get("admin.update_user_failed"))
 		}
 		return
+	}
+
+	// 角色变更时同步 Casbin
+	if h.casbinSvc != nil && req.Role != nil {
+		_ = h.casbinSvc.UpdateUserRole(fmt.Sprintf("%d", id), *req.Role)
 	}
 
 	response.Success(c, user)

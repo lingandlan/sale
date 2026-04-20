@@ -89,9 +89,13 @@ func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
 		return
 	}
 
-	// TODO: 从JWT获取申请人信息
-	req["applicantId"] = "user123"
-	req["applicantName"] = "张财务"
+	applicantID, _, _, applicantName, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	req["applicantId"] = fmt.Sprintf("%d", applicantID)
+	req["applicantName"] = applicantName
 
 	app, err := h.rechargeService.CreateBRechargeApplication(req)
 	if err != nil {
@@ -142,8 +146,12 @@ func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
 	action := req["action"]
 	remark := req["remark"]
 
-	// TODO: 从JWT获取审批人信息
-	approvedBy := "admin"
+	approvedByID, _, _, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+	approvedBy := fmt.Sprintf("%d", approvedByID)
 
 	if err := h.rechargeService.ApproveRechargeApplication(id, action, approvedBy, remark); err != nil {
 		response.InternalError(c, errmsg.Get("recharge.approval_failed"))
@@ -703,34 +711,69 @@ func (h *RechargeHandler) DeleteOperator(c *gin.Context) {
 // ========== Dashboard ==========
 
 func (h *RechargeHandler) GetDashboardStatistics(c *gin.Context) {
-	// TODO: 从数据库获取实际统计数据
-	response.Success(c, gin.H{
-		"todayRecharge":    15000,
-		"monthRecharge":    450000,
-		"totalCards":       500,
-		"pendingApprovals": 5,
-	})
+	_, role, centerID, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	// center_admin/operator 限定本中心
+	filterCenterID := ""
+	if role != model.RoleSuperAdmin && role != model.RoleHQAdmin && role != model.RoleFinance {
+		filterCenterID = centerID
+	}
+
+	data, err := h.rechargeService.GetDashboardStatistics(role, filterCenterID)
+	if err != nil {
+		response.InternalError(c, "统计数据加载失败")
+		return
+	}
+	response.Success(c, data)
 }
 
 func (h *RechargeHandler) GetDashboardTodos(c *gin.Context) {
-	// TODO: 从数据库获取实际待办事项
-	response.Success(c, gin.H{
-		"pendingApprovals": gin.H{
-			"count":       3,
-			"description": "3笔充值申请待审批",
-		},
-		"expiringCards": gin.H{
-			"count":       5,
-			"description": "5张门店卡将在7天内到期",
-		},
-	})
+	_, role, centerID, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	filterCenterID := ""
+	if role != model.RoleSuperAdmin && role != model.RoleHQAdmin && role != model.RoleFinance {
+		filterCenterID = centerID
+	}
+
+	data, err := h.rechargeService.GetDashboardTodos(role, filterCenterID)
+	if err != nil {
+		response.InternalError(c, "待办事项加载失败")
+		return
+	}
+	response.Success(c, data)
 }
 
 func (h *RechargeHandler) GetDashboardRechargeTrends(c *gin.Context) {
-	// TODO: 从数据库获取实际趋势数据
-	_ = c.DefaultQuery("days", "7")
-	response.Success(c, gin.H{
-		"dates":  []string{"04-05", "04-06", "04-07", "04-08", "04-09", "04-10", "04-11"},
-		"values": []int{32000, 45000, 28000, 52000, 41000, 38000, 52800},
-	})
+	_, role, centerID, _, err := h.getOperatorInfo(c)
+	if err != nil {
+		response.Error(c, 401, err.Error())
+		return
+	}
+
+	filterCenterID := ""
+	if role != model.RoleSuperAdmin && role != model.RoleHQAdmin && role != model.RoleFinance {
+		filterCenterID = centerID
+	}
+
+	days := 7
+	if d := c.DefaultQuery("days", "7"); d != "" {
+		if parsed, e := strconv.Atoi(d); e == nil && parsed > 0 {
+			days = parsed
+		}
+	}
+
+	data, err := h.rechargeService.GetDashboardRechargeTrends(days, role, filterCenterID)
+	if err != nil {
+		response.InternalError(c, "趋势数据加载失败")
+		return
+	}
+	response.Success(c, data)
 }

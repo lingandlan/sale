@@ -56,6 +56,15 @@ type RechargeRepoInterface interface {
 	CreateOperator(operator *model.RechargeOperator) error
 	UpdateOperator(id string, updates map[string]interface{}) error
 	DeleteOperator(id string) error
+	// Dashboard
+	GetTodayRechargeTotal(centerID string) (float64, error)
+	GetTodayConsumptionTotal(centerID string) (float64, error)
+	GetActiveCenterCount(centerID string) (int64, error)
+	GetYesterdayRechargeTotal(centerID string) (float64, error)
+	GetYesterdayConsumptionTotal(centerID string) (float64, error)
+	CountPendingApprovals(centerID string) (int64, error)
+	CountExpiringCards(centerID string) (int64, error)
+	GetRechargeTrends(days int, centerID string) ([]string, []float64, error)
 }
 
 var _ RechargeRepoInterface = (*RechargeRepository)(nil)
@@ -697,4 +706,131 @@ func (r *RechargeRepository) GetOperatorByUsername(username string) (*model.Rech
 	var operator model.RechargeOperator
 	err := r.db.Where("username = ?", username).First(&operator).Error
 	return &operator, err
+}
+
+// ========== Dashboard ==========
+
+func (r *RechargeRepository) GetTodayRechargeTotal(centerID string) (float64, error) {
+	var total float64
+	query := r.db.Model(&model.CRecharge{}).
+		Where("DATE(created_at) = CURDATE()")
+	if centerID != "" {
+		query = query.Where("center_id = ?", centerID)
+	}
+	err := query.Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
+	return total, err
+}
+
+func (r *RechargeRepository) GetTodayConsumptionTotal(centerID string) (float64, error) {
+	var total float64
+	query := r.db.Model(&model.CardTransaction{}).
+		Where("type = 'consume' AND DATE(created_at) = CURDATE()")
+	if centerID != "" {
+		query = query.Where("card_no IN (SELECT card_no FROM store_cards WHERE recharge_center_id = ?)", centerID)
+	}
+	err := query.Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
+	return total, err
+}
+
+func (r *RechargeRepository) GetActiveCenterCount(centerID string) (int64, error) {
+	if centerID != "" {
+		return 1, nil
+	}
+	var count int64
+	err := r.db.Model(&model.CRecharge{}).
+		Where("DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)").
+		Distinct("center_id").
+		Count(&count).Error
+	return count, err
+}
+
+func (r *RechargeRepository) GetYesterdayRechargeTotal(centerID string) (float64, error) {
+	var total float64
+	query := r.db.Model(&model.CRecharge{}).
+		Where("DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
+	if centerID != "" {
+		query = query.Where("center_id = ?", centerID)
+	}
+	err := query.Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
+	return total, err
+}
+
+func (r *RechargeRepository) GetYesterdayConsumptionTotal(centerID string) (float64, error) {
+	var total float64
+	query := r.db.Model(&model.CardTransaction{}).
+		Where("type = 'consume' AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
+	if centerID != "" {
+		query = query.Where("card_no IN (SELECT card_no FROM store_cards WHERE recharge_center_id = ?)", centerID)
+	}
+	err := query.Select("COALESCE(SUM(amount), 0)").Scan(&total).Error
+	return total, err
+}
+
+func (r *RechargeRepository) CountPendingApprovals(centerID string) (int64, error) {
+	var count int64
+	query := r.db.Model(&model.RechargeApplication{}).Where("status = 'pending'")
+	if centerID != "" {
+		query = query.Where("center_id = ?", centerID)
+	}
+	err := query.Count(&count).Error
+	return count, err
+}
+
+func (r *RechargeRepository) CountExpiringCards(centerID string) (int64, error) {
+	var count int64
+	query := r.db.Model(&model.StoreCard{}).
+		Where("status NOT IN (5, 6)"). // 排除已过期和已作废
+		Where("expired_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY)")
+	if centerID != "" {
+		query = query.Where("recharge_center_id = ?", centerID)
+	}
+	err := query.Count(&count).Error
+	return count, err
+}
+
+func (r *RechargeRepository) GetRechargeTrends(days int, centerID string) ([]string, []float64, error) {
+	type result struct {
+		Date  string
+		Total float64
+	}
+	var results []result
+
+	query := r.db.Model(&model.CRecharge{}).
+		Select("DATE(created_at) AS date, COALESCE(SUM(amount), 0) AS total").
+		Where("DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)", days-1).
+		Group("DATE(created_at)").
+		Order("DATE(created_at) ASC")
+	if centerID != "" {
+		query = query.Where("center_id = ?", centerID)
+	}
+	err := query.Scan(&results).Error
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 确保连续：填充缺失日期
+	dates := make([]string, days)
+	values := make([]float64, days)
+	now := time.Now()
+	for i := 0; i < days; i++ {
+		d := now.AddDate(0, 0, -(days - 1 - i))
+		dates[i] = d.Format("01-02")
+		values[i] = 0
+	}
+
+	resultMap := make(map[string]float64, len(results))
+	for _, r := range results {
+		// DB returns "YYYY-MM-DD", convert to "MM-DD"
+		parts := strings.SplitN(r.Date, "-", 3)
+		if len(parts) == 3 {
+			resultMap[parts[1]+"-"+parts[2]] = r.Total
+		}
+	}
+	for i, d := range dates {
+		if v, ok := resultMap[d]; ok {
+			values[i] = v
+		}
+	}
+
+	return dates, values, nil
 }

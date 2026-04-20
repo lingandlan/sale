@@ -52,10 +52,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-
-interface Props {
-  modelValue: boolean
-}
+import { useUserStore } from '@/stores/user'
 
 interface Props {
   collapsed?: boolean
@@ -68,20 +65,21 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
 const collapsed = computed({
   get: () => props.collapsed || false,
   set: (value) => emit('update:modelValue', value)
 })
 
-// 菜单数据
-const menuGroups = ref([
+// 菜单定义（带权限码）
+const allMenuGroups = [
   {
     key: 'dashboard',
     title: '数据概览',
     icon: '📊',
     items: [
-      { key: '/dashboard', title: '首页仪表盘' }
+      { key: '/dashboard', title: '首页仪表盘', permission: 'dashboard' }
     ]
   },
   {
@@ -89,10 +87,10 @@ const menuGroups = ref([
     title: '充值管理',
     icon: '💰',
     items: [
-      { key: '/recharge/b-apply', title: 'B端充值申请' },
-      { key: '/recharge/b-approval', title: 'B端充值审批' },
-      { key: '/recharge/c-entry', title: 'C端充值录入' },
-      { key: '/recharge/records', title: '充值记录' }
+      { key: '/recharge/b-apply', title: 'B端充值申请', permission: 'recharge:b' },
+      { key: '/recharge/b-approval', title: 'B端充值审批', permission: 'recharge:b' },
+      { key: '/recharge/c-entry', title: 'C端充值录入', permission: 'recharge:c' },
+      { key: '/recharge/records', title: '充值记录', permission: 'recharge:records' }
     ]
   },
   {
@@ -100,8 +98,8 @@ const menuGroups = ref([
     title: '充值中心',
     icon: '🏦',
     items: [
-      { key: '/center/manage', title: '中心列表' },
-      { key: '/operator/manage', title: '操作员管理' }
+      { key: '/center/manage', title: '中心列表', permission: 'center:manage' },
+      { key: '/operator/manage', title: '操作员管理', permission: 'operator:manage' }
     ]
   },
   {
@@ -109,11 +107,11 @@ const menuGroups = ref([
     title: '门店卡',
     icon: '🎫',
     items: [
-      { key: '/card/inventory', title: '总卡库管理' },
-      { key: '/card/issue', title: '绑定卡号' },
-      { key: '/card/verify', title: '门店卡核销' },
-      { key: '/card/manage', title: '门店卡管理' },
-      { key: '/card/stats', title: '门店卡统计' }
+      { key: '/card/inventory', title: '总卡库管理', permission: 'card:inventory' },
+      { key: '/card/issue', title: '绑定卡号', permission: 'card:issue' },
+      { key: '/card/verify', title: '门店卡核销', permission: 'card:verify' },
+      { key: '/card/manage', title: '门店卡管理', permission: 'card:manage' },
+      { key: '/card/stats', title: '门店卡统计', permission: 'card:stats' }
     ]
   },
   {
@@ -121,7 +119,7 @@ const menuGroups = ref([
     title: '用户管理',
     icon: '👥',
     items: [
-      { key: '/user/manage', title: '用户列表' }
+      { key: '/user/manage', title: '用户列表', permission: 'user:manage' }
     ]
   },
   {
@@ -129,10 +127,20 @@ const menuGroups = ref([
     title: '系统设置',
     icon: '⚙️',
     items: [
-      { key: '/system/config', title: '系统配置' }
+      { key: '/system/config', title: '系统配置', permission: 'system:config' }
     ]
   }
-])
+]
+
+// 根据权限过滤菜单
+const menuGroups = computed(() =>
+  allMenuGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => userStore.hasPermission(item.permission))
+    }))
+    .filter(group => group.items.length > 0)
+)
 
 // 当前激活的菜单
 const activeMenu = computed(() => {

@@ -4,6 +4,25 @@ import { getUserInfo, type UserInfo } from '@/api/auth'
 
 const USER_INFO_KEY = 'user_info'
 
+/** 角色 → 权限码映射表 */
+const RolePermissions: Record<string, string[]> = {
+  super_admin: ['*'],
+  hq_admin: [
+    'dashboard', 'recharge:b', 'recharge:c', 'recharge:records',
+    'card:inventory', 'card:issue', 'card:verify', 'card:manage', 'card:stats',
+  ],
+  finance: ['dashboard', 'recharge:records', 'card:stats'],
+  center_admin: [
+    'dashboard', 'recharge:c', 'recharge:records',
+    'operator:manage',
+    'card:issue', 'card:verify', 'card:manage', 'card:stats',
+  ],
+  operator: [
+    'dashboard', 'recharge:records',
+    'card:issue', 'card:verify', 'card:manage', 'card:stats',
+  ],
+}
+
 export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
 
@@ -18,6 +37,19 @@ export const useUserStore = defineStore('user', () => {
   const isFinance = computed(() => userInfo.value?.role === 'finance')
   const userCenterId = computed(() => userInfo.value?.center_id ?? null)
   const userCenterName = computed(() => userInfo.value?.center_name ?? '')
+
+  /** 当前角色的权限码列表 */
+  const permissions = computed(() => {
+    const role = userInfo.value?.role
+    if (!role) return []
+    return RolePermissions[role] ?? []
+  })
+
+  /** 判断当前用户是否拥有指定权限码 */
+  function hasPermission(code: string): boolean {
+    if (permissions.value.includes('*')) return true
+    return permissions.value.includes(code)
+  }
 
   /** 超管/总部/财务 可以选择所有中心 */
   const canSelectAllCenters = computed(() =>
@@ -45,6 +77,8 @@ export const useUserStore = defineStore('user', () => {
     isSuperAdmin,
     isHQAdmin,
     isFinance,
+    permissions,
+    hasPermission,
     userCenterId,
     userCenterName,
     canSelectAllCenters,

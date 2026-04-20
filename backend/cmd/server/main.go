@@ -86,7 +86,7 @@ func main() {
 	// 9. 初始化 Handler
 	authHandler := handler.NewAuthHandler(authSvc, userSvc)
 	userHandler := handler.NewUserHandler(userSvc, memberSvc)
-	adminHandler := handler.NewAdminHandler(userSvc)
+	adminHandler := handler.NewAdminHandler(userSvc, casbinSvc)
 	rechargeHandler := handler.NewRechargeHandler(rechargeSvc, userRepo)
 
 	// 10. 初始化中间件

@@ -50,6 +50,14 @@ func NewCasbinService(sqlDB *sqlx.DB, cfg *config.DatabaseConfig) (*CasbinServic
 		db:       gormDB,
 	}
 
+	// 如果没有策略，初始化基础权限
+	policy, _ := e.GetPolicy()
+	if len(policy) == 0 {
+		if err := svc.initDefaultPolicies(); err != nil {
+			return nil, fmt.Errorf("init default policies failed: %w", err)
+		}
+	}
+
 	return svc, nil
 }
 
@@ -189,26 +197,36 @@ func convertPathToWildcard(path string) string {
 	return strings.Join(parts, "/")
 }
 
-// isDynamicSegment 判断是否为动态路径段（数字或 UUID 等）
+// isDynamicSegment 判断是否为动态路径段（纯数字或 UUID 等 ID 格式）
 func isDynamicSegment(segment string) bool {
 	if segment == "" {
 		return false
 	}
-	// 纯数字
+	// 纯数字（如 123, 456）
+	allDigits := true
 	for _, c := range segment {
 		if c < '0' || c > '9' {
-			// 包含非数字字符，可能是 UUID 或其他 ID
-			if c == '-' || c == '_' {
-				continue
-			}
-			// 跳过单字符
-			if len(segment) > 1 && (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
-				continue
-			}
+			allDigits = false
+			break
+		}
+	}
+	if allDigits && len(segment) > 0 {
+		return true
+	}
+	// UUID 格式（包含连字符，如 abc-123-def）
+	hasLetter := false
+	hasDash := false
+	for _, c := range segment {
+		if c == '-' {
+			hasDash = true
+		} else if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+			hasLetter = true
+		} else if c < '0' || c > '9' {
 			return false
 		}
 	}
-	return len(segment) > 0
+	// 只有包含连字符且有字母的才视为动态 ID（如 center-bj-cy）
+	return hasDash && hasLetter
 }
 
 // ReloadPolicy 重新加载策略
@@ -216,4 +234,72 @@ func (s *CasbinService) ReloadPolicy() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.enforcer.LoadPolicy()
+}
+
+// initDefaultPolicies 初始化默认角色权限策略
+func (s *CasbinService) initDefaultPolicies() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// center_admin 和 operator 可访问的基础路径
+	policies := [][]string{
+		// 用户自身信息
+		{"center_admin", "/api/v1/user/*", "*"},
+		{"operator", "/api/v1/user/*", "*"},
+		// Dashboard
+		{"center_admin", "/api/v1/dashboard/*", "GET"},
+		{"operator", "/api/v1/dashboard/*", "GET"},
+		// 充值相关 - C端充值 + 充值记录
+		{"center_admin", "/api/v1/recharge/c-entry/*", "*"},
+		{"center_admin", "/api/v1/recharge/records/*", "GET"},
+		{"operator", "/api/v1/recharge/records/*", "GET"},
+		// 门店卡（不含 batch-import/allocate 总卡库操作）
+		{"center_admin", "/api/v1/card/verify/*", "*"},
+		{"center_admin", "/api/v1/card/consume", "*"},
+		{"center_admin", "/api/v1/card/available", "GET"},
+		{"center_admin", "/api/v1/card/available/*", "GET"},
+		{"center_admin", "/api/v1/card/list", "GET"},
+		{"center_admin", "/api/v1/card/detail/*", "GET"},
+		{"center_admin", "/api/v1/card/stats", "GET"},
+		{"center_admin", "/api/v1/card/inventory-stats", "GET"},
+		{"center_admin", "/api/v1/card/monthly-trend", "GET"},
+		{"center_admin", "/api/v1/card/center-stats", "GET"},
+		{"center_admin", "/api/v1/card/bind", "*"},
+		{"center_admin", "/api/v1/card/*/freeze", "*"},
+		{"center_admin", "/api/v1/card/*/unfreeze", "*"},
+		{"center_admin", "/api/v1/card/*/void", "*"},
+		{"operator", "/api/v1/card/verify/*", "*"},
+		{"operator", "/api/v1/card/consume", "*"},
+		{"operator", "/api/v1/card/available", "GET"},
+		{"operator", "/api/v1/card/available/*", "GET"},
+		{"operator", "/api/v1/card/list", "GET"},
+		{"operator", "/api/v1/card/detail/*", "GET"},
+		{"operator", "/api/v1/card/stats", "GET"},
+		{"operator", "/api/v1/card/inventory-stats", "GET"},
+		{"operator", "/api/v1/card/monthly-trend", "GET"},
+		{"operator", "/api/v1/card/center-stats", "GET"},
+		{"operator", "/api/v1/card/bind", "*"},
+		{"operator", "/api/v1/card/*/freeze", "*"},
+		{"operator", "/api/v1/card/*/unfreeze", "*"},
+		{"operator", "/api/v1/card/*/void", "*"},
+		// 充值中心（只读）
+		{"center_admin", "/api/v1/center", "GET"},
+		{"center_admin", "/api/v1/center/*", "GET"},
+		{"operator", "/api/v1/center", "GET"},
+		{"operator", "/api/v1/center/*", "GET"},
+		// 操作员（只读）
+		{"center_admin", "/api/v1/operator", "GET"},
+		{"operator", "/api/v1/operator", "GET"},
+		// 管理员接口（center_admin 部分权限）
+		{"center_admin", "/api/v1/admin/users", "*"},
+		{"center_admin", "/api/v1/admin/users/*", "*"},
+	}
+
+	for _, p := range policies {
+		if _, err := s.enforcer.AddPolicy(p); err != nil {
+			return err
+		}
+	}
+
+	return s.enforcer.SavePolicy()
 }

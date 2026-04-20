@@ -73,7 +73,6 @@
         <div class="section-card todo-card">
           <div class="section-header">
             <h3 class="section-title">📋 待办事项</h3>
-            <span class="more-link">查看更多 &gt;</span>
           </div>
           <el-divider />
           <div class="todo-list">
@@ -81,11 +80,12 @@
               v-for="todo in todos"
               :key="todo.id"
               class="todo-item"
-              :class="todo.type"
+              :class="[todo.type, { clickable: todo.route }]"
+              @click="todo.route && $router.push(todo.route)"
             >
               <span class="todo-icon">{{ todo.icon }}</span>
               <div class="todo-content">
-                <p class="todo-title">{{ todo.title }}</p>
+                <p class="todo-title">{{ todo.title }}<span v-if="todo.route" class="todo-link">去处理 &gt;</span></p>
                 <p class="todo-desc">{{ todo.count }}{{ todo.description }}</p>
               </div>
             </div>
@@ -137,52 +137,27 @@ let isUnmounted = false
 
 // 统计数据
 const statistics = ref<StatisticsType>({
-  memberCount: 1234,
-  memberTrend: '+12%',
-  todayRecharge: 56780,
-  rechargeTrend: '+8%',
-  todayConsumption: 23450,
-  consumptionTrend: '+15%',
-  activeCenters: 5,
-  centerTrend: '+3%'
+  memberCount: 0,
+  memberTrend: '—',
+  todayRecharge: 0,
+  rechargeTrend: '—',
+  todayConsumption: 0,
+  consumptionTrend: '—',
+  activeCenters: 0,
+  centerTrend: '—'
 })
 
 // 待办事项
-const todos = ref([
-  {
-    id: '1',
-    title: '待审批充值申请',
-    description: '3笔申请等待审批',
-    type: 'warning',
-    icon: '⏰',
-    count: 3
-  },
-  {
-    id: '2',
-    title: '即将过期的门店卡',
-    description: '12张门店卡7天内过期',
-    type: 'error',
-    icon: '⚠️',
-    count: 12
-  }
-])
+const todos = ref([] as { id: string; title: string; description: string; type: string; icon: string; count: number; route?: string }[])
 
 // 充值趋势数据
-const chartData = ref([
-  { label: '4/3', value: 12000, color: '#C00000' },
-  { label: '4/4', value: 9000, color: '#C00000' },
-  { label: '4/5', value: 15000, color: '#C00000' },
-  { label: '4/6', value: 18000, color: '#C00000' },
-  { label: '4/7', value: 14000, color: '#C00000' },
-  { label: '4/8', value: 16000, color: '#C00000' },
-  { label: '4/9', value: 20000, color: '#FFD700' }
-])
+const chartData = ref([] as { label: string; value: number; color: string }[])
 
 // 快捷操作
 const quickActions = ref([
   {
     icon: '💵',
-    text: 'C端充值',
+    text: 'C端充值录入',
     route: '/recharge/c-entry',
     background: '#FFF7E6',
     border: '#FFD700'
@@ -196,14 +171,14 @@ const quickActions = ref([
   },
   {
     icon: '🎁',
-    text: '门店卡发放',
+    text: '绑定卡号',
     route: '/card/issue',
     background: '#F6FFED',
     border: '#52C41A'
   },
   {
     icon: '📝',
-    text: '充值申请',
+    text: 'B端充值申请',
     route: '/recharge/b-apply',
     background: '#FFF1F0',
     border: '#FF4D4F'
@@ -228,7 +203,8 @@ const loadDashboardData = async () => {
           description: d.pendingApprovals?.description || '',
           type: 'warning',
           icon: '⏰',
-          count: d.pendingApprovals?.count || 0
+          count: d.pendingApprovals?.count || 0,
+          route: '/recharge/b-approval'
         },
         {
           id: '2',
@@ -412,6 +388,14 @@ onUnmounted(() => {
   align-items: center;
 }
 
+.todo-item.clickable {
+  cursor: pointer;
+}
+
+.todo-item.clickable:hover {
+  opacity: 0.8;
+}
+
 .todo-item.warning {
   background-color: #FFF7E6;
 }
@@ -436,6 +420,12 @@ onUnmounted(() => {
   font-weight: 500;
   color: #262626;
   margin: 0;
+}
+
+.todo-link {
+  font-size: 12px;
+  color: #1677FF;
+  margin-left: 8px;
 }
 
 .todo-desc {
