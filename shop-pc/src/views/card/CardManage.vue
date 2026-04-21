@@ -14,11 +14,11 @@
           <span class="stat-value">{{ stats.totalCards }}</span>
           <span class="stat-label">总卡数</span>
         </div>
-        <div class="stat-card" style="background:#F0F0F0;border-color:#D9D9D9">
+        <div class="stat-card stat-gray">
           <span class="stat-value">{{ stats.inStockCards }}</span>
           <span class="stat-label">已入库</span>
         </div>
-        <div class="stat-card" style="background:#E6F7FF;border-color:#91D5FF">
+        <div class="stat-card stat-blue">
           <span class="stat-value">{{ stats.issuedCards }}</span>
           <span class="stat-label">已发放</span>
         </div>
@@ -198,26 +198,27 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card-manage { background: #F5F5F5; min-height: calc(100vh - 64px); }
-.page-header { display: flex; justify-content: space-between; align-items: center; height: 64px; background: #FFF; border-bottom: 1px solid #E5E5E5; padding: 16px 24px; }
-.page-title { font-size: 20px; font-weight: 600; color: #262626; margin: 0; }
+.card-manage { background: var(--color-bg); min-height: calc(100vh - 64px); }
+.page-header { display: flex; justify-content: space-between; align-items: center; height: 64px; background: var(--color-bg-card); border-bottom: 1px solid var(--color-border); padding: 16px 24px; }
+.page-title { font-size: 20px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
 .header-actions { display: flex; gap: 12px; }
 .action-btn { width: 80px; height: 36px; }
 .content-area { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
 .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-.stat-card { background: #FFF; border-radius: 8px; border: 1px solid; padding: 16px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.stat-value { font-size: 28px; font-weight: 600; color: #262626; }
-.stat-label { font-size: 13px; color: #595959; }
-.stat-blue { background: #E6F7FF; border-color: #91D5FF; }
-.stat-green { background: #F6FFED; border-color: #B7EB8F; }
-.stat-green .stat-value { color: #52C41A; }
-.stat-orange { background: #FFF7E6; border-color: #FFD591; }
+.stat-card { background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid; padding: 16px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.stat-value { font-size: 28px; font-weight: 600; color: var(--color-text-primary); }
+.stat-label { font-size: 13px; color: var(--color-text-secondary); }
+.stat-gray { background: var(--color-bg-section); border-color: var(--color-border); }
+.stat-blue { background: var(--color-info-bg); border-color: #91D5FF; }
+.stat-green { background: var(--color-success-bg); border-color: #B7EB8F; }
+.stat-green .stat-value { color: var(--color-success); }
+.stat-orange { background: var(--color-warning-bg); border-color: #FFD591; }
 .stat-orange .stat-value { color: #FA8C16; }
-.stat-red { background: #FFF1F0; border-color: #FFA39E; }
-.stat-red .stat-value { color: #FF4D4F; }
-.filter-card, .list-card { background: #FFF; border-radius: 8px; border: 1px solid #E5E5E5; padding: 20px; }
+.stat-red { background: var(--color-danger-bg); border-color: #FFA39E; }
+.stat-red .stat-value { color: var(--color-danger); }
+.filter-card, .list-card { background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid var(--color-border); padding: 20px; }
 .filter-row { display: flex; gap: 16px; align-items: center; }
 .filter-item { display: flex; gap: 8px; align-items: center; }
-.filter-label { font-size: 14px; color: #595959; white-space: nowrap; }
-.search-btn { background: #C00000; border-color: #C00000; }
+.filter-label { font-size: 14px; color: var(--color-text-secondary); white-space: nowrap; }
+.search-btn { background: var(--color-primary); border-color: var(--color-primary); }
 </style>

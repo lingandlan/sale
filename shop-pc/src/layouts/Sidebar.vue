@@ -2,7 +2,7 @@
   <div class="sidebar" :class="{ collapsed }">
     <!-- Logo区域 -->
     <div class="sidebar-header">
-      <div class="logo-icon">太</div>
+      <img src="@/assets/logo.png" alt="太积堂" class="logo-img" />
       <div v-show="!collapsed" class="logo-text">太积堂管理系统</div>
     </div>
 
@@ -20,7 +20,7 @@
       <template v-for="group in menuGroups" :key="group.title">
         <el-sub-menu v-if="group.items && group.items.length > 0" :index="group.key">
           <template #title>
-            <span class="menu-icon">{{ group.icon }}</span>
+            <el-icon><component :is="group.icon" /></el-icon>
             <span>{{ group.title }}</span>
           </template>
           <el-menu-item
@@ -32,7 +32,7 @@
           </el-menu-item>
         </el-sub-menu>
         <el-menu-item v-else :index="group.key">
-          <span class="menu-icon">{{ group.icon }}</span>
+          <el-icon><component :is="group.icon" /></el-icon>
           <template #title>{{ group.title }}</template>
         </el-menu-item>
       </template>
@@ -41,7 +41,7 @@
     <!-- 退出登录 -->
     <div class="sidebar-footer">
       <div class="logout-btn" @click="handleLogout">
-        <span class="logout-icon">🚪</span>
+        <el-icon><SwitchButton /></el-icon>
         <span v-show="!collapsed" class="logout-text">退出登录</span>
       </div>
     </div>
@@ -72,12 +72,12 @@ const collapsed = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-// 菜单定义（带权限码）
+// 菜单定义（图标使用 Element Plus Icons 组件名）
 const allMenuGroups = [
   {
     key: 'dashboard',
     title: '数据概览',
-    icon: '📊',
+    icon: 'DataAnalysis',
     items: [
       { key: '/dashboard', title: '首页仪表盘', permission: 'dashboard' }
     ]
@@ -85,7 +85,7 @@ const allMenuGroups = [
   {
     key: 'recharge',
     title: '充值管理',
-    icon: '💰',
+    icon: 'Wallet',
     items: [
       { key: '/recharge/b-apply', title: 'B端充值申请', permission: 'recharge:b' },
       { key: '/recharge/b-approval', title: 'B端充值审批', permission: 'recharge:b' },
@@ -96,7 +96,7 @@ const allMenuGroups = [
   {
     key: 'center',
     title: '充值中心',
-    icon: '🏦',
+    icon: 'OfficeBuilding',
     items: [
       { key: '/center/manage', title: '中心列表', permission: 'center:manage' },
       { key: '/operator/manage', title: '操作员管理', permission: 'operator:manage' }
@@ -105,7 +105,7 @@ const allMenuGroups = [
   {
     key: 'card',
     title: '门店卡',
-    icon: '🎫',
+    icon: 'Ticket',
     items: [
       { key: '/card/inventory', title: '总卡库管理', permission: 'card:inventory' },
       { key: '/card/issue', title: '绑定卡号', permission: 'card:issue' },
@@ -117,7 +117,7 @@ const allMenuGroups = [
   {
     key: 'user',
     title: '用户管理',
-    icon: '👥',
+    icon: 'User',
     items: [
       { key: '/user/manage', title: '用户列表', permission: 'user:manage' }
     ]
@@ -125,7 +125,7 @@ const allMenuGroups = [
   {
     key: 'system',
     title: '系统设置',
-    icon: '⚙️',
+    icon: 'Setting',
     items: [
       { key: '/system/config', title: '系统配置', permission: 'system:config' }
     ]
@@ -175,7 +175,7 @@ const defaultOpeneds = ref(['dashboard', 'recharge'])
 .sidebar {
   width: 240px;
   height: 100vh;
-  background-color: #001529;
+  background-color: var(--color-bg-dark);
   display: flex;
   flex-direction: column;
   transition: width 0.3s;
@@ -190,37 +190,31 @@ const defaultOpeneds = ref(['dashboard', 'recharge'])
   height: 64px;
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
-.logo-icon {
+.logo-img {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #C00000 0%, #FFD700 100%);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
   flex-shrink: 0;
 }
 
 .logo-text {
-  margin-left: 12px;
-  font-family: 'Inter', sans-serif;
-  font-size: 16px;
+  margin-left: var(--spacing-md);
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   white-space: nowrap;
 }
 
 .sidebar-menu {
   flex: 1;
   border: none;
-  padding: 16px 0;
+  padding: var(--spacing-base) 0;
 }
 
 :deep(.el-menu) {
@@ -230,8 +224,8 @@ const defaultOpeneds = ref(['dashboard', 'recharge'])
 :deep(.el-sub-menu__title) {
   height: 48px;
   line-height: 48px;
-  padding: 0 24px !important;
-  color: rgba(255, 255, 255, 0.65) !important;
+  padding: 0 var(--spacing-lg) !important;
+  color: var(--color-text-white-secondary) !important;
 }
 
 :deep(.el-sub-menu__title:hover) {
@@ -241,8 +235,8 @@ const defaultOpeneds = ref(['dashboard', 'recharge'])
 :deep(.el-menu-item) {
   height: 40px;
   line-height: 40px;
-  padding: 0 24px 0 48px !important;
-  color: rgba(255, 255, 255, 0.65) !important;
+  padding: 0 var(--spacing-lg) 0 48px !important;
+  color: var(--color-text-white-secondary) !important;
 }
 
 :deep(.el-menu-item:hover) {
@@ -250,22 +244,13 @@ const defaultOpeneds = ref(['dashboard', 'recharge'])
 }
 
 :deep(.el-menu-item.is-active) {
-  background-color: #C00000 !important;
-  color: #FFFFFF !important;
-}
-
-.menu-icon {
-  margin-right: 8px;
-  font-size: 16px;
-}
-
-.sidebar.collapsed .menu-icon {
-  margin-right: 0;
+  background-color: var(--color-primary) !important;
+  color: var(--color-text-white) !important;
 }
 
 .sidebar-footer {
-  padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-base) var(--spacing-lg);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .logout-btn {
@@ -273,20 +258,17 @@ const defaultOpeneds = ref(['dashboard', 'recharge'])
   align-items: center;
   cursor: pointer;
   transition: all 0.3s;
+  color: var(--color-text-white-secondary);
 }
 
 .logout-btn:hover {
   opacity: 0.8;
 }
 
-.logout-icon {
-  font-size: 18px;
-}
-
 .logout-text {
-  margin-left: 12px;
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
+  margin-left: var(--spacing-sm);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-white-secondary);
 }
 </style>

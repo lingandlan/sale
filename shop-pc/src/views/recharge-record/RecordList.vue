@@ -20,7 +20,7 @@
           value-format="YYYY-MM-DD"
           style="width: 260px"
         />
-        <el-button type="primary" plain @click="handleSearch">查询</el-button>
+        <el-button type="primary" @click="handleSearch">查询</el-button>
         <el-button @click="handleReset">重置</el-button>
       </div>
 
@@ -29,7 +29,6 @@
         <el-table
           :data="tableData"
           style="width: 100%"
-          :header-cell-style="{ backgroundColor: '#FAFAFA', color: '#262626', fontWeight: '600' }"
         >
           <el-table-column label="交易单号" width="240">
             <template #default="{ row }">{{ row.id || '-' }}</template>
@@ -152,14 +151,14 @@ onMounted(() => {
 
 <style scoped>
 .record-list {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
 }
 
 .page-header {
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
   display: flex;
   justify-content: space-between;
@@ -169,7 +168,7 @@ onMounted(() => {
 .page-title {
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -181,9 +180,9 @@ onMounted(() => {
 }
 
 .filter-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 16px;
   display: flex;
   gap: 12px;
@@ -191,15 +190,15 @@ onMounted(() => {
 }
 
 .list-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 
 .amount-value {
   font-weight: 600;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .pagination-row {

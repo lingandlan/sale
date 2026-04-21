@@ -103,7 +103,7 @@ onMounted(() => {
 
 <style scoped>
 .record-detail {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
 }
 
@@ -112,8 +112,8 @@ onMounted(() => {
   gap: 16px;
   align-items: center;
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
 }
 
@@ -126,19 +126,19 @@ onMounted(() => {
 
 .back-icon {
   font-size: 20px;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .back-text {
   font-size: 14px;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .page-title {
   flex: 1;
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -147,16 +147,16 @@ onMounted(() => {
 }
 
 .info-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 
 .card-header {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .info-grid {
@@ -173,22 +173,22 @@ onMounted(() => {
 
 .info-label {
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .info-value {
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .amount-value {
   font-size: 18px;
   font-weight: 600;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .text-green {
-  color: #52C41A;
+  color: var(--color-success);
 }
 </style>

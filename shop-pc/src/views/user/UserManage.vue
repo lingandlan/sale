@@ -22,7 +22,7 @@
           <el-option label="启用" value="1" />
           <el-option label="停用" value="0" />
         </el-select>
-        <el-button type="primary" plain @click="handleSearch">查询</el-button>
+        <el-button type="primary" @click="handleSearch">查询</el-button>
         <el-button @click="handleResetFilter">重置</el-button>
       </div>
 
@@ -31,7 +31,6 @@
         <el-table
           :data="tableData"
           style="width: 100%"
-          :header-cell-style="{ backgroundColor: '#FAFAFA', color: '#262626', fontWeight: '600' }"
         >
           <el-table-column prop="username" label="用户名" width="140" />
           <el-table-column prop="phone" label="手机号" width="140" />
@@ -310,14 +309,14 @@ onMounted(async () => {
 
 <style scoped>
 .user-manage {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
 }
 
 .page-header {
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
   display: flex;
   justify-content: space-between;
@@ -327,19 +326,19 @@ onMounted(async () => {
 .page-title {
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .add-btn {
-  background-color: #C00000;
-  border-color: #C00000;
-  border-radius: 4px;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
 }
 
 .add-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .content-area {
@@ -350,9 +349,9 @@ onMounted(async () => {
 }
 
 .filter-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 16px;
   display: flex;
   gap: 12px;
@@ -360,9 +359,9 @@ onMounted(async () => {
 }
 
 .list-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 
@@ -373,12 +372,12 @@ onMounted(async () => {
 }
 
 .save-btn {
-  background-color: #C00000;
-  border-color: #C00000;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .danger-btn {
-  background-color: #FF4D4F;
-  border-color: #FF4D4F;
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 </style>

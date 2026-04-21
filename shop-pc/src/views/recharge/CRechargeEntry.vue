@@ -345,7 +345,7 @@ const resetForm = () => {
 
 <style scoped>
 .crecharge-entry {
-  background-color: #F5F5F5;
+  background-color: var(--color-bg);
   min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
@@ -356,16 +356,16 @@ const resetForm = () => {
   justify-content: space-between;
   align-items: center;
   height: 64px;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
 }
 
 .page-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 20px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -378,9 +378,9 @@ const resetForm = () => {
 }
 
 .info-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
 }
 
@@ -395,10 +395,10 @@ const resetForm = () => {
 }
 
 .header-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -414,21 +414,21 @@ const resetForm = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #F9F9F9;
-  border-radius: 4px;
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
   margin-top: 12px;
 }
 
 .center-balance-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 16px;
   font-weight: 600;
-  color: #52C41A;
+  color: var(--color-success);
 }
 
 .highlight {
-  color: #C00000;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -447,22 +447,22 @@ const resetForm = () => {
 }
 
 .search-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .search-btn {
-  background-color: #C00000;
-  border-color: #C00000;
-  border-radius: 4px;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
   height: 40px;
 }
 
 .member-info-box {
-  background-color: #F9F9F9;
-  border-radius: 4px;
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-sm);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -477,16 +477,16 @@ const resetForm = () => {
 }
 
 .info-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .info-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .amount-section {
@@ -496,10 +496,10 @@ const resetForm = () => {
 }
 
 .amount-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .amount-input-wrapper {
@@ -508,16 +508,16 @@ const resetForm = () => {
   gap: 8px;
   padding: 12px 16px;
   height: 56px;
-  background-color: #FFFFFF;
-  border: 2px solid #C00000;
-  border-radius: 4px;
+  background-color: var(--color-bg-card);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-sm);
 }
 
 .currency-symbol {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 24px;
   font-weight: 600;
-  color: #C00000;
+  color: var(--color-primary);
 }
 
 .amount-input {
@@ -529,7 +529,7 @@ const resetForm = () => {
   padding: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 
 .amount-input :deep(.el-input-number__decrease),
@@ -545,24 +545,24 @@ const resetForm = () => {
 .quick-amount-btn {
   flex: 1;
   height: 36px;
-  border-radius: 4px;
-  border: 1px solid #D9D9D9;
-  background-color: #FFFFFF;
-  color: #595959;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 
 .quick-amount-btn:hover {
-  border-color: #C00000;
-  color: #C00000;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .ratio-notice {
   display: flex;
   gap: 8px;
   align-items: center;
-  background-color: #FFF7E6;
-  border-radius: 4px;
+  background-color: var(--color-warning-bg);
+  border-radius: var(--radius-sm);
   padding: 12px;
   margin-top: 16px;
 }
@@ -572,14 +572,14 @@ const resetForm = () => {
 }
 
 .ratio-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 13px;
   color: #8C6000;
 }
 
 .points-calc-box {
   background-color: #F0F9FF;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -594,16 +594,16 @@ const resetForm = () => {
 }
 
 .calc-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .calc-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 18px;
   font-weight: 600;
-  color: #1677FF;
+  color: var(--color-info);
 }
 
 .store-balance {
@@ -611,21 +611,21 @@ const resetForm = () => {
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid #E5E5E5;
+  border-top: 1px solid var(--color-border);
   margin-top: 16px;
 }
 
 .store-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
-  color: #595959;
+  color: var(--color-text-secondary);
 }
 
 .store-value {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 600;
-  color: #52C41A;
+  color: var(--color-success);
 }
 
 .action-bar {
@@ -633,9 +633,9 @@ const resetForm = () => {
   gap: 12px;
   justify-content: center;
   align-items: center;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   padding: 24px;
   margin: 0 24px;
 }
@@ -643,15 +643,15 @@ const resetForm = () => {
 .cancel-btn {
   width: 140px;
   height: 48px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .confirm-btn {
   width: 160px;
   height: 48px;
-  border-radius: 4px;
-  background-color: #C00000;
-  border-color: #C00000;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
   display: flex;
   gap: 8px;
   align-items: center;
@@ -662,12 +662,12 @@ const resetForm = () => {
 }
 
 .confirm-btn:hover {
-  background-color: #A00000;
-  border-color: #A00000;
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .confirm-btn:disabled {
-  background-color: #D9D9D9;
-  border-color: #D9D9D9;
+  background-color: var(--color-border);
+  border-color: var(--color-border);
 }
 </style>

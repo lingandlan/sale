@@ -97,24 +97,20 @@ func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
 	}
 
 	data := map[string]interface{}{
-		"memberId":             req.MemberID,
 		"centerId":             req.CenterID,
-		"amount":               req.Amount,
-		"paymentMethod":        req.PaymentMethod,
-		"remark":               req.Remark,
-		"lastMonthConsumption": req.LastMonthConsumption,
 		"centerName":           req.CenterName,
+		"amount":               req.Amount,
+		"lastMonthConsumption": req.LastMonthConsumption,
 		"transactionNo":        req.TransactionNo,
 		"screenshot":           req.Screenshot,
-		"memberName":           req.MemberName,
-		"memberPhone":          req.MemberPhone,
+		"remark":               req.Remark,
 		"applicantId":          fmt.Sprintf("%d", applicantID),
 		"applicantName":        applicantName,
 	}
 
 	app, err := h.rechargeService.CreateBRechargeApplication(data)
 	if err != nil {
-		response.InternalError(c, errmsg.Get("recharge.apply_failed"))
+		bizError(c, err)
 		return
 	}
 
@@ -165,7 +161,7 @@ func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
 	approvedBy := fmt.Sprintf("%d", approvedByID)
 
 	if err := h.rechargeService.ApproveRechargeApplication(req.ID, req.Action, approvedBy, req.Reason); err != nil {
-		response.InternalError(c, errmsg.Get("recharge.approval_failed"))
+		bizError(c, err)
 		return
 	}
 

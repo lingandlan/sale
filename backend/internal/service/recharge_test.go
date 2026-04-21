@@ -121,6 +121,16 @@ func (m *MockRechargeRepo) CreateCardTransaction(transaction *model.CardTransact
 	return args.Error(0)
 }
 
+func (m *MockRechargeRepo) TransitionCardStatusTX(cardNo string, updates map[string]interface{}, txn *model.CardTransaction) error {
+	args := m.Called(cardNo, updates, txn)
+	return args.Error(0)
+}
+
+func (m *MockRechargeRepo) BatchCreateCardTransactions(transactions []*model.CardTransaction) error {
+	args := m.Called(transactions)
+	return args.Error(0)
+}
+
 func (m *MockRechargeRepo) GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error) {
 	args := m.Called(cardNo, page, pageSize)
 	return args.Get(0).([]model.CardTransaction), args.Get(1).(int64), args.Error(2)
@@ -189,14 +199,14 @@ func (m *MockRechargeRepo) DeductCenterBalance(id string, amount float64) (float
 	return args.Get(0).(float64), args.Error(1)
 }
 
-func (m *MockRechargeRepo) GetCenterTotalRecharge(centerID string) int64 {
+func (m *MockRechargeRepo) GetCenterTotalRecharge(centerID string) (int64, error) {
 	args := m.Called(centerID)
-	return args.Get(0).(int64)
+	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) float64 {
+func (m *MockRechargeRepo) GetCenterTotalConsumed(centerID string) (float64, error) {
 	args := m.Called(centerID)
-	return args.Get(0).(float64)
+	return args.Get(0).(float64), args.Error(1)
 }
 
 func (m *MockRechargeRepo) GetCenters() ([]model.RechargeCenter, error) {
@@ -583,7 +593,7 @@ func TestRechargeService_BatchImportCards(t *testing.T) {
 		svc := newTestRechargeService(repo)
 
 		repo.On("BatchCreateCards", mock.AnythingOfType("[]*model.StoreCard")).Return(nil)
-		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
+		repo.On("BatchCreateCardTransactions", mock.AnythingOfType("[]*model.CardTransaction")).Return(nil)
 
 		rows := [][]string{
 			{"卡号", "卡类型", "面值"},
@@ -726,8 +736,7 @@ func TestRechargeService_FreezeCard(t *testing.T) {
 
 		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusIssued, Balance: 1000}
 		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-		repo.On("UpdateCardByMap", "TJ2600001", mock.AnythingOfType("map[string]interface {}")).Return(nil)
-		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
+		repo.On("TransitionCardStatusTX", "TJ2600001", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
 		err := svc.FreezeCard("TJ2600001", "op-1")
 		assert.NoError(t, err)
@@ -753,8 +762,7 @@ func TestRechargeService_UnfreezeCard(t *testing.T) {
 
 		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusFrozen, Balance: 1000}
 		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-		repo.On("UpdateCardByMap", "TJ2600001", mock.AnythingOfType("map[string]interface {}")).Return(nil)
-		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
+		repo.On("TransitionCardStatusTX", "TJ2600001", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
 		err := svc.UnfreezeCard("TJ2600001", "op-1")
 		assert.NoError(t, err)
@@ -769,8 +777,7 @@ func TestRechargeService_VoidCard(t *testing.T) {
 
 		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusInStock, Balance: 1000}
 		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-		repo.On("UpdateCardByMap", "TJ2600001", mock.AnythingOfType("map[string]interface {}")).Return(nil)
-		repo.On("CreateCardTransaction", mock.AnythingOfType("*model.CardTransaction")).Return(nil)
+		repo.On("TransitionCardStatusTX", "TJ2600001", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.CardTransaction")).Return(nil)
 
 		err := svc.VoidCard("TJ2600001", "op-1")
 		assert.NoError(t, err)

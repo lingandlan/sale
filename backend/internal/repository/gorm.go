@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"marketplace/backend/pkg/logger"
+
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -34,7 +37,12 @@ func NewGormDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	}
 
 	// 确保连接使用 utf8mb4，MySQL 5.6 默认 latin1 会导致中文乱码
-	sqlDB.Exec("SET NAMES utf8mb4")
+	if _, err := sqlDB.Exec("SET NAMES utf8mb4"); err != nil {
+		logger.Warn("set names utf8mb4 failed", zap.Error(err))
+	}
+
+	// 设置空闲连接最大生命周期
+	sqlDB.SetConnMaxIdleTime(30 * time.Minute)
 
 	return db, nil
 }

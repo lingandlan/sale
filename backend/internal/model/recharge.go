@@ -43,6 +43,7 @@ type CRecharge struct {
 	Remark        string    `json:"remark"`                            // 备注
 	BalanceBefore int       `json:"balanceBefore"`                     // 充值前余额
 	BalanceAfter  int       `json:"balanceAfter"`                      // 充值后余额
+	Status        string    `json:"status" gorm:"default:'success';size:32"` // pending/success/failed
 	CreatedAt     time.Time `json:"createdAt" gorm:"autoCreateTime"`
 }
 
@@ -140,17 +141,13 @@ type RechargeOperator struct {
 
 // CreateBRechargeApplicationRequest B端充值申请
 type CreateBRechargeApplicationRequest struct {
-	MemberID           string  `json:"memberId" binding:"required"`
-	CenterID           string  `json:"centerId" binding:"required"`
-	Amount             float64 `json:"amount" binding:"required,gt=0"`
-	PaymentMethod      string  `json:"paymentMethod" binding:"required,oneof=cash card transfer"`
-	Remark             string  `json:"remark"`
+	CenterID             string  `json:"centerId" binding:"required"`
+	CenterName           string  `json:"centerName"`
+	Amount               float64 `json:"amount" binding:"required,gt=0"`
 	LastMonthConsumption float64 `json:"lastMonthConsumption"`
-	CenterName         string  `json:"centerName"`
-	TransactionNo      string  `json:"transactionNo"`
-	Screenshot         string  `json:"screenshot"`
-	MemberName         string  `json:"memberName"`
-	MemberPhone        string  `json:"memberPhone"`
+	TransactionNo        string  `json:"transactionNo"`
+	Screenshot           string  `json:"screenshot"`
+	Remark               string  `json:"remark"`
 }
 
 // ApprovalRechargeApplicationRequest B端充值审批

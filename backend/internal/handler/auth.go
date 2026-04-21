@@ -1,15 +1,15 @@
 package handler
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"marketplace/backend/internal/middleware"
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/service"
 	apperrors "marketplace/backend/pkg/errors"
 	"marketplace/backend/pkg/errmsg"
+	"marketplace/backend/pkg/logger"
 	"marketplace/backend/pkg/response"
 )
 
@@ -37,7 +37,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	result, err := h.authSvc.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
-		fmt.Printf("登录失败: error=%v\n", err)
+		logger.Warn("login failed", zap.String("phone", req.Phone), zap.Error(err))
 		switch err {
 		case apperrors.ErrNotFound:
 			response.Unauthorized(c, errmsg.Get("auth.login_failed"))

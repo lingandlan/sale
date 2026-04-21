@@ -28,7 +28,7 @@ const handleClick = () => {
 .quick-action {
   width: 140px;
   height: 100px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 2px solid v-bind(background, props.border);
   padding: 16px;
   display: flex;
@@ -51,9 +51,9 @@ const handleClick = () => {
 }
 
 .action-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
   font-size: 14px;
   font-weight: 500;
-  color: #262626;
+  color: var(--color-text-primary);
 }
 </style>

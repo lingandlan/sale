@@ -34,6 +34,8 @@ type RechargeRepoInterface interface {
 	BindCardToUser(cardNo string, updates map[string]interface{}, record *model.CardIssueRecord, txn *model.CardTransaction) error
 	ConsumeCardInTx(cardNo string, amount int, operatorID, remark string) error
 	CreateCardTransaction(transaction *model.CardTransaction) error
+		TransitionCardStatusTX(cardNo string, updates map[string]interface{}, txn *model.CardTransaction) error
+		BatchCreateCardTransactions(transactions []*model.CardTransaction) error
 	GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error)
 	GetCardStats(centerID string) (map[string]int64, error)
 	GetCardInventoryStats() (map[string]int64, error)
@@ -45,8 +47,8 @@ type RechargeRepoInterface interface {
 	GetCenterByID(id string) (*model.RechargeCenter, error)
 	AddCenterBalance(id string, amount float64) error
 	DeductCenterBalance(id string, amount float64) (float64, error)
-	GetCenterTotalRecharge(centerID string) int64
-	GetCenterTotalConsumed(centerID string) float64
+	GetCenterTotalRecharge(centerID string) (int64, error)
+	GetCenterTotalConsumed(centerID string) (float64, error)
 	GetCenters() ([]model.RechargeCenter, error)
 	CreateCenter(center *model.RechargeCenter) error
 	UpdateCenter(id string, updates map[string]interface{}) error
@@ -95,12 +97,16 @@ func (r *RechargeRepository) GetRechargeApplications(status string, page, pageSi
 		query = query.Where("status IN ?", statuses)
 	}
 
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * pageSize
-	err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error
+	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
 
-	return list, total, err
+	return list, total, nil
 }
 
 // GetRechargeApplicationByID 根据ID获取充值申请
@@ -154,12 +160,16 @@ func (r *RechargeRepository) GetCRechargeList(memberPhone, centerID, startDate, 
 		query = query.Where("created_at <= ?", endDate+" 23:59:59")
 	}
 
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * pageSize
-	err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error
+	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
 
-	return list, total, err
+	return list, total, nil
 }
 
 // GetCRechargeByID 根据ID获取C端充值记录
@@ -202,12 +212,16 @@ func (r *RechargeRepository) GetCardList(status int, cardNo, centerID string, pa
 		query = query.Where("recharge_center_id = ?", centerID)
 	}
 
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * pageSize
-	err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error
+	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
 
-	return list, total, err
+	return list, total, nil
 }
 
 // GetCardByCardNo 根据卡号获取门店卡
@@ -366,18 +380,49 @@ func (r *RechargeRepository) CreateCardTransaction(transaction *model.CardTransa
 	return r.db.Create(transaction).Error
 }
 
+// TransitionCardStatusTX 在事务中更新卡状态并创建交易记录
+func (r *RechargeRepository) TransitionCardStatusTX(cardNo string, updates map[string]interface{}, txn *model.CardTransaction) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.StoreCard{}).Where("card_no = ?", cardNo).Updates(updates).Error; err != nil {
+			return err
+		}
+		if txn != nil {
+			if err := tx.Create(txn).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// BatchCreateCardTransactions 批量创建卡交易记录（事务）
+func (r *RechargeRepository) BatchCreateCardTransactions(transactions []*model.CardTransaction) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for _, t := range transactions {
+			if err := tx.Create(t).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // GetCardTransactions 获取卡交易记录（分页）
 func (r *RechargeRepository) GetCardTransactions(cardNo string, page, pageSize int) ([]model.CardTransaction, int64, error) {
 	var list []model.CardTransaction
 	var total int64
 
 	query := r.db.Model(&model.CardTransaction{}).Where("card_no = ?", cardNo)
-	query.Count(&total)
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
 
 	offset := (page - 1) * pageSize
-	err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error
+	if err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
 
-	return list, total, err
+	return list, total, nil
 }
 
 // GetCardStats 获取门店卡统计
@@ -392,7 +437,9 @@ func (r *RechargeRepository) GetCardStats(centerID string) (map[string]int64, er
 
 	// 总卡数
 	var total int64
-	baseQuery.Count(&total)
+	if err := baseQuery.Count(&total).Error; err != nil {
+		return nil, err
+	}
 	stats["totalCards"] = total
 
 	// 按6种状态统计
@@ -410,7 +457,9 @@ func (r *RechargeRepository) GetCardStats(centerID string) (map[string]int64, er
 		if centerID != "" {
 			q = q.Where("recharge_center_id = ?", centerID)
 		}
-		q.Count(&count)
+		if err := q.Count(&count).Error; err != nil {
+			return nil, err
+		}
 		stats[field] = count
 	}
 
@@ -421,19 +470,23 @@ func (r *RechargeRepository) GetCardStats(centerID string) (map[string]int64, er
 	if centerID != "" {
 		q = q.Where("recharge_center_id = ?", centerID)
 	}
-	q.Select("COALESCE(SUM(balance), 0) as total").Scan(&totalBalance)
+	if err := q.Select("COALESCE(SUM(balance), 0) as total").Scan(&totalBalance).Error; err != nil {
+		return nil, err
+	}
 	stats["totalBalance"] = int64(totalBalance.Total)
 
 	// 今日消费（按中心过滤需 JOIN store_cards）
 	today := time.Now().Format("2006-01-02")
 	var todayConsume struct{ Total int }
 	tq := r.db.Model(&model.CardTransaction{}).
-		Where("type = ? AND DATE(created_at) = ?", "consume", today)
+		Where("type = ? AND DATE(card_transactions.created_at) = ?", "consume", today)
 	if centerID != "" {
 		tq = tq.Joins("JOIN store_cards ON store_cards.card_no = card_transactions.card_no").
 			Where("store_cards.recharge_center_id = ?", centerID)
 	}
-	tq.Select("COALESCE(SUM(amount), 0) as total").Scan(&todayConsume)
+	if err := tq.Select("COALESCE(SUM(amount), 0) as total").Scan(&todayConsume).Error; err != nil {
+		return nil, err
+	}
 	stats["todayConsume"] = int64(todayConsume.Total)
 
 	// 7天内过期
@@ -444,7 +497,9 @@ func (r *RechargeRepository) GetCardStats(centerID string) (map[string]int64, er
 	if centerID != "" {
 		eq = eq.Where("recharge_center_id = ?", centerID)
 	}
-	eq.Count(&expireIn7Days)
+	if err := eq.Count(&expireIn7Days).Error; err != nil {
+		return nil, err
+	}
 	stats["expireIn7Days"] = expireIn7Days
 
 	return stats, nil
@@ -456,17 +511,23 @@ func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
 
 	// 总卡数
 	var total int64
-	r.db.Model(&model.StoreCard{}).Count(&total)
+	if err := r.db.Model(&model.StoreCard{}).Count(&total).Error; err != nil {
+		return nil, err
+	}
 	stats["totalCards"] = total
 
 	// 已发放+已激活+已冻结+已过期的卡都是"已出库"的
 	var issued int64
-	r.db.Model(&model.StoreCard{}).Where("status IN ?", []int{model.CardStatusIssued, model.CardStatusActive, model.CardStatusFrozen, model.CardStatusExpired}).Count(&issued)
+	if err := r.db.Model(&model.StoreCard{}).Where("status IN ?", []int{model.CardStatusIssued, model.CardStatusActive, model.CardStatusFrozen, model.CardStatusExpired}).Count(&issued).Error; err != nil {
+		return nil, err
+	}
 	stats["issuedCards"] = issued
 
 	// 剩余库存 = 已入库且未划拨到充值中心的卡
 	var inStock int64
-	r.db.Model(&model.StoreCard{}).Where("status = ? AND (recharge_center_id IS NULL OR recharge_center_id = '')", model.CardStatusInStock).Count(&inStock)
+	if err := r.db.Model(&model.StoreCard{}).Where("status = ? AND (recharge_center_id IS NULL OR recharge_center_id = '')", model.CardStatusInStock).Count(&inStock).Error; err != nil {
+		return nil, err
+	}
 	stats["inStockCards"] = inStock
 
 	return stats, nil
@@ -497,24 +558,28 @@ func (r *RechargeRepository) GetMonthlyTrend(centerID string) ([]MonthlyTrendIte
 	var issueCounts []monthCount
 	iq := r.db.Model(&model.CardTransaction{}).
 		Where("type = ?", "issue").
-		Where("DATE_FORMAT(created_at, '%Y-%m') IN ?", months)
+		Where("DATE_FORMAT(card_transactions.created_at, '%Y-%m') IN ?", months)
 	if centerID != "" {
 		iq = iq.Joins("JOIN store_cards ON store_cards.card_no = card_transactions.card_no").
 			Where("store_cards.recharge_center_id = ?", centerID)
 	}
-	iq.Select("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as cnt").
-		Group("DATE_FORMAT(created_at, '%Y-%m')").Scan(&issueCounts)
+	if err := iq.Select("DATE_FORMAT(card_transactions.created_at, '%Y-%m') as month, COUNT(*) as cnt").
+		Group("DATE_FORMAT(card_transactions.created_at, '%Y-%m')").Scan(&issueCounts).Error; err != nil {
+		return nil, err
+	}
 
 	var consumeCounts []monthCount
 	cq := r.db.Model(&model.CardTransaction{}).
 		Where("type = ?", "consume").
-		Where("DATE_FORMAT(created_at, '%Y-%m') IN ?", months)
+		Where("DATE_FORMAT(card_transactions.created_at, '%Y-%m') IN ?", months)
 	if centerID != "" {
 		cq = cq.Joins("JOIN store_cards ON store_cards.card_no = card_transactions.card_no").
 			Where("store_cards.recharge_center_id = ?", centerID)
 	}
-	cq.Select("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as cnt").
-		Group("DATE_FORMAT(created_at, '%Y-%m')").Scan(&consumeCounts)
+	if err := cq.Select("DATE_FORMAT(card_transactions.created_at, '%Y-%m') as month, COUNT(*) as cnt").
+		Group("DATE_FORMAT(card_transactions.created_at, '%Y-%m')").Scan(&consumeCounts).Error; err != nil {
+		return nil, err
+	}
 
 	issueMap := make(map[string]int64)
 	for _, ic := range issueCounts {
@@ -564,7 +629,9 @@ func (r *RechargeRepository) GetCenterCardStats(centerID string) ([]CenterCardSt
 	if centerID != "" {
 		query = query.Where("sc.recharge_center_id = ?", centerID)
 	}
-	query.Group("rc.name").Scan(&results)
+	if err := query.Group("rc.name").Scan(&results).Error; err != nil {
+		return nil, err
+	}
 	return results, nil
 }
 
@@ -631,7 +698,9 @@ func (r *RechargeRepository) DeductCenterBalance(id string, amount float64) (flo
 	}
 	// 查询扣减后余额
 	var center model.RechargeCenter
-	r.db.Where("id = ?", id).First(&center)
+	if err := r.db.Where("id = ?", id).First(&center).Error; err != nil {
+		return 0, fmt.Errorf("查询扣减后余额失败: %w", err)
+	}
 	return center.Balance, nil
 }
 
@@ -643,23 +712,27 @@ func (r *RechargeRepository) GetCenters() ([]model.RechargeCenter, error) {
 }
 
 // GetCenterTotalRecharge 获取中心累计充值（approved 的申请 points 总和）
-func (r *RechargeRepository) GetCenterTotalRecharge(centerID string) int64 {
+func (r *RechargeRepository) GetCenterTotalRecharge(centerID string) (int64, error) {
 	var total int64
-	r.db.Model(&model.RechargeApplication{}).
+	if err := r.db.Model(&model.RechargeApplication{}).
 		Where("center_id = ? AND status = ?", centerID, "approved").
 		Select("COALESCE(SUM(points), 0)").
-		Scan(&total)
-	return total
+		Scan(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
 }
 
 // GetCenterTotalConsumed 获取中心已消耗（c_recharges 的 amount 总和）
-func (r *RechargeRepository) GetCenterTotalConsumed(centerID string) float64 {
+func (r *RechargeRepository) GetCenterTotalConsumed(centerID string) (float64, error) {
 	var total float64
-	r.db.Table("c_recharges").
+	if err := r.db.Table("c_recharges").
 		Where("center_id = ?", centerID).
 		Select("COALESCE(SUM(amount), 0)").
-		Scan(&total)
-	return total
+		Scan(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
 }
 
 // CreateCenter 创建充值中心
@@ -724,7 +797,7 @@ func (r *RechargeRepository) GetTodayRechargeTotal(centerID string) (float64, er
 func (r *RechargeRepository) GetTodayConsumptionTotal(centerID string) (float64, error) {
 	var total float64
 	query := r.db.Model(&model.CardTransaction{}).
-		Where("type = 'consume' AND DATE(created_at) = CURDATE()")
+		Where("type = 'consume' AND DATE(card_transactions.created_at) = CURDATE()")
 	if centerID != "" {
 		query = query.Where("card_no IN (SELECT card_no FROM store_cards WHERE recharge_center_id = ?)", centerID)
 	}
@@ -758,7 +831,7 @@ func (r *RechargeRepository) GetYesterdayRechargeTotal(centerID string) (float64
 func (r *RechargeRepository) GetYesterdayConsumptionTotal(centerID string) (float64, error) {
 	var total float64
 	query := r.db.Model(&model.CardTransaction{}).
-		Where("type = 'consume' AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
+		Where("type = 'consume' AND DATE(card_transactions.created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
 	if centerID != "" {
 		query = query.Where("card_no IN (SELECT card_no FROM store_cards WHERE recharge_center_id = ?)", centerID)
 	}

@@ -15,34 +15,36 @@
     <!-- 统计卡片区域 -->
     <div class="stats-section">
       <StatCard
-        icon="👥"
+        icon="User"
         :value="statistics.memberCount"
         label="总会员数"
         :trend="statistics.memberTrend"
-        :value-color="'#262626'"
+        color="var(--color-info)"
       />
       <StatCard
-        icon="💰"
+        icon="Wallet"
         :value="statistics.todayRecharge"
         label="今日充值金额"
         :trend="statistics.rechargeTrend"
-        :value-color="'#C00000'"
+        :value-color="'var(--color-primary)'"
         prefix="¥ "
+        color="var(--color-primary)"
       />
       <StatCard
-        icon="🎫"
+        icon="Ticket"
         :value="statistics.todayConsumption"
         label="今日核销金额"
         :trend="statistics.consumptionTrend"
-        :value-color="'#52C41A'"
+        :value-color="'var(--color-success)'"
         prefix="¥ "
+        color="var(--color-success)"
       />
       <StatCard
-        icon="🏢"
+        icon="OfficeBuilding"
         :value="statistics.activeCenters"
         label="活跃中心数"
         :trend="statistics.centerTrend"
-        :value-color="'#1677FF'"
+        color="var(--color-warning)"
       />
     </div>
 
@@ -50,7 +52,7 @@
     <div class="quick-actions-section">
       <div class="section-card">
         <div class="section-header">
-          <h3 class="section-title">⚡ 快捷操作</h3>
+          <h3 class="section-title">快捷操作</h3>
         </div>
         <el-divider />
         <div class="quick-actions-grid">
@@ -72,7 +74,7 @@
       <div class="todo-section">
         <div class="section-card todo-card">
           <div class="section-header">
-            <h3 class="section-title">📋 待办事项</h3>
+            <h3 class="section-title">待办事项</h3>
           </div>
           <el-divider />
           <div class="todo-list">
@@ -96,7 +98,7 @@
       <div class="chart-section">
         <div class="section-card chart-card">
           <div class="section-header">
-            <h3 class="section-title">📈 充值趋势（最近7天）</h3>
+            <h3 class="section-title">充值趋势（最近7天）</h3>
           </div>
           <el-divider />
           <div class="chart-container">
@@ -156,32 +158,32 @@ const chartData = ref([] as { label: string; value: number; color: string }[])
 // 快捷操作
 const quickActions = ref([
   {
-    icon: '💵',
+    icon: '💰',
     text: 'C端充值录入',
     route: '/recharge/c-entry',
-    background: '#FFF7E6',
-    border: '#FFD700'
+    background: 'var(--color-warning-bg)',
+    border: 'var(--color-primary-gold)'
   },
   {
     icon: '🎫',
     text: '门店卡核销',
     route: '/card/verify',
-    background: '#E6F7FF',
-    border: '#1677FF'
+    background: 'var(--color-info-bg)',
+    border: 'var(--color-info)'
   },
   {
     icon: '🎁',
     text: '绑定卡号',
     route: '/card/issue',
-    background: '#F6FFED',
-    border: '#52C41A'
+    background: 'var(--color-success-bg)',
+    border: 'var(--color-success)'
   },
   {
     icon: '📝',
     text: 'B端充值申请',
     route: '/recharge/b-apply',
-    background: '#FFF1F0',
-    border: '#FF4D4F'
+    background: 'var(--color-danger-bg)',
+    border: 'var(--color-danger)'
   }
 ])
 
@@ -202,7 +204,7 @@ const loadDashboardData = async () => {
           title: '待审批充值申请',
           description: d.pendingApprovals?.description || '',
           type: 'warning',
-          icon: '⏰',
+          icon: '',
           count: d.pendingApprovals?.count || 0,
           route: '/recharge/b-approval'
         },
@@ -211,7 +213,7 @@ const loadDashboardData = async () => {
           title: '即将过期的门店卡',
           description: d.expiringCards?.description || '',
           type: 'error',
-          icon: '⚠️',
+          icon: '',
           count: d.expiringCards?.count || 0
         }
       ].filter(t => t.count > 0)
@@ -222,7 +224,7 @@ const loadDashboardData = async () => {
       chartData.value = trendsRes.data.dates.map((date: string, index: number) => ({
         label: date,
         value: trendsRes.data.values[index],
-        color: index === trendsRes.data.values.length - 1 ? '#FFD700' : '#C00000'
+        color: index === trendsRes.data.values.length - 1 ? 'var(--color-primary-gold)' : 'var(--color-primary)'
       }))
     }
   } catch (err: any) {
@@ -264,60 +266,60 @@ onUnmounted(() => {
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--spacing-lg);
 }
 
 /* 欢迎区域 */
 .welcome-section {
-  background-color: #C00000;
-  padding: 16px 32px;
+  background-color: var(--color-primary);
+  padding: var(--spacing-base) var(--spacing-xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .welcome-left {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
 }
 
 .welcome-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 20px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--color-text-white);
   margin: 0;
 }
 
 .welcome-subtitle {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   font-weight: 400;
-  color: #FFD700;
+  color: var(--color-primary-gold);
   margin: 0;
 }
 
 .welcome-right {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
   align-items: flex-end;
 }
 
 .current-time,
 .current-user {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: #FFFFFF;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-white);
   margin: 0;
 }
 
 /* 统计卡片区域 */
 .stats-section {
   display: flex;
-  gap: 16px;
+  gap: var(--spacing-base);
 }
 
 /* 快捷操作区域 */
@@ -326,44 +328,44 @@ onUnmounted(() => {
 }
 
 .section-card {
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  border: 1px solid #E5E5E5;
-  padding: 24px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-lg);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--spacing-base);
 }
 
 .section-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 16px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
   font-weight: 600;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .more-link {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: #1677FF;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  color: var(--color-info);
   cursor: pointer;
 }
 
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: var(--spacing-base);
 }
 
 /* 底部区域 */
 .bottom-section {
   display: flex;
-  gap: 16px;
+  gap: var(--spacing-base);
 }
 
 .todo-card {
@@ -377,14 +379,14 @@ onUnmounted(() => {
 .todo-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .todo-item {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 4px;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
   align-items: center;
 }
 
@@ -397,11 +399,11 @@ onUnmounted(() => {
 }
 
 .todo-item.warning {
-  background-color: #FFF7E6;
+  background-color: var(--color-warning-bg);
 }
 
 .todo-item.error {
-  background-color: #FFF1F0;
+  background-color: var(--color-danger-bg);
 }
 
 .todo-icon {
@@ -411,31 +413,31 @@ onUnmounted(() => {
 .todo-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-xs);
 }
 
 .todo-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   font-weight: 500;
-  color: #262626;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .todo-link {
-  font-size: 12px;
-  color: #1677FF;
-  margin-left: 8px;
+  font-size: var(--font-size-xs);
+  color: var(--color-info);
+  margin-left: var(--spacing-sm);
 }
 
 .todo-desc {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: #8C8C8C;
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
   margin: 0;
 }
 
 .chart-container {
-  padding: 0 24px;
+  padding: 0 var(--spacing-lg);
 }
 </style>

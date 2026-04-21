@@ -38,7 +38,8 @@ func (m *RBACMiddleware) Auth() gin.HandlerFunc {
 
 		// 超级管理员拥有所有权限
 		role, _ := c.Get("role")
-		if role.(string) == "super_admin" || role.(string) == "hq_admin" {
+		roleStr, ok := role.(string)
+		if ok && (roleStr == "super_admin" || roleStr == "hq_admin") {
 			c.Next()
 			return
 		}
@@ -91,8 +92,15 @@ func RequireRoles(roles ...string) gin.HandlerFunc {
 			return
 		}
 
+		userRoleStr, ok := userRole.(string)
+		if !ok {
+			response.Unauthorized(c, errmsg.Get("common.unauthorized"))
+			c.Abort()
+			return
+		}
+
 		for _, r := range roles {
-			if userRole.(string) == r {
+			if userRoleStr == r {
 				c.Next()
 				return
 			}

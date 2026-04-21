@@ -118,16 +118,19 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	// 16. 启动服务器（goroutine）
+	// 16. 等待中断信号
+	quit := make(chan os.Signal, 1)
+
+	// 17. 启动服务器（goroutine）
 	go func() {
 		log.Info(fmt.Sprintf("server listening on :%d", cfg.Server.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("server failed", zap.Error(err))
+			log.Error("server failed", zap.Error(err))
+			quit <- syscall.SIGTERM
 		}
 	}()
 
-	// 17. 等待中断信号优雅关闭
-	quit := make(chan os.Signal, 1)
+	// 18. 等待中断信号优雅关闭
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Info("shutting down server...")
@@ -142,8 +145,9 @@ func main() {
 	// 17. 关闭数据库连接
 	db.Close()
 
-	sqlGormDB, _ := gormDB.DB()
-	sqlGormDB.Close()
+	if sqlGormDB, err := gormDB.DB(); err == nil && sqlGormDB != nil {
+		sqlGormDB.Close()
+	}
 
 	// 18. 关闭 Redis 连接
 	redisClient.Close()

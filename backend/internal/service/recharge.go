@@ -11,9 +11,11 @@ import (
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/repository"
 	"marketplace/backend/pkg/errno"
+	"marketplace/backend/pkg/logger"
 
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
+	"go.uber.org/zap"
 )
 
 type RechargeService struct {
@@ -23,6 +25,32 @@ type RechargeService struct {
 
 func NewRechargeService(rechargeRepo repository.RechargeRepoInterface, memberService MemberServiceInterface) *RechargeService {
 	return &RechargeService{rechargeRepo: rechargeRepo, memberService: memberService}
+}
+
+// ========== Map 参数安全解析 helper ==========
+
+func getFloat64(data map[string]interface{}, key string) (float64, error) {
+	v, ok := data[key]
+	if !ok {
+		return 0, errno.New(errno.CodeInvalidParam, fmt.Sprintf("参数 %s 不能为空", key))
+	}
+	val, ok := v.(float64)
+	if !ok {
+		return 0, errno.New(errno.CodeInvalidParam, fmt.Sprintf("参数 %s 类型错误", key))
+	}
+	return val, nil
+}
+
+func getString(data map[string]interface{}, key string) (string, error) {
+	v, ok := data[key]
+	if !ok {
+		return "", errno.New(errno.CodeInvalidParam, fmt.Sprintf("参数 %s 不能为空", key))
+	}
+	val, ok := v.(string)
+	if !ok {
+		return "", errno.New(errno.CodeInvalidParam, fmt.Sprintf("参数 %s 类型错误", key))
+	}
+	return val, nil
 }
 
 // ========== B端充值申请 ==========
@@ -46,25 +74,60 @@ func (s *RechargeService) CalculatePoints(amount float64, lastMonthConsumption f
 // CreateBRechargeApplication 创建B端充值申请
 func (s *RechargeService) CreateBRechargeApplication(data map[string]interface{}) (*model.RechargeApplication, error) {
 	// 计算积分
-	amount := data["amount"].(float64)
-	lastMonthConsumption := data["lastMonthConsumption"].(float64)
+	amount, err := getFloat64(data, "amount")
+	if err != nil {
+		return nil, err
+	}
+	lastMonthConsumption, err := getFloat64(data, "lastMonthConsumption")
+	if err != nil {
+		return nil, err
+	}
 	basePoints, rebatePoints, totalPoints := s.CalculatePoints(amount, lastMonthConsumption)
+
+	centerID, err := getString(data, "centerId")
+	if err != nil {
+		return nil, err
+	}
+	centerName, err := getString(data, "centerName")
+	if err != nil {
+		return nil, err
+	}
+	applicantID, err := getString(data, "applicantId")
+	if err != nil {
+		return nil, err
+	}
+	applicantName, err := getString(data, "applicantName")
+	if err != nil {
+		return nil, err
+	}
+	transactionNo, err := getString(data, "transactionNo")
+	if err != nil {
+		return nil, err
+	}
+	screenshot, err := getString(data, "screenshot")
+	if err != nil {
+		return nil, err
+	}
+	remark, err := getString(data, "remark")
+	if err != nil {
+		return nil, err
+	}
 
 	// 创建申请记录
 	app := &model.RechargeApplication{
 		ID:            uuid.New().String(),
-		CenterID:      data["centerId"].(string),
-		CenterName:    data["centerName"].(string),
+		CenterID:      centerID,
+		CenterName:    centerName,
 		Amount:        amount,
 		BasePoints:    basePoints,
 		RebatePoints:  rebatePoints,
 		Points:        totalPoints,
 		RebateRate:    rebatePoints * 100 / basePoints,
-		ApplicantID:   data["applicantId"].(string),
-		ApplicantName: data["applicantName"].(string),
-		TransactionNo: data["transactionNo"].(string),
-		Screenshot:     data["screenshot"].(string),
-		Remark:        data["remark"].(string),
+		ApplicantID:   applicantID,
+		ApplicantName: applicantName,
+		TransactionNo: transactionNo,
+		Screenshot:    screenshot,
+		Remark:        remark,
 		Status:        "pending",
 	}
 
@@ -127,9 +190,18 @@ func (s *RechargeService) ApproveRechargeApplication(id, action, approvedBy, rem
 
 // CreateCRecharge C端充值
 func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.CRecharge, error) {
-	memberPhone := data["memberPhone"].(string)
-	amount := data["amount"].(float64)
-	centerID := data["centerId"].(string)
+	memberPhone, err := getString(data, "memberPhone")
+	if err != nil {
+		return nil, err
+	}
+	amount, err := getFloat64(data, "amount")
+	if err != nil {
+		return nil, err
+	}
+	centerID, err := getString(data, "centerId")
+	if err != nil {
+		return nil, err
+	}
 	points := int(amount)
 
 	// 获取充值中心信息及余额
@@ -147,21 +219,51 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 		memberBalanceBefore = int(info.Balance)
 	}
 
+	memberID, err := getString(data, "memberId")
+	if err != nil {
+		return nil, err
+	}
+	memberName, err := getString(data, "memberName")
+	if err != nil {
+		return nil, err
+	}
+	centerName, err := getString(data, "centerName")
+	if err != nil {
+		return nil, err
+	}
+	paymentMethod, err := getString(data, "paymentMethod")
+	if err != nil {
+		return nil, err
+	}
+	operatorID, err := getString(data, "operatorId")
+	if err != nil {
+		return nil, err
+	}
+	operatorName, err := getString(data, "operatorName")
+	if err != nil {
+		return nil, err
+	}
+	remark, err := getString(data, "remark")
+	if err != nil {
+		return nil, err
+	}
+
 	recharge := &model.CRecharge{
 		ID:            uuid.New().String(),
-		MemberID:      data["memberId"].(string),
-		MemberName:    data["memberName"].(string),
+		MemberID:      memberID,
+		MemberName:    memberName,
 		MemberPhone:   memberPhone,
 		CenterID:      centerID,
-		CenterName:    data["centerName"].(string),
+		CenterName:    centerName,
 		Amount:        amount,
 		Points:        points,
-		PaymentMethod: data["paymentMethod"].(string),
-		OperatorID:    data["operatorId"].(string),
-		OperatorName:  data["operatorName"].(string),
-		Remark:        data["remark"].(string),
+		PaymentMethod: paymentMethod,
+		OperatorID:    operatorID,
+		OperatorName:  operatorName,
+		Remark:        remark,
 		BalanceBefore: memberBalanceBefore,
 		BalanceAfter:  memberBalanceBefore + points,
+		Status:        "pending",
 	}
 
 	if err := s.rechargeRepo.CreateCRecharge(recharge); err != nil {
@@ -178,12 +280,24 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 	if len(batchcode) > 30 {
 		batchcode = batchcode[:30]
 	}
-	if afterIntegral, err := s.memberService.AddIntegral(memberPhone, float64(points), batchcode, fmt.Sprintf("充值中心充值 %s", centerID)); err == nil {
+	if afterIntegral, apiErr := s.memberService.AddIntegral(memberPhone, float64(points), batchcode, fmt.Sprintf("充值中心充值 %s", centerID)); apiErr == nil {
 		recharge.BalanceAfter = int(afterIntegral)
 		s.rechargeRepo.UpdateCRecharge(recharge.ID, map[string]interface{}{
 			"balance_before": memberBalanceBefore,
 			"balance_after":  int(afterIntegral),
+			"status":         "success",
 		})
+		recharge.Status = "success"
+	} else {
+		// WSY加积分失败，记录错误，保持 status = pending
+		logger.Error("WSY AddIntegral failed, recharge pending",
+			zap.String("rechargeId", recharge.ID),
+			zap.String("memberPhone", memberPhone),
+			zap.Int("points", points),
+			zap.String("centerID", centerID),
+			zap.Error(apiErr),
+		)
+		return nil, errno.New(errno.CodeInvalidParam, fmt.Sprintf("充值记录已创建，但积分发放失败，请联系管理员处理（单号：%s）", recharge.ID))
 	}
 
 	return recharge, nil
@@ -349,9 +463,10 @@ func (s *RechargeService) BatchImportCards(file []byte, ext string, operatorID s
 		return 0, nil, err
 	}
 
-	// 7. 创建入库交易记录
+	// 7. 创建入库交易记录（事务）
+	txns := make([]*model.CardTransaction, 0, len(cards))
 	for _, card := range cards {
-		s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
+		txns = append(txns, &model.CardTransaction{
 			ID:            uuid.New().String(),
 			CardNo:        card.CardNo,
 			Type:          "stock_in",
@@ -361,6 +476,9 @@ func (s *RechargeService) BatchImportCards(file []byte, ext string, operatorID s
 			Remark:        fmt.Sprintf("批量入库（批次%s）", batchNo),
 			OperatorID:    operatorID,
 		})
+	}
+	if err := s.rechargeRepo.BatchCreateCardTransactions(txns); err != nil {
+		return 0, nil, fmt.Errorf("创建入库交易记录失败: %w", err)
 	}
 
 	return len(cards), cardNos, nil
@@ -593,11 +711,7 @@ func (s *RechargeService) transitionCardStatus(cardNo string, targetStatus int, 
 		return fmt.Errorf("不允许从状态%d转换到状态%d", card.Status, targetStatus)
 	}
 
-	if err := s.rechargeRepo.UpdateCardByMap(cardNo, map[string]interface{}{"status": targetStatus}); err != nil {
-		return err
-	}
-
-	s.rechargeRepo.CreateCardTransaction(&model.CardTransaction{
+	if err := s.rechargeRepo.TransitionCardStatusTX(cardNo, map[string]interface{}{"status": targetStatus}, &model.CardTransaction{
 		ID:            uuid.New().String(),
 		CardNo:        cardNo,
 		Type:          txnType,
@@ -606,7 +720,9 @@ func (s *RechargeService) transitionCardStatus(cardNo string, targetStatus int, 
 		BalanceAfter:  card.Balance,
 		Remark:        remark,
 		OperatorID:    operatorID,
-	})
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -680,8 +796,16 @@ func (s *RechargeService) GetCenters() ([]map[string]interface{}, error) {
 			item["managerPhone"] = op.Phone
 		}
 
-			item["totalRecharge"] = s.rechargeRepo.GetCenterTotalRecharge(c.ID)
-			item["totalConsumed"] = s.rechargeRepo.GetCenterTotalConsumed(c.ID)
+			if tr, err := s.rechargeRepo.GetCenterTotalRecharge(c.ID); err == nil {
+			item["totalRecharge"] = tr
+		} else {
+			item["totalRecharge"] = int64(0)
+		}
+			if tc, err := s.rechargeRepo.GetCenterTotalConsumed(c.ID); err == nil {
+			item["totalConsumed"] = tc
+		} else {
+			item["totalConsumed"] = float64(0)
+		}
 
 
 		result = append(result, item)
@@ -696,11 +820,20 @@ func (s *RechargeService) GetCenterDetail(id string) (*model.RechargeCenter, err
 
 // CreateCenter 创建充值中心
 func (s *RechargeService) CreateCenter(data map[string]interface{}) (*model.RechargeCenter, error) {
+	name, err := getString(data, "name")
+	if err != nil {
+		return nil, err
+	}
+	code, err := getString(data, "code")
+	if err != nil {
+		return nil, err
+	}
+
 	center := &model.RechargeCenter{
-		ID:      uuid.New().String(),
-		Name:    data["name"].(string),
-		Code:    data["code"].(string),
-		Status:  "active",
+		ID:     uuid.New().String(),
+		Name:   name,
+		Code:   code,
+		Status: "active",
 	}
 
 	if v, ok := data["province"].(string); ok {
@@ -751,19 +884,40 @@ func (s *RechargeService) GetOperators() ([]model.RechargeOperator, error) {
 
 // CreateOperator 创建操作员
 func (s *RechargeService) CreateOperator(data map[string]interface{}) (*model.RechargeOperator, error) {
+	name, err := getString(data, "name")
+	if err != nil {
+		return nil, err
+	}
+	phone, err := getString(data, "phone")
+	if err != nil {
+		return nil, err
+	}
+	password, err := getString(data, "password")
+	if err != nil {
+		return nil, err
+	}
+	centerID, err := getString(data, "centerId")
+	if err != nil {
+		return nil, err
+	}
+	role, err := getString(data, "role")
+	if err != nil {
+		return nil, err
+	}
+
 	// 密码哈希存储
-	hashedPwd, err := HashPassword(data["password"].(string))
+	hashedPwd, err := HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("密码加密失败: %w", err)
 	}
 
 	operator := &model.RechargeOperator{
 		ID:       uuid.New().String(),
-		Name:     data["name"].(string),
-		Phone:    data["phone"].(string),
+		Name:     name,
+		Phone:    phone,
 		Password: hashedPwd,
-		CenterID: data["centerId"].(string),
-		Role:     data["role"].(string),
+		CenterID: centerID,
+		Role:     role,
 		Status:   "active",
 	}
 
