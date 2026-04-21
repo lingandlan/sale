@@ -36,7 +36,6 @@
               <el-tag :type="row.level === '子公司合伙人' ? 'primary' : 'info'" size="small">{{ row.level }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="managerDisplay" label="管理员" min-width="160" />
           <el-table-column label="积分余额" width="140" align="right">
             <template #default="{ row }">
               <span class="balance-value">{{ row.balance.toLocaleString() }}</span>
@@ -146,7 +145,6 @@
         </el-descriptions-item>
         <el-descriptions-item label="省/市/区">{{ [detailData.province, detailData.city, detailData.district].filter(Boolean).join(' / ') || '-' }}</el-descriptions-item>
         <el-descriptions-item label="具体位置">{{ detailData.address || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="管理员">{{ detailData.managerName ? `${detailData.managerName}（${detailData.managerPhone}）` : '-' }}</el-descriptions-item>
         <el-descriptions-item label="联系电话">{{ detailData.phone || '-' }}</el-descriptions-item>
         <el-descriptions-item label="积分余额">
           <span class="balance-value">{{ (detailData.balance ?? 0).toLocaleString() }}</span>
@@ -236,9 +234,12 @@ const loadData = async () => {
         return {
           id: c.id,
           name: c.name,
-          region: [c.province, c.city, c.district].filter(Boolean).join('/') || c.address || '-',
+          region: [c.province, c.city, c.district].filter(Boolean).join('/') || '-',
           level: c.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人',
-          managerDisplay: c.managerDisplay || '-',
+          province: c.province,
+          city: c.city,
+          district: c.district,
+          address: c.address,
           balance: c.balance ?? 0,
           totalIn: c.totalRecharge ?? 0,
           totalOut: c.totalConsumed ?? 0,
@@ -263,15 +264,13 @@ const handleAdd = () => {
 
 const handleEdit = (row: any) => {
   dialogTitle.value = '编辑充值中心'
-  // 从 region 字段解析出省/市/区
-  const regionParts = (row.region || '').split('/')
   Object.assign(formData, {
     id: row.id,
     name: row.name,
     level: row.level,
-    province: regionParts[0] || '',
-    city: regionParts[1] || '',
-    district: regionParts[2] || '',
+    province: row.province || '',
+    city: row.city || '',
+    district: row.district || '',
     address: row.address || '',
   })
   dialogVisible.value = true

@@ -658,7 +658,6 @@ func (h *RechargeHandler) CreateCenter(c *gin.Context) {
 		"province":  req.Province,
 		"city":      req.City,
 		"district":  req.District,
-		"managerId": req.ManagerID,
 	}
 
 	result, err := h.rechargeService.CreateCenter(data)
@@ -682,6 +681,9 @@ func (h *RechargeHandler) UpdateCenter(c *gin.Context) {
 	if req.Name != "" {
 		data["name"] = req.Name
 	}
+	if req.Code != "" {
+		data["code"] = req.Code
+	}
 	if req.Address != "" {
 		data["address"] = req.Address
 	}
@@ -700,9 +702,6 @@ func (h *RechargeHandler) UpdateCenter(c *gin.Context) {
 	}
 	if req.District != "" {
 		data["district"] = req.District
-	}
-	if req.ManagerID != "" {
-		data["managerId"] = req.ManagerID
 	}
 	result, err := h.rechargeService.UpdateCenter(id, data)
 	if err != nil {
