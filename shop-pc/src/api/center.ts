@@ -36,3 +36,7 @@ export function updateCenter(id: string, data: Partial<CenterItem>) {
 export function deleteCenter(id: string) {
   return request.delete<{ data: { success: boolean } }>(`/center/${id}`)
 }
+
+export function getCenterDetail(id: string) {
+  return request.get<{ data: CenterItem }>(`/center/${id}`)
+}

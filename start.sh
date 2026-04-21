@@ -1,14 +1,19 @@
 #!/bin/bash
-# 太积堂 - Beta 环境启动脚本
+# 太积堂 - Alpha 环境启动脚本
 # 端口写死，不依赖 .env.local
 
 set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-FRONTEND_PORT="5179"
-BACKEND_PORT="8082"
-REDIS_DB="2"
+# Alpha 环境固定端口（防止合并时被覆盖）
+FRONTEND_PORT="5178"
+BACKEND_PORT="8081"
+REDIS_DB="1"
+
+# 强制写回 .env.local，确保端口不被其他分支覆盖
+echo "VITE_PORT=$FRONTEND_PORT
+VITE_API_PORT=$BACKEND_PORT" > "$ROOT/shop-pc/.env.local"
 
 # 清理僵尸进程
 echo "🧹 清理残留进程..."
@@ -27,7 +32,7 @@ cd "$ROOT/shop-pc"
 VITE_PORT=$FRONTEND_PORT VITE_API_PORT=$BACKEND_PORT npx vite &
 
 echo ""
-echo "✅ Beta 环境已启动:"
+echo "✅ Alpha 环境已启动:"
 echo "   前端: http://localhost:$FRONTEND_PORT"
 echo "   后端: http://localhost:$BACKEND_PORT"
 echo "   按 Ctrl+C 停止所有服务"

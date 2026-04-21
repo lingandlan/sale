@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -20,11 +21,12 @@ import (
 
 type RechargeService struct {
 	rechargeRepo  repository.RechargeRepoInterface
+	userRepo      repository.UserRepoInterface
 	memberService MemberServiceInterface
 }
 
-func NewRechargeService(rechargeRepo repository.RechargeRepoInterface, memberService MemberServiceInterface) *RechargeService {
-	return &RechargeService{rechargeRepo: rechargeRepo, memberService: memberService}
+func NewRechargeService(rechargeRepo repository.RechargeRepoInterface, userRepo repository.UserRepoInterface, memberService MemberServiceInterface) *RechargeService {
+	return &RechargeService{rechargeRepo: rechargeRepo, userRepo: userRepo, memberService: memberService}
 }
 
 // ========== Map 参数安全解析 helper ==========
@@ -759,10 +761,23 @@ func (s *RechargeService) GetCenters() ([]map[string]interface{}, error) {
 		return nil, err
 	}
 
-	operators, _ := s.rechargeRepo.GetOperators()
-	opMap := make(map[string]*model.RechargeOperator)
-	for i := range operators {
-		opMap[operators[i].CenterID] = &operators[i]
+	// 查所有 center_admin 用户，按 center_id 分组
+	users, _, _ := s.userRepo.List(context.Background(), 1, 1000)
+	centerAdmins := make(map[string][]map[string]string) // centerId -> [{name, phone}]
+	for i := range users {
+		if users[i].Role == "center_admin" {
+			cid := ""
+			if users[i].CenterID != nil {
+				cid = *users[i].CenterID
+			}
+			logger.Info("center_admin user", zap.String("name", users[i].Name), zap.String("centerId", cid))
+			if cid != "" {
+				centerAdmins[cid] = append(centerAdmins[cid], map[string]string{
+					"name":  users[i].Name,
+					"phone": users[i].Phone,
+				})
+			}
+		}
 	}
 
 	result := make([]map[string]interface{}, 0, len(centers))
@@ -783,11 +798,6 @@ func (s *RechargeService) GetCenters() ([]map[string]interface{}, error) {
 			"updatedAt": c.UpdatedAt,
 		}
 
-		// 管理员：从 operator 列表匹配
-		if op, ok := opMap[c.ID]; ok {
-			item["managerName"] = op.Name
-			item["managerPhone"] = op.Phone
-		}
 
 			if tr, err := s.rechargeRepo.GetCenterTotalRecharge(c.ID); err == nil {
 			item["totalRecharge"] = tr
