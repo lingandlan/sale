@@ -39,6 +39,7 @@ func main() {
 		&model.CardTransaction{},
 		&model.RechargeCenter{},
 		&model.RechargeOperator{},
+		&model.CenterMonthlyConsumption{},
 	)
 	if err != nil {
 		log.Fatalf("迁移失败: %v", err)
