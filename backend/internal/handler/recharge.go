@@ -485,24 +485,6 @@ func (h *RechargeHandler) UnfreezeCard(c *gin.Context) {
 	response.Success(c, gin.H{"success": true})
 }
 
-func (h *RechargeHandler) VoidCard(c *gin.Context) {
-	cardNo := c.Param("cardNo")
-
-	userID, _, _, _, err := h.getOperatorInfo(c)
-	if err != nil {
-		response.Error(c, 401, err.Error())
-		return
-	}
-	operatorID := fmt.Sprintf("%d", userID)
-
-	if err := h.rechargeService.VoidCard(cardNo, operatorID); err != nil {
-		bizError(c, err)
-		return
-	}
-
-	response.Success(c, gin.H{"success": true})
-}
-
 func (h *RechargeHandler) GetAvailableCards(c *gin.Context) {
 	centerID := c.Query("centerId")
 	keyword := c.Query("keyword")

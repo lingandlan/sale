@@ -512,7 +512,7 @@ func (r *RechargeRepository) GetCardStats(centerID string) (map[string]int64, er
 	return stats, nil
 }
 
-// GetCardInventoryStats 总卡库统计
+// GetCardInventoryStats 总卡库统计（返回所有状态计数）
 func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
 	stats := make(map[string]int64)
 
@@ -523,19 +523,22 @@ func (r *RechargeRepository) GetCardInventoryStats() (map[string]int64, error) {
 	}
 	stats["totalCards"] = total
 
-	// 已发放+已激活+已冻结+已过期的卡都是"已出库"的
-	var issued int64
-	if err := r.db.Model(&model.StoreCard{}).Where("status IN ?", []int{model.CardStatusIssued, model.CardStatusActive, model.CardStatusFrozen, model.CardStatusExpired}).Count(&issued).Error; err != nil {
-		return nil, err
+	// 按6种状态统计
+	statusFields := map[string]int{
+		"inStockCards": model.CardStatusInStock,
+		"issuedCards":  model.CardStatusIssued,
+		"activeCards":  model.CardStatusActive,
+		"frozenCards":  model.CardStatusFrozen,
+		"expiredCards": model.CardStatusExpired,
+		"voidedCards":  model.CardStatusVoided,
 	}
-	stats["issuedCards"] = issued
-
-	// 剩余库存 = 已入库且未划拨到充值中心的卡
-	var inStock int64
-	if err := r.db.Model(&model.StoreCard{}).Where("status = ? AND (recharge_center_id IS NULL OR recharge_center_id = '')", model.CardStatusInStock).Count(&inStock).Error; err != nil {
-		return nil, err
+	for field, status := range statusFields {
+		var count int64
+		if err := r.db.Model(&model.StoreCard{}).Where("status = ?", status).Count(&count).Error; err != nil {
+			return nil, err
+		}
+		stats[field] = count
 	}
-	stats["inStockCards"] = inStock
 
 	return stats, nil
 }

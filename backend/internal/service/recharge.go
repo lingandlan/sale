@@ -328,13 +328,9 @@ func (s *RechargeService) GetCRechargeDetail(id string) (*model.CRecharge, error
 
 // ========== 门店卡 ==========
 
-// 状态转换白名单
-var allowedTransitions = map[int][]int{
-	model.CardStatusInStock: {model.CardStatusVoided},
-	model.CardStatusIssued:  {model.CardStatusFrozen, model.CardStatusVoided},
-	model.CardStatusActive:  {model.CardStatusFrozen, model.CardStatusExpired},
-	model.CardStatusFrozen:  {model.CardStatusActive, model.CardStatusVoided},
-}
+// 状态转换规则：
+// - 非冻结状态 → 可冻结
+// - 冻结状态 → 可解冻（转为已激活）
 
 // cardTypeMap 卡类型中文映射
 var cardTypeMap = map[string]int{
@@ -698,19 +694,18 @@ func (s *RechargeService) transitionCardStatus(cardNo string, targetStatus int, 
 	}
 
 	// 校验状态转换合法性
-	allowed, ok := allowedTransitions[card.Status]
-	if !ok {
-		return errno.New(errno.CodeInvalidAction, "当前状态不允许操作")
-	}
-	valid := false
-	for _, s := range allowed {
-		if s == targetStatus {
-			valid = true
-			break
+	if targetStatus == model.CardStatusFrozen {
+		// 任何非冻结状态都可以冻结
+		if card.Status == model.CardStatusFrozen {
+			return errno.New(errno.CodeInvalidAction, "卡已冻结，不能重复冻结")
 		}
-	}
-	if !valid {
-		return fmt.Errorf("不允许从状态%d转换到状态%d", card.Status, targetStatus)
+	} else if targetStatus == model.CardStatusActive {
+		// 只有冻结状态可以解冻
+		if card.Status != model.CardStatusFrozen {
+			return errno.New(errno.CodeInvalidAction, "只有冻结状态的卡才能解冻")
+		}
+	} else {
+		return errno.New(errno.CodeInvalidAction, "不支持的状态转换")
 	}
 
 	if err := s.rechargeRepo.TransitionCardStatusTX(cardNo, map[string]interface{}{"status": targetStatus}, &model.CardTransaction{
@@ -737,11 +732,6 @@ func (s *RechargeService) FreezeCard(cardNo, operatorID string) error {
 // UnfreezeCard 解冻卡
 func (s *RechargeService) UnfreezeCard(cardNo, operatorID string) error {
 	return s.transitionCardStatus(cardNo, model.CardStatusActive, operatorID, "unfreeze", "解冻卡")
-}
-
-// VoidCard 作废卡
-func (s *RechargeService) VoidCard(cardNo, operatorID string) error {
-	return s.transitionCardStatus(cardNo, model.CardStatusVoided, operatorID, "void", "作废卡")
 }
 
 // GetAvailableCards 获取指定充值中心的可用卡号列表

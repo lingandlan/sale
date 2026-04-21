@@ -283,7 +283,6 @@ func (s *CasbinService) initDefaultPolicies() error {
 		{"center_admin", "/api/v1/card/bind", "*"},
 		{"center_admin", "/api/v1/card/*/freeze", "*"},
 		{"center_admin", "/api/v1/card/*/unfreeze", "*"},
-		{"center_admin", "/api/v1/card/*/void", "*"},
 		{"operator", "/api/v1/card/verify/*", "*"},
 		{"operator", "/api/v1/card/consume", "*"},
 		{"operator", "/api/v1/card/available", "GET"},
@@ -297,7 +296,6 @@ func (s *CasbinService) initDefaultPolicies() error {
 		{"operator", "/api/v1/card/bind", "*"},
 		{"operator", "/api/v1/card/*/freeze", "*"},
 		{"operator", "/api/v1/card/*/unfreeze", "*"},
-		{"operator", "/api/v1/card/*/void", "*"},
 		// 充值中心（只读）
 		{"center_admin", "/api/v1/center", "GET"},
 		{"center_admin", "/api/v1/center/*", "GET"},

@@ -107,7 +107,6 @@ func SetupRouter(
 			card.POST("/bind", rechargeHandler.BindCardToUser)
 			card.POST("/:cardNo/freeze", rechargeHandler.FreezeCard)
 			card.POST("/:cardNo/unfreeze", rechargeHandler.UnfreezeCard)
-			card.POST("/:cardNo/void", rechargeHandler.VoidCard)
 		}
 
 		// ========== 充值中心管理 ==========
