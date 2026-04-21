@@ -58,7 +58,6 @@ type RechargeServiceInterface interface {
 	GetAvailableCardCount(centerID string) (int64, error)
 	FreezeCard(cardNo, operatorID string) error
 	UnfreezeCard(cardNo, operatorID string) error
-	VoidCard(cardNo, operatorID string) error
 	// 充值中心
 	GetCenters() ([]map[string]interface{}, error)
 	GetCenterDetail(id string) (*model.RechargeCenter, error)

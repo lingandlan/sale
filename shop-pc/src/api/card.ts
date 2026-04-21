@@ -6,8 +6,7 @@ export const CardStatusMap: Record<number, string> = {
   2: '已发放',
   3: '已激活',
   4: '已冻结',
-  5: '已过期',
-  6: '已作废'
+  5: '已过期'
 }
 
 export const CardStatusTagType: Record<number, string> = {
@@ -15,8 +14,7 @@ export const CardStatusTagType: Record<number, string> = {
   2: '',
   3: 'success',
   4: 'warning',
-  5: 'danger',
-  6: 'info'
+  5: 'danger'
 }
 
 export const CardTypeMap: Record<number, string> = {
@@ -107,7 +105,6 @@ export interface CardStatsResponse {
   activeCards: number
   frozenCards: number
   expiredCards: number
-  voidedCards: number
   totalBalance: number
   todayConsume: number
   expireIn7Days: number
@@ -116,8 +113,11 @@ export interface CardStatsResponse {
 // 总卡库统计
 export interface CardInventoryResponse {
   totalCards: number
-  issuedCards: number
   inStockCards: number
+  issuedCards: number
+  activeCards: number
+  frozenCards: number
+  expiredCards: number
 }
 
 // 批量入库（Excel上传）
@@ -175,11 +175,6 @@ export function freezeCard(cardNo: string) {
 // 解冻卡
 export function unfreezeCard(cardNo: string) {
   return request.post(`/card/${cardNo}/unfreeze`)
-}
-
-// 作废卡
-export function voidCard(cardNo: string) {
-  return request.post(`/card/${cardNo}/void`)
 }
 
 // 获取卡统计

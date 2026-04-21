@@ -1,49 +1,60 @@
 <template>
   <div class="card-inventory">
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>总卡库管理</span>
-          <div class="card-header-actions">
-            <el-button @click="downloadTemplate">下载模板</el-button>
-            <el-button type="primary" @click="showImportDialog = true">批量入库</el-button>
-          </div>
+    <div class="page-header">
+      <h1 class="page-title">总卡库管理</h1>
+      <div class="header-actions">
+        <el-button class="action-btn" @click="downloadTemplate">下载模板</el-button>
+        <el-button type="primary" class="action-btn" @click="showImportDialog = true">批量入库</el-button>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <!-- 统计区域 -->
+      <div class="stats-row">
+        <div class="stat-card stat-blue">
+          <span class="stat-value">{{ inventory.totalCards }}</span>
+          <span class="stat-label">总卡数</span>
         </div>
-      </template>
+        <div class="stat-card stat-gray">
+          <span class="stat-value">{{ inventory.inStockCards }}</span>
+          <span class="stat-label">已入库</span>
+        </div>
+        <div class="stat-card stat-blue">
+          <span class="stat-value">{{ inventory.issuedCards }}</span>
+          <span class="stat-label">已发放</span>
+        </div>
+        <div class="stat-card stat-green">
+          <span class="stat-value">{{ inventory.activeCards }}</span>
+          <span class="stat-label">已激活</span>
+        </div>
+        <div class="stat-card stat-orange">
+          <span class="stat-value">{{ inventory.frozenCards }}</span>
+          <span class="stat-label">已冻结</span>
+        </div>
+        <div class="stat-card stat-red">
+          <span class="stat-value">{{ inventory.expiredCards }}</span>
+          <span class="stat-label">已过期</span>
+        </div>
+      </div>
 
-      <!-- 库存统计 -->
-      <el-row :gutter="20" class="stats-row">
-        <el-col :span="8">
-          <el-statistic title="总卡数" :value="inventory.totalCards" />
-        </el-col>
-        <el-col :span="8">
-          <el-statistic title="已出库" :value="inventory.issuedCards" />
-        </el-col>
-        <el-col :span="8">
-          <el-statistic title="剩余库存" :value="inventory.inStockCards" />
-        </el-col>
-      </el-row>
-    </el-card>
-
-    <!-- 划拨到充值中心 -->
-    <el-card shadow="never" style="margin-top: 16px">
-      <template #header>
-        <span>划拨到充值中心</span>
-      </template>
-      <el-form :model="allocateForm" label-width="100px" :rules="allocateRules" ref="allocateFormRef">
-        <el-form-item label="目标中心" prop="centerId">
-          <el-select v-model="allocateForm.centerId" placeholder="选择充值中心" style="width: 100%">
-            <el-option v-for="c in centers" :key="c.id" :label="c.name" :value="c.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="划拨数量" prop="quantity">
-          <el-input-number v-model="allocateForm.quantity" :min="1" :max="1000" style="width: 100%" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleAllocate" :loading="allocateLoading">确认划拨</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+      <!-- 划拨到充值中心 -->
+      <div class="section-card">
+        <h2 class="section-title">划拨到充值中心</h2>
+        <el-form :model="allocateForm" label-width="100px" :rules="allocateRules" ref="allocateFormRef">
+          <el-form-item label="目标中心" prop="centerId">
+            <el-select v-model="allocateForm.centerId" placeholder="选择充值中心" style="width: 100%">
+              <el-option v-for="c in centers" :key="c.id" :label="c.name" :value="c.id" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="划拨数量" prop="quantity">
+            <el-input-number v-model="allocateForm.quantity" :min="1" :max="1000" style="width: 100%" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleAllocate" :loading="allocateLoading">确认划拨</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </div>
 
     <!-- 批量入库对话框 -->
     <el-dialog v-model="showImportDialog" title="批量入库" width="500px">
@@ -78,7 +89,7 @@ import type { FormInstance, UploadFile } from 'element-plus'
 import { batchImportCards, allocateCards, getCardInventoryStats, type CardInventoryResponse } from '@/api/card'
 import request from '@/utils/request'
 
-const inventory = ref<CardInventoryResponse>({ totalCards: 0, issuedCards: 0, inStockCards: 0 })
+const inventory = ref<CardInventoryResponse>({ totalCards: 0, inStockCards: 0, issuedCards: 0, activeCards: 0, frozenCards: 0, expiredCards: 0 })
 const centers = ref<{ id: string; name: string }[]>([])
 
 // 批量入库
@@ -179,16 +190,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.card-header-actions {
-  display: flex;
-  gap: 8px;
-}
-.stats-row {
-  text-align: center;
-}
+.card-inventory { background: var(--color-bg); min-height: calc(100vh - 64px); }
+.page-header { display: flex; justify-content: space-between; align-items: center; height: 64px; background: var(--color-bg-card); border-bottom: 1px solid var(--color-border); padding: 16px 24px; }
+.page-title { font-size: 20px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
+.header-actions { display: flex; gap: 12px; }
+.action-btn { width: 80px; height: 36px; }
+.content-area { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.stat-card { background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid; padding: 16px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.stat-value { font-size: 28px; font-weight: 600; color: var(--color-text-primary); }
+.stat-label { font-size: 13px; color: var(--color-text-secondary); }
+.stat-gray { background: var(--color-bg-section); border-color: var(--color-border); }
+.stat-blue { background: var(--color-info-bg); border-color: #91D5FF; }
+.stat-green { background: var(--color-success-bg); border-color: #B7EB8F; }
+.stat-green .stat-value { color: var(--color-success); }
+.stat-orange { background: var(--color-warning-bg); border-color: #FFD591; }
+.stat-orange .stat-value { color: #FA8C16; }
+.stat-red { background: var(--color-danger-bg); border-color: #FFA39E; }
+.stat-red .stat-value { color: var(--color-danger); }
+.section-card { background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid var(--color-border); padding: 20px; }
+.section-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); margin: 0 0 16px 0; }
 </style>

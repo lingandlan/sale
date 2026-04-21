@@ -87,12 +87,11 @@
           <el-table-column label="过期日期" width="110">
             <template #default="{ row }">{{ row.expiredAt ? row.expiredAt.slice(0, 10) : '-' }}</template>
           </el-table-column>
-          <el-table-column label="操作" fixed="right" width="200">
+          <el-table-column label="操作" fixed="right" width="160">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="router.push(`/card/detail/${row.cardNo}`)">详情</el-button>
-              <el-button v-if="row.status === 2 || row.status === 3" type="warning" link size="small" @click="handleFreeze(row)">冻结</el-button>
+              <el-button v-if="row.status !== 4" type="warning" link size="small" @click="handleFreeze(row)">冻结</el-button>
               <el-button v-if="row.status === 4" type="success" link size="small" @click="handleUnfreeze(row)">解冻</el-button>
-              <el-button v-if="row.status !== 5 && row.status !== 6" type="danger" link size="small" @click="handleVoid(row)">作废</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -106,7 +105,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
-import { getCardList, getCardStats, freezeCard, unfreezeCard, voidCard, CardStatusMap, CardStatusTagType, CardTypeMap, type CardListItem } from '@/api/card'
+import { getCardList, getCardStats, freezeCard, unfreezeCard, CardStatusMap, CardStatusTagType, CardTypeMap, type CardListItem } from '@/api/card'
 import { getCenterList } from '@/api/center'
 import { useUserStore } from '@/stores/user'
 
@@ -115,7 +114,7 @@ const router = useRouter()
 
 const stats = ref({
   totalCards: 0, inStockCards: 0, issuedCards: 0,
-  activeCards: 0, frozenCards: 0, expiredCards: 0, voidedCards: 0
+  activeCards: 0, frozenCards: 0, expiredCards: 0
 })
 
 const filterStatus = ref<number | undefined>(undefined)
@@ -140,13 +139,6 @@ const handleUnfreeze = async (row: CardListItem) => {
   loadData()
 }
 
-const handleVoid = async (row: CardListItem) => {
-  await ElMessageBox.confirm(`确认作废卡 ${row.cardNo}？此操作不可恢复`, '作废', { type: 'warning' })
-  await voidCard(row.cardNo)
-  ElMessage.success('作废成功')
-  loadData()
-}
-
 const loadData = async () => {
   try {
     const [listRes, statsRes] = await Promise.all([
@@ -160,8 +152,7 @@ const loadData = async () => {
       stats.value = {
         totalCards: s.totalCards || 0, inStockCards: s.inStockCards || 0,
         issuedCards: s.issuedCards || 0, activeCards: s.activeCards || 0,
-        frozenCards: s.frozenCards || 0, expiredCards: s.expiredCards || 0,
-        voidedCards: s.voidedCards || 0
+        frozenCards: s.frozenCards || 0, expiredCards: s.expiredCards || 0
       }
     }
   } catch (err: any) {
