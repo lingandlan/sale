@@ -120,10 +120,6 @@ func (m *MockRechargeService) UnfreezeCard(cardNo, operatorID string) error {
 	return args.Error(0)
 }
 
-func (m *MockRechargeService) VoidCard(cardNo, operatorID string) error {
-	args := m.Called(cardNo, operatorID)
-	return args.Error(0)
-}
 
 func (m *MockRechargeService) GetCardList(status int, cardNo, centerID string, page, pageSize int) (map[string]interface{}, error) {
 	args := m.Called(status, cardNo, centerID, page, pageSize)
@@ -367,7 +363,6 @@ func setupRechargeRouter(h *RechargeHandler) *gin.Engine {
 		card.POST("/bind", h.BindCardToUser)
 		card.POST("/:cardNo/freeze", h.FreezeCard)
 		card.POST("/:cardNo/unfreeze", h.UnfreezeCard)
-		card.POST("/:cardNo/void", h.VoidCard)
 	}
 
 	// 充值中心
