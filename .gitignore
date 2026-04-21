@@ -26,3 +26,4 @@ backend/uploads/*
 # Apifox submodule dirty state
 apifox-mcp
 !.gitkeep
+.env.worktree

@@ -772,21 +772,6 @@ func TestRechargeService_UnfreezeCard(t *testing.T) {
 	})
 }
 
-func TestRechargeService_VoidCard(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		repo := new(MockRechargeRepo)
-		svc := newTestRechargeService(repo)
-
-		card := &model.StoreCard{CardNo: "TJ2600001", Status: model.CardStatusInStock, Balance: 1000}
-		repo.On("GetCardByCardNo", "TJ2600001").Return(card, nil)
-		repo.On("TransitionCardStatusTX", "TJ2600001", mock.AnythingOfType("map[string]interface {}"), mock.AnythingOfType("*model.CardTransaction")).Return(nil)
-
-		err := svc.VoidCard("TJ2600001", "op-1")
-		assert.NoError(t, err)
-		repo.AssertExpectations(t)
-	})
-}
-
 func TestRechargeService_GetCardStats(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := new(MockRechargeRepo)

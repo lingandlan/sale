@@ -231,4 +231,5 @@ func (StoreCard) TableName() string           { return "store_cards" }
 func (CardIssueRecord) TableName() string     { return "card_issue_records" }
 func (CardTransaction) TableName() string     { return "card_transactions" }
 func (RechargeCenter) TableName() string      { return "recharge_centers" }
+func (RechargeOperator) TableName() string   { return "recharge_operators" }
 func (CenterMonthlyConsumption) TableName() string { return "center_monthly_consumption" }

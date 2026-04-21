@@ -98,7 +98,7 @@ func TestRechargeRepository_BRechargeApplication(t *testing.T) {
 		require.NoError(t, err)
 
 		// Filter by pending
-		list, total, err := repo.GetRechargeApplications("pending", 1, 10)
+		list, total, err := repo.GetRechargeApplications("pending", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(1))
 		for _, item := range list {
@@ -106,7 +106,7 @@ func TestRechargeRepository_BRechargeApplication(t *testing.T) {
 		}
 
 		// Filter by approved
-		list, total, err = repo.GetRechargeApplications("approved", 1, 10)
+		list, total, err = repo.GetRechargeApplications("approved", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(1))
 		for _, item := range list {
@@ -114,7 +114,7 @@ func TestRechargeRepository_BRechargeApplication(t *testing.T) {
 		}
 
 		// No filter - returns all
-		_, total, err = repo.GetRechargeApplications("", 1, 10)
+		_, total, err = repo.GetRechargeApplications("", "", 1, 10)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, total, int64(2))
 	})

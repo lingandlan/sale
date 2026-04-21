@@ -1,17 +1,21 @@
 #!/bin/bash
-# 太积堂 - Alpha 环境启动脚本
-# 端口写死，不依赖 .env.local
+# 太积堂 - 通用启动脚本
+# 端口从 .env.worktree 读取（gitignored，每个环境独立维护）
 
 set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# Alpha 环境固定端口（防止合并时被覆盖）
-FRONTEND_PORT="5178"
-BACKEND_PORT="8081"
-REDIS_DB="1"
+# 读取本地环境配置（不存在则用 Main 默认值）
+if [ -f "$ROOT/.env.worktree" ]; then
+  source "$ROOT/.env.worktree"
+fi
 
-# 强制写回 .env.local，确保端口不被其他分支覆盖
+FRONTEND_PORT="${FRONTEND_PORT:-5175}"
+BACKEND_PORT="${BACKEND_PORT:-8080}"
+REDIS_DB="${REDIS_DB:-0}"
+
+# 写回 .env.local 确保前端端口正确
 echo "VITE_PORT=$FRONTEND_PORT
 VITE_API_PORT=$BACKEND_PORT" > "$ROOT/shop-pc/.env.local"
 
@@ -26,14 +30,15 @@ echo "🚀 启动后端 (port $BACKEND_PORT, Redis DB $REDIS_DB)..."
 cd "$ROOT/backend"
 APP_SERVER_PORT=$BACKEND_PORT APP_REDIS_DB=$REDIS_DB air &
 
-# 启动前端，通过环境变量指定端口和代理目标（不依赖 .env.local）
+# 启动前端
 echo "🚀 启动前端 (port $FRONTEND_PORT)..."
 cd "$ROOT/shop-pc"
 VITE_PORT=$FRONTEND_PORT VITE_API_PORT=$BACKEND_PORT npx vite &
 
 echo ""
-echo "✅ Alpha 环境已启动:"
+echo "✅ 环境已启动:"
 echo "   前端: http://localhost:$FRONTEND_PORT"
 echo "   后端: http://localhost:$BACKEND_PORT"
+echo "   Redis DB: $REDIS_DB"
 echo "   按 Ctrl+C 停止所有服务"
 wait
