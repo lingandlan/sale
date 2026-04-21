@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: `http://localhost:${env.VITE_API_PORT || '8080'}`,
           changeOrigin: true
+        },
+        '/uploads': {
+          target: `http://localhost:${env.VITE_API_PORT || '8080'}`,
+          changeOrigin: true
         }
       },
       watch: {

@@ -58,17 +58,16 @@ func getString(data map[string]interface{}, key string) (string, error) {
 // CalculatePoints 计算积分
 // 规则：基础积分 = 金额，返还积分 = 金额 * 返还比例
 // 返还比例：上月净消费>=10万元返2%，否则返1%
-func (s *RechargeService) CalculatePoints(amount float64, lastMonthConsumption float64) (int, int, int) {
-	basePoints := int(amount)
-	var rebateRate int
+func (s *RechargeService) CalculatePoints(amount float64, lastMonthConsumption float64) (basePoints, rebatePoints, totalPoints, rebateRate int) {
+	basePoints = int(amount)
 	if lastMonthConsumption >= 100000 {
 		rebateRate = 2
 	} else {
 		rebateRate = 1
 	}
-	rebatePoints := int(float64(basePoints) * float64(rebateRate) / 100)
-	totalPoints := basePoints + rebatePoints
-	return basePoints, rebatePoints, totalPoints
+	rebatePoints = int(float64(basePoints) * float64(rebateRate) / 100)
+	totalPoints = basePoints + rebatePoints
+	return
 }
 
 // CreateBRechargeApplication 创建B端充值申请
@@ -82,7 +81,7 @@ func (s *RechargeService) CreateBRechargeApplication(data map[string]interface{}
 	if err != nil {
 		return nil, err
 	}
-	basePoints, rebatePoints, totalPoints := s.CalculatePoints(amount, lastMonthConsumption)
+	basePoints, rebatePoints, totalPoints, rebateRate := s.CalculatePoints(amount, lastMonthConsumption)
 
 	centerID, err := getString(data, "centerId")
 	if err != nil {
@@ -122,12 +121,13 @@ func (s *RechargeService) CreateBRechargeApplication(data map[string]interface{}
 		BasePoints:    basePoints,
 		RebatePoints:  rebatePoints,
 		Points:        totalPoints,
-		RebateRate:    rebatePoints * 100 / basePoints,
+		RebateRate:    rebateRate,
 		ApplicantID:   applicantID,
 		ApplicantName: applicantName,
 		TransactionNo: transactionNo,
 		Screenshot:    screenshot,
 		Remark:        remark,
+		LastMonthConsumption: lastMonthConsumption,
 		Status:        "pending",
 	}
 
@@ -139,8 +139,8 @@ func (s *RechargeService) CreateBRechargeApplication(data map[string]interface{}
 }
 
 // GetRechargeApplicationList 获取充值申请列表
-func (s *RechargeService) GetRechargeApplicationList(status string, page, pageSize int) (map[string]interface{}, error) {
-	list, total, err := s.rechargeRepo.GetRechargeApplications(status, page, pageSize)
+func (s *RechargeService) GetRechargeApplicationList(status string, centerID string, page, pageSize int) (map[string]interface{}, error) {
+	list, total, err := s.rechargeRepo.GetRechargeApplications(status, centerID, page, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +261,7 @@ func (s *RechargeService) CreateCRecharge(data map[string]interface{}) (*model.C
 		OperatorID:    operatorID,
 		OperatorName:  operatorName,
 		Remark:        remark,
+
 		BalanceBefore: memberBalanceBefore,
 		BalanceAfter:  memberBalanceBefore + points,
 		Status:        "pending",
@@ -547,6 +548,7 @@ func (s *RechargeService) BindCardToUser(cardNo, userPhone, issueReason string, 
 		OperatorID:       operatorID,
 		RelatedUserPhone: relatedUserPhone,
 		Remark:           remark,
+
 	}
 
 	// 发放交易记录（在同一事务中创建）
@@ -719,6 +721,7 @@ func (s *RechargeService) transitionCardStatus(cardNo string, targetStatus int, 
 		BalanceBefore: card.Balance,
 		BalanceAfter:  card.Balance,
 		Remark:        remark,
+
 		OperatorID:    operatorID,
 	}); err != nil {
 		return err
@@ -1059,4 +1062,62 @@ func (s *RechargeService) GetDashboardRechargeTrends(days int, role, centerID st
 		"dates":  dates,
 		"values": values,
 	}, nil
+}
+
+// ========== 月度消费 ==========
+
+// GetCenterLastMonthConsumption 查询充值中心上月消费金额及返还比例
+func (s *RechargeService) GetCenterLastMonthConsumption(centerID string) (map[string]interface{}, error) {
+	// 上月 YYYY-MM
+	now := time.Now()
+	lastMonth := time.Date(now.Year(), now.Month()-1, 1, 0, 0, 0, 0, time.UTC)
+	monthStr := lastMonth.Format("2006-01")
+
+	record, err := s.rechargeRepo.GetMonthlyConsumption(centerID, monthStr)
+	if err != nil {
+		return nil, err
+	}
+
+	consumption := float64(0)
+	if record != nil {
+		consumption = record.Consumption
+	}
+
+	rebateRate := 1
+	if consumption >= 100000 {
+		rebateRate = 2
+	}
+
+	return map[string]interface{}{
+		"consumption": consumption,
+		"rebateRate":  rebateRate,
+		"month":       monthStr,
+	}, nil
+}
+
+// UpsertMonthlyConsumption 录入/更新月度消费
+func (s *RechargeService) UpsertMonthlyConsumption(centerID, month string, consumption float64) error {
+	// 查已有记录
+	existing, err := s.rechargeRepo.GetMonthlyConsumption(centerID, month)
+	if err != nil {
+		return err
+	}
+
+	if existing != nil {
+		existing.Consumption = consumption
+		return s.rechargeRepo.UpsertMonthlyConsumption(existing)
+	}
+
+	record := &model.CenterMonthlyConsumption{
+		ID:          uuid.New().String(),
+		CenterID:    centerID,
+		Month:       month,
+		Consumption: consumption,
+	}
+	return s.rechargeRepo.UpsertMonthlyConsumption(record)
+}
+
+// ListMonthlyConsumption 查询月度消费列表
+func (s *RechargeService) ListMonthlyConsumption(month string) ([]model.CenterMonthlyConsumption, error) {
+	return s.rechargeRepo.ListMonthlyConsumption(month)
 }

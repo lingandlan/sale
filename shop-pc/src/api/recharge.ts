@@ -37,6 +37,7 @@ export interface BRechargeApprovalListResponse {
 
 export interface BRechargeApprovalListParams {
   status?: string
+  centerId?: string
   page: number
   pageSize: number
 }
@@ -141,6 +142,23 @@ export interface RechargeRecordDetail {
   createdAt: string
 }
 
+// 上传文件（用 fetch 绕开 axios 对 FormData 的处理）
+export async function uploadFile(file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const token = localStorage.getItem('access_token')
+  const res = await fetch('/api/v1/upload', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  })
+  const json = await res.json()
+  if (json.code !== 0) {
+    throw new Error(json.message || '上传失败')
+  }
+  return json
+}
+
 // 提交B端充值申请
 export function submitBRechargeApply(data: BRechargeApplyData) {
   return request.post<{ data: BRechargeApplyResponse }>('/recharge/b-apply', data)
@@ -205,4 +223,39 @@ export function getRechargeRecordList(params: RechargeRecordListParams) {
 // 获取充值记录详情
 export function getRechargeRecordDetail(id: string) {
   return request.get<{ data: RechargeRecordDetail }>(`/recharge/records/${id}`)
+}
+
+// 获取充值中心上月消费
+export interface LastMonthConsumption {
+  consumption: number
+  rebateRate: number
+  month: string
+}
+
+export function getCenterLastMonthConsumption(centerId: string) {
+  return request.get<{ data: LastMonthConsumption }>(`/center/${centerId}/last-month-consumption`)
+}
+
+// 录入月度消费
+export interface MonthlyConsumptionData {
+  centerId: string
+  month: string
+  consumption: number
+}
+
+export function upsertMonthlyConsumption(data: MonthlyConsumptionData) {
+  return request.post<{ data: { success: boolean } }>('/center-monthly-consumption', data)
+}
+
+// 查询月度消费列表
+export interface MonthlyConsumptionRecord {
+  id: string
+  centerId: string
+  consumption: number
+  month: string
+  createdAt: string
+}
+
+export function listMonthlyConsumption(month?: string) {
+  return request.get<{ data: MonthlyConsumptionRecord[] }>('/center-monthly-consumption', { params: { month } })
 }

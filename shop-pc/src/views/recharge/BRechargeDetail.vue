@@ -74,8 +74,8 @@
           </div>
           <el-divider />
           <div class="points-details">
-            <div class="detail-line">• 基础积分：{{ detailData.amount.toLocaleString() }} × 1 = {{ detailData.amount.toLocaleString() }}</div>
-            <div class="detail-line">• 返还积分：{{ detailData.amount.toLocaleString() }} × {{ detailData.points?.rebateRate || 0 }}% = {{ detailData.points?.rebate?.toLocaleString() || '0' }}</div>
+            <div class="detail-line">• 基础积分：{{ detailData.points?.base?.toLocaleString() || '0' }}</div>
+            <div class="detail-line">• 返还积分（{{ detailData.points?.rebateRate || 0 }}%）：{{ detailData.points?.rebate?.toLocaleString() || '0' }}</div>
             <div class="detail-line highlight">• 总计（向上取整）：{{ formatTotalPoints }}</div>
           </div>
         </div>
@@ -97,11 +97,16 @@
             <div class="payment-label">付款截图</div>
             <div v-if="detailData.screenshot" class="screenshot-preview">
               <el-image
+                v-if="detailData.screenshot.startsWith('http') || detailData.screenshot.startsWith('/uploads/')"
                 :src="detailData.screenshot"
                 fit="cover"
                 style="width: 160px; height: 100px; border-radius: var(--radius-sm)"
                 :preview-src-list="[detailData.screenshot]"
               />
+              <div v-else class="no-screenshot">
+                <span class="no-screenshot-icon">📎</span>
+                <span class="no-screenshot-text">{{ detailData.screenshot }}</span>
+              </div>
             </div>
             <div v-else class="no-screenshot">
               <span class="no-screenshot-icon">📷</span>

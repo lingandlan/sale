@@ -23,6 +23,8 @@ type RechargeApplication struct {
 	ApprovedBy    string    `json:"approvedBy"`                        // 审批人
 	ApprovedAt    *time.Time `json:"approvedAt"`                       // 审批时间
 	ApprovalRemark string   `json:"approvalRemark"`                   // 审批备注
+	LastMonthConsumption float64 `json:"lastMonthConsumption"`
+
 	CreatedAt     time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt     time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
@@ -94,6 +96,16 @@ type CardIssueRecord struct {
 	RelatedUserPhone string    `json:"relatedUserPhone" gorm:"size:32"`              // 推荐奖励时关联购买人手机号
 	Remark           string    `json:"remark" gorm:"size:500"`                       // 备注
 	CreatedAt        time.Time `json:"createdAt" gorm:"autoCreateTime"`
+}
+
+// CenterMonthlyConsumption 充值中心月度消费记录（手动录入商城消费）
+type CenterMonthlyConsumption struct {
+	ID          string    `json:"id" gorm:"primaryKey;size:64"`
+	CenterID    string    `json:"centerId" gorm:"uniqueIndex:uk_center_month;size:64"`
+	Month       string    `json:"month" gorm:"uniqueIndex:uk_center_month;size:7"`
+	Consumption float64   `json:"consumption"`
+	CreatedAt   time.Time `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt   time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // CardTransaction 门店卡交易记录
@@ -214,4 +226,4 @@ func (StoreCard) TableName() string           { return "store_cards" }
 func (CardIssueRecord) TableName() string     { return "card_issue_records" }
 func (CardTransaction) TableName() string     { return "card_transactions" }
 func (RechargeCenter) TableName() string      { return "recharge_centers" }
-func (RechargeOperator) TableName() string    { return "recharge_operators" }
+func (CenterMonthlyConsumption) TableName() string { return "center_monthly_consumption" }

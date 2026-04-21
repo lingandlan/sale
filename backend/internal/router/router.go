@@ -19,6 +19,9 @@ func SetupRouter(
 	rbacMiddleware *middleware.RBACMiddleware,
 	rdb *redis.Client,
 ) {
+	// 静态文件服务（上传文件）
+	r.Static("/uploads", "./uploads")
+
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -39,6 +42,7 @@ func SetupRouter(
 		authed.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb))
 		{
 			authed.POST("/auth/logout", authHandler.Logout)
+				authed.POST("/upload", rechargeHandler.UploadFile)
 		}
 
 		// ========== Dashboard接口 ==========
@@ -115,6 +119,15 @@ func SetupRouter(
 			center.POST("", rechargeHandler.CreateCenter)
 			center.PUT("/:id", rechargeHandler.UpdateCenter)
 			center.DELETE("/:id", rechargeHandler.DeleteCenter)
+			center.GET("/:id/last-month-consumption", rechargeHandler.GetCenterLastMonthConsumption)
+		}
+
+		// ========== 月度消费管理 ==========
+		monthlyConsumption := v1.Group("/center-monthly-consumption")
+		monthlyConsumption.Use(authMiddleware.Auth(), middleware.APIRateLimit(rdb), rbacMiddleware.Auth())
+		{
+			monthlyConsumption.GET("", rechargeHandler.ListMonthlyConsumption)
+			monthlyConsumption.POST("", rechargeHandler.UpsertMonthlyConsumption)
 		}
 
 		// ========== 操作员管理 ==========

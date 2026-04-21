@@ -15,7 +15,7 @@ import (
 //go:generate mockgen -destination=mock_recharge_repo.go -package=repository marketplace/backend/internal/repository RechargeRepoInterface
 type RechargeRepoInterface interface {
 	CreateRechargeApplication(app *model.RechargeApplication) error
-	GetRechargeApplications(status string, page, pageSize int) ([]model.RechargeApplication, int64, error)
+	GetRechargeApplications(status string, centerID string, page, pageSize int) ([]model.RechargeApplication, int64, error)
 	GetRechargeApplicationByID(id string) (*model.RechargeApplication, error)
 	UpdateRechargeApplicationStatus(id, status, approvedBy, remark string) error
 	CreateCRecharge(recharge *model.CRecharge) error
@@ -67,6 +67,10 @@ type RechargeRepoInterface interface {
 	CountPendingApprovals(centerID string) (int64, error)
 	CountExpiringCards(centerID string) (int64, error)
 	GetRechargeTrends(days int, centerID string) ([]string, []float64, error)
+	// 月度消费
+	UpsertMonthlyConsumption(record *model.CenterMonthlyConsumption) error
+	GetMonthlyConsumption(centerID, month string) (*model.CenterMonthlyConsumption, error)
+	ListMonthlyConsumption(month string) ([]model.CenterMonthlyConsumption, error)
 }
 
 var _ RechargeRepoInterface = (*RechargeRepository)(nil)
@@ -87,7 +91,7 @@ func (r *RechargeRepository) CreateRechargeApplication(app *model.RechargeApplic
 }
 
 // GetRechargeApplications 获取充值申请列表
-func (r *RechargeRepository) GetRechargeApplications(status string, page, pageSize int) ([]model.RechargeApplication, int64, error) {
+func (r *RechargeRepository) GetRechargeApplications(status string, centerID string, page, pageSize int) ([]model.RechargeApplication, int64, error) {
 	var list []model.RechargeApplication
 	var total int64
 
@@ -95,6 +99,9 @@ func (r *RechargeRepository) GetRechargeApplications(status string, page, pageSi
 	if status != "" {
 		statuses := strings.Split(status, ",")
 		query = query.Where("status IN ?", statuses)
+	}
+	if centerID != "" {
+		query = query.Where("center_id = ?", centerID)
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -906,4 +913,36 @@ func (r *RechargeRepository) GetRechargeTrends(days int, centerID string) ([]str
 	}
 
 	return dates, values, nil
+}
+
+// ========== 月度消费 ==========
+
+// UpsertMonthlyConsumption 录入/更新月度消费（ON DUPLICATE KEY UPDATE）
+func (r *RechargeRepository) UpsertMonthlyConsumption(record *model.CenterMonthlyConsumption) error {
+	return r.db.Save(record).Error
+}
+
+// GetMonthlyConsumption 查询指定中心指定月份的消费记录
+func (r *RechargeRepository) GetMonthlyConsumption(centerID, month string) (*model.CenterMonthlyConsumption, error) {
+	var record model.CenterMonthlyConsumption
+	if err := r.db.Where("center_id = ? AND month = ?", centerID, month).First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &record, nil
+}
+
+// ListMonthlyConsumption 查询指定月份所有中心的消费记录
+func (r *RechargeRepository) ListMonthlyConsumption(month string) ([]model.CenterMonthlyConsumption, error) {
+	var list []model.CenterMonthlyConsumption
+	query := r.db.Model(&model.CenterMonthlyConsumption{})
+	if month != "" {
+		query = query.Where("month = ?", month)
+	}
+	if err := query.Order("center_id").Find(&list).Error; err != nil {
+		return nil, err
+	}
+	return list, nil
 }

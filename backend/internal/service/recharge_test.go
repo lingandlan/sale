@@ -26,7 +26,7 @@ func (m *MockRechargeRepo) CreateRechargeApplication(app *model.RechargeApplicat
 	return args.Error(0)
 }
 
-func (m *MockRechargeRepo) GetRechargeApplications(status string, page, pageSize int) ([]model.RechargeApplication, int64, error) {
+func (m *MockRechargeRepo) GetRechargeApplications(status string, centerID string, page, pageSize int) ([]model.RechargeApplication, int64, error) {
 	args := m.Called(status, page, pageSize)
 	return args.Get(0).([]model.RechargeApplication), args.Get(1).(int64), args.Error(2)
 }
@@ -337,19 +337,21 @@ func TestRechargeService_CalculatePoints(t *testing.T) {
 		wantBase             int
 		wantRebate           int
 		wantTotal            int
+		wantRate             int
 	}{
-		{"high consumption 2% rebate", 10000, 120000, 10000, 200, 10200},
-		{"low consumption 1% rebate", 50000, 50000, 50000, 500, 50500},
-		{"boundary exactly 100000", 100000, 100000, 100000, 2000, 102000},
-		{"zero amount", 0, 0, 0, 0, 0},
+		{"high consumption 2% rebate", 10000, 120000, 10000, 200, 10200, 2},
+		{"low consumption 1% rebate", 50000, 50000, 50000, 500, 50500, 1},
+		{"boundary exactly 100000", 100000, 100000, 100000, 2000, 102000, 2},
+		{"zero amount", 0, 0, 0, 0, 0, 1},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			base, rebate, total := svc.CalculatePoints(tt.amount, tt.lastMonthConsumption)
+			base, rebate, total, rate := svc.CalculatePoints(tt.amount, tt.lastMonthConsumption)
 			assert.Equal(t, tt.wantBase, base)
 			assert.Equal(t, tt.wantRebate, rebate)
 			assert.Equal(t, tt.wantTotal, total)
+			assert.Equal(t, tt.wantRate, rate)
 		})
 	}
 }
@@ -890,4 +892,22 @@ func TestRechargeService_CreateOperator(t *testing.T) {
 		assert.Error(t, err)
 		repo.AssertExpectations(t)
 	})
+}
+
+func (m *MockRechargeRepo) UpsertMonthlyConsumption(record *model.CenterMonthlyConsumption) error {
+	args := m.Called(record)
+	return args.Error(0)
+}
+
+func (m *MockRechargeRepo) GetMonthlyConsumption(centerID, month string) (*model.CenterMonthlyConsumption, error) {
+	args := m.Called(centerID, month)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.CenterMonthlyConsumption), args.Error(1)
+}
+
+func (m *MockRechargeRepo) ListMonthlyConsumption(month string) ([]model.CenterMonthlyConsumption, error) {
+	args := m.Called(month)
+	return args.Get(0).([]model.CenterMonthlyConsumption), args.Error(1)
 }

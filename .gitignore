@@ -13,6 +13,7 @@ coverage/
 # Build artifacts
 backend/main
 backend/tmp/
+backend/uploads/*
 
 # OS files
 .DS_Store
@@ -24,3 +25,4 @@ backend/tmp/
 
 # Apifox submodule dirty state
 apifox-mcp
+!.gitkeep

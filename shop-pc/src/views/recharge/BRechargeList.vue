@@ -91,6 +91,14 @@
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button
+                type="primary"
+                size="small"
+                link
+                @click="handleViewDetail(row)"
+              >
+                查看详情
+              </el-button>
+              <el-button
                 v-if="row.status === 'pending'"
                 type="success"
                 size="small"
@@ -105,15 +113,6 @@
                 @click="handleReject(row)"
               >
                 拒绝
-              </el-button>
-              <el-button
-                v-if="row.status !== 'pending'"
-                type="primary"
-                size="small"
-                link
-                @click="handleViewDetail(row)"
-              >
-                查看详情
               </el-button>
             </div>
           </template>
@@ -217,6 +216,7 @@ const loadData = async () => {
   try {
     const res = await getBRechargeApprovalList({
       status: activeTab.value === 'pending' ? 'pending' : 'approved,rejected',
+      centerId: filterCenter.value || undefined,
       page: currentPage.value,
       pageSize: pageSize.value
     })

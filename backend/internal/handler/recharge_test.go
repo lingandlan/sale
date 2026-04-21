@@ -21,9 +21,9 @@ type MockRechargeService struct {
 	mock.Mock
 }
 
-func (m *MockRechargeService) CalculatePoints(amount float64, lastMonthConsumption float64) (int, int, int) {
+func (m *MockRechargeService) CalculatePoints(amount float64, lastMonthConsumption float64) (int, int, int, int) {
 	args := m.Called(amount, lastMonthConsumption)
-	return args.Int(0), args.Int(1), args.Int(2)
+	return args.Int(0), args.Int(1), args.Int(2), args.Int(3)
 }
 
 func (m *MockRechargeService) CreateBRechargeApplication(data map[string]interface{}) (*model.RechargeApplication, error) {
@@ -34,7 +34,7 @@ func (m *MockRechargeService) CreateBRechargeApplication(data map[string]interfa
 	return args.Get(0).(*model.RechargeApplication), args.Error(1)
 }
 
-func (m *MockRechargeService) GetRechargeApplicationList(status string, page, pageSize int) (map[string]interface{}, error) {
+func (m *MockRechargeService) GetRechargeApplicationList(status string, centerID string, page, pageSize int) (map[string]interface{}, error) {
 	args := m.Called(status, page, pageSize)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -525,6 +525,7 @@ func TestRechargeHandler_GetRechargeApplicationDetail(t *testing.T) {
 
 		app := &model.RechargeApplication{ID: "app-001", CenterName: "北京朝阳中心", Amount: 50000}
 		mockSvc.On("GetRechargeApplicationDetail", "app-001").Return(app, nil).Once()
+			mockSvc.On("GetCenterDetail", "").Return(nil, assert.AnError).Once()
 
 		req, _ := http.NewRequest("GET", "/api/v1/recharge/b-approval/app-001", nil)
 		w := httptest.NewRecorder()
@@ -1187,4 +1188,19 @@ func TestRechargeHandler_GetDashboardRechargeTrends(t *testing.T) {
 		assert.Contains(t, data, "values")
 		mockSvc.AssertExpectations(t)
 	})
+}
+
+func (m *MockRechargeService) GetCenterLastMonthConsumption(centerID string) (map[string]interface{}, error) {
+	args := m.Called(centerID)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockRechargeService) UpsertMonthlyConsumption(centerID, month string, consumption float64) error {
+	args := m.Called(centerID, month, consumption)
+	return args.Error(0)
+}
+
+func (m *MockRechargeService) ListMonthlyConsumption(month string) ([]model.CenterMonthlyConsumption, error) {
+	args := m.Called(month)
+	return args.Get(0).([]model.CenterMonthlyConsumption), args.Error(1)
 }

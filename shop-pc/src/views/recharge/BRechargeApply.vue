@@ -14,6 +14,7 @@
           <el-select
             v-model="formData.centerId"
             placeholder="请选择充值中心"
+            @change="handleCenterChange"
             style="width: 100%"
           >
             <el-option
@@ -54,24 +55,26 @@
             />
           </el-form-item>
 
-          <el-upload
-            class="upload-area"
-            drag
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            :limit="1"
-            accept="image/*"
-          >
-            <div class="upload-content">
-              <el-icon class="upload-icon"><Upload /></el-icon>
-              <div class="upload-text">银行流水截图上传区域</div>
-            </div>
-          </el-upload>
+          <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop">
+            <input ref="fileInputRef" type="file" accept="image/*" style="display: none" @change="handleFileSelect" />
+            <template v-if="selectedFileName">
+              <div class="upload-preview">
+                <span class="file-name">{{ selectedFileName }}</span>
+                <span class="file-remove" @click.stop="clearFile">&times;</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="upload-content">
+                <el-icon class="upload-icon"><Upload /></el-icon>
+                <div class="upload-text">点击或拖拽上传银行流水截图</div>
+              </div>
+            </template>
+          </div>
         </div>
 
         <div class="button-group">
           <el-button class="cancel-btn" @click="handleCancel">取消</el-button>
-          <el-button type="primary" class="submit-btn" @click="handleSubmit">提交申请</el-button>
+          <el-button type="primary" class="submit-btn" :loading="uploading" @click="handleSubmit">提交申请</el-button>
         </div>
       </el-form>
     </div>
@@ -81,10 +84,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import { Upload } from '@element-plus/icons-vue'
-import { submitBRechargeApply, getCenterList } from '@/api/recharge'
+import { submitBRechargeApply, getCenterList, getCenterLastMonthConsumption, uploadFile } from '@/api/recharge'
 
 interface RechargeCenter {
   id: string
@@ -93,6 +96,7 @@ interface RechargeCenter {
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
+const fileInputRef = ref<HTMLInputElement>()
 
 const centers = ref<RechargeCenter[]>([])
 
@@ -137,34 +141,89 @@ const pointsDetail = computed(() => {
   return `基础 ${base.toLocaleString()} + 返还 ${rebate.toLocaleString()} (${rebateRate}%)`
 })
 
+const lastMonthConsumption = ref(0)
+const rebateRate = ref(1)
+const lastMonth = ref('')
+
+const uploading = ref(false)
+const pendingFile = ref<File | null>(null)
+const selectedFileName = ref('')
+
+// 选中充值中心时查询上月消费
+const handleCenterChange = async () => {
+  if (!formData.value.centerId) return
+  try {
+    const res = await getCenterLastMonthConsumption(formData.value.centerId)
+    if (res?.data) {
+      lastMonthConsumption.value = res.data.consumption
+      rebateRate.value = res.data.rebateRate
+      lastMonth.value = res.data.month
+    }
+  } catch {}
+  calculatePoints()
+}
+
 const calculatePoints = () => {
   const amount = formData.value.amount || 0
-
-  // 计算规则：≥100000返2%，否则返1%
-  const rebateRate = amount >= 100000 ? 2 : 1
+  const rate = rebateRate.value
   const base = Math.floor(amount)
-  const rebate = Math.floor(base * (rebateRate / 100))
+  const rebate = Math.floor(base * (rate / 100))
 
   calculatedPoints.value = {
     base,
     rebate,
-    rebateRate,
+    rebateRate: rate,
     total: base + rebate
   }
 }
 
-// 实时监听金额变化，自动计算积分
 watch(() => formData.value.amount, () => {
   calculatePoints()
 }, { immediate: true })
 
-const handleFileChange = (file: UploadFile) => {
-  formData.value.screenshot = file.name
-  ElMessage.success('已选择文件: ' + file.name)
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const handleFileSelect = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    const file = input.files[0]
+    // 立即读入内存，避免 Chrome ERR_UPLOAD_FILE_CHANGED
+    try {
+      const buffer = await file.arrayBuffer()
+      pendingFile.value = new File([buffer], file.name, { type: file.type })
+      selectedFileName.value = file.name
+      ElMessage.success('已选择文件: ' + file.name)
+    } catch {
+      ElMessage.error('无法读取文件，请重试')
+    }
+  }
+}
+
+const handleDrop = async (e: DragEvent) => {
+  if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+    const file = e.dataTransfer.files[0]
+    try {
+      const buffer = await file.arrayBuffer()
+      pendingFile.value = new File([buffer], file.name, { type: file.type })
+      selectedFileName.value = file.name
+      ElMessage.success('已选择文件: ' + file.name)
+    } catch {
+      ElMessage.error('无法读取文件，请重试')
+    }
+  }
+}
+
+const clearFile = () => {
+  pendingFile.value = null
+  selectedFileName.value = ''
+  if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
 const handleCancel = () => {
   formRef.value?.resetFields()
+  clearFile()
   calculatedPoints.value = {
     base: 0,
     rebate: 0,
@@ -182,27 +241,35 @@ const handleSubmit = async () => {
     return
   }
 
-  // 验证至少填写一项付款凭证
-  if (!formData.value.transactionNo && !formData.value.screenshot) {
+  if (!formData.value.transactionNo && !pendingFile.value) {
     ElMessage.warning('银行流水单号或截图至少需要填写一项')
     return
   }
 
+  uploading.value = true
   try {
+    let screenshotUrl = ''
+    if (pendingFile.value) {
+      const uploadRes = await uploadFile(pendingFile.value)
+      screenshotUrl = uploadRes?.data?.url || ''
+    }
+
     const center = centers.value.find(c => c.id === formData.value.centerId)
     await submitBRechargeApply({
       centerId: formData.value.centerId,
       centerName: center?.name || '',
       amount: formData.value.amount,
-      lastMonthConsumption: 0,
+      lastMonthConsumption: lastMonthConsumption.value,
       transactionNo: formData.value.transactionNo || '',
-      screenshot: formData.value.screenshot || '',
+      screenshot: screenshotUrl,
       remark: ''
     })
     ElMessage.success('充值申请已提交，等待审核')
     router.push('/recharge/b-approval')
   } catch (err: any) {
     ElMessage.error(extractErrorMessage(err, '提交充值申请失败'))
+  } finally {
+    uploading.value = false
   }
 }
 </script>
@@ -280,24 +347,47 @@ const handleSubmit = async () => {
 
 .upload-area {
   width: 100%;
-}
-
-.upload-area :deep(.el-upload-dragger) {
-  width: 100%;
   height: 100px;
   background-color: var(--color-bg);
-  border: none;
+  border: 1px dashed var(--color-border);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.upload-area:hover {
+  border-color: var(--color-primary);
+}
+
+.upload-preview {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.file-name {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-primary);
+}
+
+.file-remove {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.file-remove:hover {
+  color: var(--color-danger, #f56c6c);
 }
 
 .upload-content {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 8px;
+  align-items: center;
 }
 
 .upload-icon {

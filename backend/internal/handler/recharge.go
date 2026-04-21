@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -122,10 +123,11 @@ func (h *RechargeHandler) CreateBRechargeApplication(c *gin.Context) {
 
 func (h *RechargeHandler) GetRechargeApplicationList(c *gin.Context) {
 	status := c.DefaultQuery("status", "")
+	centerID := c.DefaultQuery("centerId", "")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
 
-	result, err := h.rechargeService.GetRechargeApplicationList(status, page, pageSize)
+	result, err := h.rechargeService.GetRechargeApplicationList(status, centerID, page, pageSize)
 	if err != nil {
 		response.InternalError(c, errmsg.Get("recharge.list_failed"))
 		return
@@ -137,13 +139,46 @@ func (h *RechargeHandler) GetRechargeApplicationList(c *gin.Context) {
 func (h *RechargeHandler) GetRechargeApplicationDetail(c *gin.Context) {
 	id := c.Param("id")
 
-	result, err := h.rechargeService.GetRechargeApplicationDetail(id)
+	app, err := h.rechargeService.GetRechargeApplicationDetail(id)
 	if err != nil {
 		response.NotFound(c, errmsg.Get("recharge.not_found"))
 		return
 	}
 
-	response.Success(c, result)
+	// 查询充值中心当前余额
+	center, _ := h.rechargeService.GetCenterDetail(app.CenterID)
+	currentBalance := float64(0)
+	if center != nil {
+		currentBalance = center.Balance
+	}
+
+	// 按前端期望的结构返回
+	response.Success(c, gin.H{
+		"id":                    app.ID,
+		"centerName":            app.CenterName,
+		"centerId":              app.CenterID,
+		"amount":                app.Amount,
+		"lastMonthConsumption":  app.LastMonthConsumption,
+		"currentBalance":        currentBalance,
+		"points": gin.H{
+			"base":       app.BasePoints,
+			"rebate":     app.RebatePoints,
+			"rebateRate": app.RebateRate,
+			"total":      app.Points,
+		},
+		"applicant": gin.H{
+			"id":   app.ApplicantID,
+			"name": app.ApplicantName,
+		},
+		"transactionNo": app.TransactionNo,
+		"screenshot":    app.Screenshot,
+		"remark":        app.Remark,
+		"status":        app.Status,
+		"approvedBy":    h.resolveUserName(app.ApprovedBy),
+		"approvedAt":    app.ApprovedAt,
+		"approvalRemark": app.ApprovalRemark,
+		"createdAt":     app.CreatedAt,
+	})
 }
 
 func (h *RechargeHandler) ApprovalRechargeApplication(c *gin.Context) {
@@ -860,4 +895,66 @@ func (h *RechargeHandler) GetDashboardRechargeTrends(c *gin.Context) {
 		return
 	}
 	response.Success(c, data)
+}
+
+// resolveUserName 根据用户ID字符串查用户名
+func (h *RechargeHandler) resolveUserName(userID string) string {
+	if userID == "" {
+		return ""
+	}
+	id, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return userID
+	}
+	user, err := h.userRepo.GetByID(context.Background(), id)
+	if err != nil || user == nil {
+		return userID
+	}
+	if user.Username != "" {
+		return user.Username
+	}
+	return user.Phone
+}
+
+// ========== 月度消费 ==========
+
+// GetCenterLastMonthConsumption 查询充值中心上月消费
+func (h *RechargeHandler) GetCenterLastMonthConsumption(c *gin.Context) {
+	centerID := c.Param("id")
+	result, err := h.rechargeService.GetCenterLastMonthConsumption(centerID)
+	if err != nil {
+		bizError(c, err)
+		return
+	}
+	response.Success(c, result)
+}
+
+// UpsertMonthlyConsumption 录入/更新月度消费
+func (h *RechargeHandler) UpsertMonthlyConsumption(c *gin.Context) {
+	var req struct {
+		CenterID    string  `json:"centerId" binding:"required"`
+		Month       string  `json:"month" binding:"required"`
+		Consumption float64 `json:"consumption" binding:"required,gte=0"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ParamsError(c, err.Error())
+		return
+	}
+
+	if err := h.rechargeService.UpsertMonthlyConsumption(req.CenterID, req.Month, req.Consumption); err != nil {
+		bizError(c, err)
+		return
+	}
+	response.Success(c, gin.H{"success": true})
+}
+
+// ListMonthlyConsumption 查询月度消费列表
+func (h *RechargeHandler) ListMonthlyConsumption(c *gin.Context) {
+	month := c.DefaultQuery("month", "")
+	list, err := h.rechargeService.ListMonthlyConsumption(month)
+	if err != nil {
+		bizError(c, err)
+		return
+	}
+	response.Success(c, list)
 }

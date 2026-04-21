@@ -34,9 +34,9 @@ var _ AuthServiceInterface = (*AuthService)(nil)
 
 // RechargeServiceInterface 充值服务接口
 type RechargeServiceInterface interface {
-	CalculatePoints(amount float64, lastMonthConsumption float64) (int, int, int)
+	CalculatePoints(amount float64, lastMonthConsumption float64) (int, int, int, int)
 	CreateBRechargeApplication(data map[string]interface{}) (*model.RechargeApplication, error)
-	GetRechargeApplicationList(status string, page, pageSize int) (map[string]interface{}, error)
+	GetRechargeApplicationList(status string, centerID string, page, pageSize int) (map[string]interface{}, error)
 	GetRechargeApplicationDetail(id string) (*model.RechargeApplication, error)
 	ApproveRechargeApplication(id, action, approvedBy, remark string) error
 	CreateCRecharge(data map[string]interface{}) (*model.CRecharge, error)
@@ -73,7 +73,11 @@ type RechargeServiceInterface interface {
 		// Dashboard
 		GetDashboardStatistics(role, centerID string) (map[string]interface{}, error)
 		GetDashboardTodos(role, centerID string) (map[string]interface{}, error)
-		GetDashboardRechargeTrends(days int, role, centerID string) (map[string]interface{}, error)
+			GetDashboardRechargeTrends(days int, role, centerID string) (map[string]interface{}, error)
+		// 月度消费
+		GetCenterLastMonthConsumption(centerID string) (map[string]interface{}, error)
+		UpsertMonthlyConsumption(centerID, month string, consumption float64) error
+		ListMonthlyConsumption(month string) ([]model.CenterMonthlyConsumption, error)
 }
 
 var _ RechargeServiceInterface = (*RechargeService)(nil)
