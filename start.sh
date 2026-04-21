@@ -8,20 +8,14 @@ set -e
 # ROOT 指向 alpha 目录（脚本所在目录）
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# 从 shop-pc/.env.local 读取端口配置
-ENV_FILE="$ROOT/shop-pc/.env.local"
+# Alpha 环境固定端口（防止合并时被覆盖）
 FRONTEND_PORT="5178"
 BACKEND_PORT="8081"
 REDIS_DB="1"
-if [ -f "$ENV_FILE" ]; then
-  while IFS='=' read -r key value; do
-    case "$key" in
-      VITE_PORT) FRONTEND_PORT="$value" ;;
-      VITE_API_PORT) BACKEND_PORT="$value" ;;
-      APP_REDIS_DB) REDIS_DB="$value" ;;
-    esac
-  done < "$ENV_FILE"
-fi
+
+# 强制写回 .env.local，确保端口不被其他分支覆盖
+echo "VITE_PORT=$FRONTEND_PORT
+VITE_API_PORT=$BACKEND_PORT" > "$ROOT/shop-pc/.env.local"
 
 # 清理僵尸进程
 echo "🧹 清理残留进程..."
