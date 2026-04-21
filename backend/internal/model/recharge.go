@@ -183,9 +183,14 @@ type CreateCenterRequest struct {
 
 // UpdateCenterRequest 更新充值中心
 type UpdateCenterRequest struct {
-	Name    string `json:"name" binding:"omitempty,min=1,max=100"`
-	Address string `json:"address" binding:"omitempty"`
-	Phone   string `json:"phone" binding:"omitempty"`
+	Name      string `json:"name" binding:"omitempty,min=1,max=100"`
+	Address   string `json:"address" binding:"omitempty"`
+	Phone     string `json:"phone" binding:"omitempty"`
+	Status    string `json:"status" binding:"omitempty,oneof=active frozen"`
+	Province  string `json:"province" binding:"omitempty"`
+	City      string `json:"city" binding:"omitempty"`
+	District  string `json:"district" binding:"omitempty"`
+	ManagerID string `json:"managerId" binding:"omitempty"`
 }
 
 // CreateOperatorRequest 创建操作员

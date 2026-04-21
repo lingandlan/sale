@@ -33,10 +33,10 @@
           <el-table-column prop="region" label="省/市/区" width="200" />
           <el-table-column prop="level" label="级别" width="150">
             <template #default="{ row }">
-              <el-tag :type="row.level === '子公司合伙人' ? '' : 'info'" size="small">{{ row.level }}</el-tag>
+              <el-tag :type="row.level === '子公司合伙人' ? 'primary' : 'info'" size="small">{{ row.level }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="manager" label="管理员" width="120" />
+          <el-table-column prop="managerDisplay" label="管理员" min-width="160" />
           <el-table-column label="积分余额" width="140" align="right">
             <template #default="{ row }">
               <span class="balance-value">{{ row.balance.toLocaleString() }}</span>
@@ -128,26 +128,37 @@
         <el-form-item label="具体位置" required>
           <el-input v-model="formData.address" placeholder="请输入具体位置" />
         </el-form-item>
-        <el-form-item label="管理员">
-          <el-select
-            v-model="formData.managerId"
-            placeholder="搜索操作员姓名或手机号"
-            style="width: 100%"
-            filterable
-            clearable
-          >
-            <el-option
-              v-for="op in operatorList"
-              :key="op.id"
-              :label="`${op.name}（${op.phone}）`"
-              :value="op.id"
-            />
-          </el-select>
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" class="save-btn" @click="handleSaveCenter">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 详情弹窗 -->
+    <el-dialog v-model="detailVisible" title="充值中心详情" width="600px">
+      <el-descriptions :column="2" border v-if="detailData">
+        <el-descriptions-item label="中心名称">{{ detailData.name }}</el-descriptions-item>
+        <el-descriptions-item label="级别">
+          <el-tag :type="detailData.code?.includes('服务') ? 'info' : 'primary'" size="small">
+            {{ detailData.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人' }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="省/市/区">{{ [detailData.province, detailData.city, detailData.district].filter(Boolean).join(' / ') || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="具体位置">{{ detailData.address || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="管理员">{{ detailData.managerName ? `${detailData.managerName}（${detailData.managerPhone}）` : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="联系电话">{{ detailData.phone || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="积分余额">
+          <span class="balance-value">{{ (detailData.balance ?? 0).toLocaleString() }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="detailData.status === 'active' ? 'success' : 'danger'" size="small">
+            {{ detailData.status === 'active' ? '正常' : '冻结' }}
+          </el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
@@ -157,8 +168,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
-import { getCenterList, createCenter, updateCenter, type CenterItem } from '@/api/center'
-import { getOperatorList, type OperatorItem } from '@/api/operator'
+import { getCenterList, getCenterDetail, createCenter, updateCenter, type CenterItem } from '@/api/center'
 import { regionData, getCities, getDistricts } from '@/utils/regionData'
 
 const filters = reactive({ keyword: '', level: '', status: '' })
@@ -174,13 +184,12 @@ const formData = reactive({
   province: '',
   city: '',
   district: '',
-  address: '',
-  managerId: ''
+  address: ''
 })
 
 const tableData = ref<any[]>([])
-const operatorList = ref<OperatorItem[]>([])
-
+const detailVisible = ref(false)
+const detailData = ref<CenterItem | null>(null)
 // 级联地区选项
 const cityOptions = computed(() => getCities(formData.province))
 const districtOptions = computed(() => getDistricts(formData.province, formData.city))
@@ -192,17 +201,6 @@ const handleProvinceChange = () => {
 
 const handleCityChange = () => {
   formData.district = ''
-}
-
-const loadOperators = async () => {
-  try {
-    const res = await getOperatorList()
-    if (res?.data) {
-      operatorList.value = res.data
-    }
-  } catch (err: any) {
-    ElMessage.error(extractErrorMessage(err, '加载操作员列表失败'))
-  }
 }
 
 const loadData = async () => {
@@ -235,13 +233,12 @@ const loadData = async () => {
       }
 
       tableData.value = list.map((c: CenterItem) => {
-        const managerOp = operatorList.value.find(op => op.id === c.managerId)
         return {
           id: c.id,
           name: c.name,
           region: [c.province, c.city, c.district].filter(Boolean).join('/') || c.address || '-',
           level: c.code?.includes('服务') ? '服务中心合伙人' : '子公司合伙人',
-          manager: c.managerName ? `${c.managerName}（${c.managerPhone}）` : '-',
+          managerDisplay: c.managerDisplay || '-',
           balance: c.balance ?? 0,
           totalIn: c.totalRecharge ?? 0,
           totalOut: c.totalConsumed ?? 0,
@@ -260,7 +257,7 @@ const handleResetFilter = () => { filters.keyword = ''; filters.level = ''; filt
 
 const handleAdd = () => {
   dialogTitle.value = '新建充值中心'
-  Object.assign(formData, { id: '', name: '', level: '', province: '', city: '', district: '', address: '', managerId: '' })
+  Object.assign(formData, { id: '', name: '', level: '', province: '', city: '', district: '', address: '' })
   dialogVisible.value = true
 }
 
@@ -276,7 +273,6 @@ const handleEdit = (row: any) => {
     city: regionParts[1] || '',
     district: regionParts[2] || '',
     address: row.address || '',
-    managerId: row.managerId || ''
   })
   dialogVisible.value = true
 }
@@ -294,7 +290,6 @@ const handleSaveCenter = async () => {
       city: formData.city,
       district: formData.district,
       address: formData.address,
-      managerId: formData.managerId,
     }
     if (formData.id) {
       await updateCenter(formData.id, { ...payload, status: 'active' })
@@ -327,12 +322,19 @@ const handleToggleFreeze = async (row: any) => {
   }
 }
 
-const handleDetail = (row: any) => {
-  ElMessage.info(`查看 ${row.name} 详情`)
+const handleDetail = async (row: any) => {
+  try {
+    const res = await getCenterDetail(row.id)
+    if (res?.data) {
+      detailData.value = res.data
+      detailVisible.value = true
+    }
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载详情失败'))
+  }
 }
 
 onMounted(() => {
-  loadOperators()
   loadData()
 })
 </script>

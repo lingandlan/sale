@@ -3,7 +3,7 @@
     <div class="header-left">
       <el-button
         :icon="collapsed ? 'Expand' : 'Fold'"
-        type="text"
+        link
         @click="handleToggle"
       />
     </div>

@@ -322,7 +322,7 @@ func (m *MockMemberService) AddIntegral(phone string, integral float64, batchCod
 }
 
 func newTestRechargeService(repo *MockRechargeRepo) *RechargeService {
-	return NewRechargeService(repo, new(MockMemberService))
+	return NewRechargeService(repo, nil, new(MockMemberService))
 }
 
 // ========== Tests ==========
