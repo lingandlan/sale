@@ -245,7 +245,7 @@ const handleSaveUser = async () => {
         name: formData.realName,
         phone: formData.phone,
         role: formData.role,
-        center_id: formData.centerId || undefined
+        center_id: formData.centerId ? Number(formData.centerId) : undefined
       })
     } else {
       await createAdminUser({
@@ -253,7 +253,7 @@ const handleSaveUser = async () => {
         phone: formData.phone,
         name: formData.realName,
         role: formData.role,
-        center_id: formData.centerId || undefined,
+        center_id: formData.centerId ? Number(formData.centerId) : undefined,
         password: formData.password || '123456'
       })
     }

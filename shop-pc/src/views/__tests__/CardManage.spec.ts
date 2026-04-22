@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ElMessage } from 'element-plus'
 import CardManage from '../card/CardManage.vue'
-import { getCardList, getCardStats, toggleCardStatus } from '@/api/card'
+import { getCardList, getCardStats } from '@/api/card'
 
 // Mock vue-router
 const mockPush = vi.fn()
@@ -123,6 +123,7 @@ describe('CardManage.vue', () => {
         data: { totalCards: 100, activeCards: 60, totalBalance: 50000, todayConsume: 0, todayIssue: 0, expireIn7Days: 0 }
       } as any)
 
+      // @ts-expect-error vm property access in test
       await wrapper.vm.handleRefresh()
 
       expect(getCardList).toHaveBeenCalledTimes(1)
@@ -142,6 +143,7 @@ describe('CardManage.vue', () => {
         data: { totalCards: 100, activeCards: 60, totalBalance: 50000, todayConsume: 0, todayIssue: 0, expireIn7Days: 0 }
       } as any)
 
+      // @ts-expect-error vm property access in test
       await wrapper.vm.handleSearch()
 
       expect(getCardList).toHaveBeenCalledTimes(1)
@@ -152,18 +154,26 @@ describe('CardManage.vue', () => {
     it('getStatusText 应该返回正确的状态标签', () => {
       const wrapper = mount(CardManage, globalStubs)
 
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusText('active')).toBe('已发放')
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusText('inactive')).toBe('已冻结')
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusText('expired')).toBe('已过期')
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusText('unknown')).toBe('未知')
     })
 
     it('getStatusType 应该返回正确的标签类型', () => {
       const wrapper = mount(CardManage, globalStubs)
 
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusType('active')).toBe('success')
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusType('inactive')).toBe('warning')
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusType('expired')).toBe('danger')
+      // @ts-expect-error vm property access in test
       expect(wrapper.vm.getStatusType('unknown')).toBe('info')
     })
   })

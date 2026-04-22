@@ -22,15 +22,15 @@ export interface CenterItem {
 }
 
 export function getCenterList() {
-  return request.get<{ data: CenterItem[] }>('/center')
+  return request.get('/center')
 }
 
 export function createCenter(data: Partial<CenterItem>) {
-  return request.post<{ data: CenterItem }>('/center', data)
+  return request.post('/center', data)
 }
 
 export function updateCenter(id: string, data: Partial<CenterItem>) {
-  return request.put<{ data: CenterItem }>(`/center/${id}`, data)
+  return request.put(`/center/${id}`, data)
 }
 
 export function deleteCenter(id: string) {
@@ -38,5 +38,5 @@ export function deleteCenter(id: string) {
 }
 
 export function getCenterDetail(id: string) {
-  return request.get<{ data: CenterItem }>(`/center/${id}`)
+  return request.get(`/center/${id}`)
 }

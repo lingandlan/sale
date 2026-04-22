@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -167,8 +167,6 @@ const handleLogout = () => {
   })
 }
 
-// 默认展开"数据概览"和"充值管理"
-const defaultOpeneds = ref(['dashboard', 'recharge'])
 </script>
 
 <style scoped>

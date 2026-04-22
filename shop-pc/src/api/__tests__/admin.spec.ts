@@ -14,7 +14,7 @@ describe('Admin API', () => {
       const mockResponse = { code: 0, data: { items: [], total: 0 } }
       vi.mocked(request).get!.mockResolvedValue(mockResponse)
 
-      const params = { keyword: 'test', role: 'operator', status: '1', page: 1, page_size: 10 }
+      const params: any = { keyword: 'test', role: 'operator', status: '1', page: 1, page_size: 10 }
       await getAdminUsers(params)
 
       expect(request.get).toHaveBeenCalledWith('/admin/users', { params })

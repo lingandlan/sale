@@ -11,14 +11,14 @@
 - [x] 2.1 创建 `.github/workflows/ci.yml`（触发条件：PR 到 main/design + push 到 main）
 - [x] 2.2 添加 `backend-test` job：`go test ./...` + 覆盖率报告
 - [x] 2.3 添加 `frontend-build` job：`npm install && npm run build`
-- [ ] 2.4 配置 GitHub Branch Protection：CI 通过才允许合并（需手动操作）
+- [x] 2.4 配置 GitHub Branch Protection：CI 通过才允许合并（需手动操作）
 
 ## 3. CD 自动部署
 
 - [x] 3.1 创建 `.github/workflows/deploy.yml`（触发条件：push 到 main）
 - [x] 3.2 添加构建 Docker 镜像步骤（后端 + 前端）
 - [x] 3.3 添加 SSH 部署步骤（拉取镜像 + docker compose up -d）
-- [ ] 3.4 在 GitHub repo Settings 中配置 Secrets：`DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_SSH_KEY`、`DEPLOY_PATH`（需手动操作）
+- [x] 3.4 在 GitHub repo Settings 中配置 Secrets：`DEPLOY_HOST`、`DEPLOY_USER`、`DEPLOY_SSH_KEY`、`DEPLOY_PATH`（需手动操作）
 
 ## 4. 版本发布管理
 
