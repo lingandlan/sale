@@ -191,7 +191,14 @@
       "Bash(kill 56662)",
       "Bash(find:*)",
       "Bash(git:*)",
-      "Bash(mysqldump -u sale -psale123 --databases sale_dev --routines --triggers --single-transaction --set-gtid-purged=OFF)"
+      "Bash(mysqldump -u sale -psale123 --databases sale_dev --routines --triggers --single-transaction --set-gtid-purged=OFF)",
+      "Bash(./start.sh)",
+      "Bash(APP_SERVER_PORT=8081 APP_REDIS_DB=1 air)",
+      "Bash(APP_SERVER_PORT=8081 APP_REDIS_DB=1 go run cmd/server/main.go)",
+      "Bash(APP_SERVER_PORT=8081 APP_REDIS_DB=1 /tmp/test-server)",
+      "Bash(sed -i '' '661d' /Users/zhangdaodong/code/sale/.claude/worktrees/alpha/backend/internal/handler/recharge.go)",
+      "Bash(sed -i '' '703,704d' /Users/zhangdaodong/code/sale/.claude/worktrees/alpha/backend/internal/handler/recharge.go)",
+      "Bash(kill 49248)"
     ],
     "disableAutoMode": "disable"
   }

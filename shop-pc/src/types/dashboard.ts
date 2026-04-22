@@ -1,6 +1,4 @@
 export interface Statistics {
-  memberCount: number
-  memberTrend: string
   todayRecharge: number
   rechargeTrend: string
   todayConsumption: number
