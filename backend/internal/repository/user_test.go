@@ -20,13 +20,16 @@ func setupTestDB(t *testing.T) (*sqlx.DB, func()) {
 	err = gormDB.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT NOT NULL,
+			username TEXT NOT NULL DEFAULT '',
+			phone TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
-			nickname TEXT DEFAULT '',
-			email TEXT DEFAULT '',
-			avatar TEXT DEFAULT NULL,
-			role INTEGER DEFAULT 0,
+			name TEXT NOT NULL,
+			role TEXT DEFAULT 'operator',
+			center_id TEXT DEFAULT NULL,
+			center_name TEXT DEFAULT NULL,
 			status INTEGER DEFAULT 1,
+			last_login_at DATETIME DEFAULT NULL,
+			last_login_ip TEXT DEFAULT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			deleted_at DATETIME DEFAULT NULL
@@ -52,12 +55,12 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 	t.Run("create and get by id", func(t *testing.T) {
 		user := &model.User{
-			Username: "cruduser",
+			Username: "testuser1",
+			Phone:    "13800138000",
 			Password: "password",
-			Email:    "crud@test.com",
-			Nickname: "CRUD User",
-			Role:     0,
-			Status:   1,
+			Name:     "CRUD User",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
 		}
 
 		id, err := repo.Create(ctx, user)
@@ -66,63 +69,65 @@ func TestUserRepository_CRUD(t *testing.T) {
 
 		result, err := repo.GetByID(ctx, id)
 		require.NoError(t, err)
-		assert.Equal(t, "cruduser", result.Username)
-		assert.Equal(t, "crud@test.com", result.Email)
+		assert.Equal(t, "testuser1", result.Username)
+		assert.Equal(t, "13800138000", result.Phone)
+		assert.Equal(t, "CRUD User", result.Name)
 	})
 
-	t.Run("get by username", func(t *testing.T) {
+	t.Run("get by phone", func(t *testing.T) {
 		user := &model.User{
-			Username: "getbyuser",
+			Username: "testuser2",
+			Phone:    "13800138001",
 			Password: "password",
-			Email:    "getbyuser@test.com",
-			Role:     0,
-			Status:   1,
+			Name:     "GetByPhone User",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
 		}
 		repo.Create(ctx, user)
 
-		result, err := repo.GetByUsername(ctx, "getbyuser")
+		result, err := repo.GetByPhone(ctx, "13800138001")
 		require.NoError(t, err)
-		assert.Equal(t, "getbyuser@test.com", result.Email)
+		assert.Equal(t, "GetByPhone User", result.Name)
 	})
 
 	t.Run("get non-existent user", func(t *testing.T) {
-		_, err := repo.GetByUsername(ctx, "nonexistent")
+		_, err := repo.GetByPhone(ctx, "13900000000")
 		assert.Error(t, err)
 	})
 
 	t.Run("update user", func(t *testing.T) {
 		user := &model.User{
-			Username: "updateuser",
+			Username: "testuser3",
+			Phone:    "13800138002",
 			Password: "password",
-			Email:    "old@test.com",
-			Nickname: "Old Nick",
-			Role:     0,
-			Status:   1,
+			Name:     "Old Name",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
 		}
 		id, _ := repo.Create(ctx, user)
 
 		updatedUser := &model.User{
 			ID:       id,
-			Username: "updateuser",
+			Username: "testuser3_new",
+			Phone:    "13800138002",
 			Password: "password",
-			Email:    "new@test.com",
-			Nickname: "New Nick",
-			Role:     0,
-			Status:   1,
+			Name:     "New Name",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
 		}
 		err := repo.Update(ctx, updatedUser)
 		require.NoError(t, err)
 
 		result, _ := repo.GetByID(ctx, id)
-		assert.Equal(t, "New Nick", result.Nickname)
-		assert.Equal(t, "new@test.com", result.Email)
+		assert.Equal(t, "New Name", result.Name)
+		assert.Equal(t, "testuser3_new", result.Username)
 	})
 
 	t.Run("list users", func(t *testing.T) {
 		users := []*model.User{
-			{Username: "list1", Password: "p", Email: "l1@t.com", Role: 0, Status: 1},
-			{Username: "list2", Password: "p", Email: "l2@t.com", Role: 0, Status: 1},
-			{Username: "list3", Password: "p", Email: "l3@t.com", Role: 0, Status: 1},
+			{Username: "list1", Phone: "13800138003", Password: "p", Name: "List User 1", Role: model.RoleOperator, Status: model.UserStatusNormal},
+			{Username: "list2", Phone: "13800138004", Password: "p", Name: "List User 2", Role: model.RoleHQAdmin, Status: model.UserStatusNormal},
+			{Username: "list3", Phone: "13800138005", Password: "p", Name: "List User 3", Role: model.RoleOperator, Status: model.UserStatusNormal},
 		}
 		for _, u := range users {
 			repo.Create(ctx, u)
@@ -137,14 +142,48 @@ func TestUserRepository_CRUD(t *testing.T) {
 	t.Run("update password", func(t *testing.T) {
 		user := &model.User{
 			Username: "pwduser",
+			Phone:    "13800138006",
 			Password: "oldpass",
-			Email:    "pwd@t.com",
-			Role:     0,
-			Status:   1,
+			Name:     "Pwd User",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
 		}
 		id, _ := repo.Create(ctx, user)
 
 		err := repo.UpdatePassword(ctx, id, "newpass")
 		require.NoError(t, err)
+	})
+
+	t.Run("delete user", func(t *testing.T) {
+		user := &model.User{
+			Username: "deluser",
+			Phone:    "13800138007",
+			Password: "password",
+			Name:     "Delete User",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
+		}
+		id, _ := repo.Create(ctx, user)
+
+		err := repo.Delete(ctx, id)
+		require.NoError(t, err)
+	})
+
+	t.Run("update status", func(t *testing.T) {
+		user := &model.User{
+			Username: "statususer",
+			Phone:    "13800138008",
+			Password: "password",
+			Name:     "Status User",
+			Role:     model.RoleOperator,
+			Status:   model.UserStatusNormal,
+		}
+		id, _ := repo.Create(ctx, user)
+
+		err := repo.UpdateStatus(ctx, id, model.UserStatusDisabled)
+		require.NoError(t, err)
+
+		result, _ := repo.GetByID(ctx, id)
+		assert.Equal(t, int8(model.UserStatusDisabled), result.Status)
 	})
 }

@@ -1,0 +1,873 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Frame",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "none"
+    },
+    {
+      "type": "frame",
+      "id": "0aeCG",
+      "x": 0,
+      "y": 0,
+      "name": "充值记录详情",
+      "width": 1200,
+      "fill": "#F5F5F5",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "PclV6",
+          "name": "页面头部",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "#FFFFFF",
+          "stroke": {
+            "thickness": 1,
+            "fill": "#E5E5E5"
+          },
+          "padding": [
+            16,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "PNVFF",
+              "name": "头部左侧",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "2oHzx",
+                  "name": "返回按钮",
+                  "width": 80,
+                  "height": 36,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 4,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#D9D9D9"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AYysE",
+                      "name": "backButtonText",
+                      "fill": "#595959",
+                      "content": "← 返回",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "yb79v",
+                  "name": "headerTitle",
+                  "fill": "#262626",
+                  "content": "充值记录详情",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pUwuP",
+              "name": "头部右侧",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "zhw5j",
+                  "name": "打印按钮",
+                  "width": 100,
+                  "height": 36,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 4,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#C00000"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "glqib",
+                      "name": "printButtonText",
+                      "fill": "#C00000",
+                      "content": "打印凭证",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "1gjCr",
+          "name": "内容区域",
+          "width": "fill_container",
+          "gap": 16,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "XDeGY",
+              "name": "左列",
+              "width": 740,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vaB3y",
+                  "name": "充值基本信息",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#E5E5E5"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Nsuhy",
+                      "name": "卡片标题",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jl0k3",
+                          "name": "cardIcon1",
+                          "content": "📋",
+                          "fontFamily": "Inter",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "9CzFO",
+                          "name": "cardTitle1",
+                          "fill": "#262626",
+                          "content": "充值基本信息",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "BIBQt",
+                      "name": "分隔线",
+                      "fill": "#E5E5E5",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SQX7A",
+                      "name": "信息行1",
+                      "width": "fill_container",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NkHlr",
+                          "name": "infoLabel1",
+                          "fill": "#595959",
+                          "content": "充值编号：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "cv1cF",
+                          "name": "infoValue1",
+                          "fill": "#262626",
+                          "content": "CZ202604090001",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "MEPa5",
+                          "name": "infoLabel2",
+                          "fill": "#595959",
+                          "content": "充值时间：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "kBo1J",
+                          "name": "infoValue2",
+                          "fill": "#262626",
+                          "content": "2026-04-09 14:30:25",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "7ngfo",
+                      "name": "信息行2",
+                      "width": "fill_container",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gT9Qo",
+                          "name": "infoLabel3",
+                          "fill": "#595959",
+                          "content": "充值中心：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "v257l",
+                          "name": "infoValue3",
+                          "fill": "#262626",
+                          "content": "北京朝阳中心",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "GDtZC",
+                          "name": "infoLabel4",
+                          "fill": "#595959",
+                          "content": "充值状态：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bH2ql",
+                          "name": "成功状态",
+                          "width": 60,
+                          "height": 28,
+                          "fill": "#F6FFED",
+                          "cornerRadius": 4,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "#52C41A"
+                          },
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "IT3Jm",
+                              "name": "statusText",
+                              "fill": "#52C41A",
+                              "content": "成功",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "RybCk",
+                      "name": "信息行3",
+                      "width": "fill_container",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "UuDyt",
+                          "name": "infoLabel5",
+                          "fill": "#595959",
+                          "content": "充值金额：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "nmojI",
+                          "name": "infoValue5",
+                          "fill": "#C00000",
+                          "content": "¥ 1,000.00",
+                          "fontFamily": "Inter",
+                          "fontSize": 18,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "aFF3G",
+                          "name": "infoLabel6",
+                          "fill": "#595959",
+                          "content": "获得积分：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "p0F7Z",
+                          "name": "infoValue6",
+                          "fill": "#52C41A",
+                          "content": "1,000 积分",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jN0GI",
+                  "name": "会员信息",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#E5E5E5"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "qiRyy",
+                      "name": "卡片标题",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YZnoJ",
+                          "name": "cardIcon2",
+                          "content": "👤",
+                          "fontFamily": "Inter",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "SVVoW",
+                          "name": "cardTitle2",
+                          "fill": "#262626",
+                          "content": "会员信息",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "tjZGz",
+                      "name": "分隔线",
+                      "fill": "#E5E5E5",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Bnnvy",
+                      "name": "会员信息行1",
+                      "width": "fill_container",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wdZOp",
+                          "name": "memberLabel1",
+                          "fill": "#595959",
+                          "content": "会员姓名：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "0gY5W",
+                          "name": "memberValue1",
+                          "fill": "#262626",
+                          "content": "张三",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "xStwh",
+                          "name": "memberLabel2",
+                          "fill": "#595959",
+                          "content": "会员卡号：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "zjaRP",
+                          "name": "memberValue2",
+                          "fill": "#262626",
+                          "content": "VIP20260315001",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rCqYe",
+                      "name": "会员信息行2",
+                      "width": "fill_container",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "SrRPr",
+                          "name": "memberLabel3",
+                          "fill": "#595959",
+                          "content": "手机号码：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "AWKDJ",
+                          "name": "memberValue3",
+                          "fill": "#262626",
+                          "content": "138****5678",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "anFuf",
+                          "name": "memberLabel4",
+                          "fill": "#595959",
+                          "content": "会员等级：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "s7HJ3",
+                          "name": "memberValue4",
+                          "fill": "#262626",
+                          "content": "普通会员",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Le3E7",
+                      "name": "会员信息行3",
+                      "width": "fill_container",
+                      "gap": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CO3pX",
+                          "name": "memberLabel5",
+                          "fill": "#595959",
+                          "content": "充值前积分：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ShVYc",
+                          "name": "memberValue5",
+                          "fill": "#8C8C8C",
+                          "content": "5,000 积分",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TRHwN",
+                          "name": "memberLabel6",
+                          "fill": "#595959",
+                          "content": "充值后积分：",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "B7BLX",
+                          "name": "memberValue6",
+                          "fill": "#52C41A",
+                          "content": "6,000 积分",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wRf83",
+              "name": "右列",
+              "width": 420,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "OcdSY",
+                  "name": "付款信息",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#E5E5E5"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Kie62",
+                      "name": "卡片标题",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MTMEE",
+                          "name": "cardIcon3",
+                          "content": "💳",
+                          "fontFamily": "Inter",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OFFlJ",
+                          "name": "cardTitle3",
+                          "fill": "#262626",
+                          "content": "付款信息",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "IUCmO",
+                      "name": "分隔线",
+                      "fill": "#E5E5E5",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NYATn",
+                      "name": "付款信息行1",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "3Hzwc",
+                          "name": "paymentLabel1",
+                          "fill": "#595959",
+                          "content": "付款方式",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "u121b",
+                          "name": "paymentValue1",
+                          "fill": "#262626",
+                          "content": "现金支付",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Y3LRf",
+                      "name": "付款信息行2",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nuVCn",
+                          "name": "paymentLabel2",
+                          "fill": "#595959",
+                          "content": "实付金额",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "upK6B",
+                          "name": "paymentValue2",
+                          "fill": "#C00000",
+                          "content": "¥ 1,000.00",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "u7e5S",
+                      "name": "付款信息行3",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oMD8R",
+                          "name": "paymentLabel3",
+                          "fill": "#595959",
+                          "content": "操作员",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "o9LJT",
+                          "name": "paymentValue3",
+                          "fill": "#262626",
+                          "content": "李四（北京朝阳中心）",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AB9YT",
+                      "name": "付款信息行4",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "5Qf1S",
+                          "name": "paymentLabel4",
+                          "fill": "#595959",
+                          "content": "备注",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "waXrY",
+                          "name": "paymentValue4",
+                          "fill": "#8C8C8C",
+                          "content": "客户生日充值优惠",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ICq72",
+                  "name": "操作记录",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#E5E5E5"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "1UkbJ",
+                      "name": "卡片标题",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nYWi5",
+                          "name": "cardIcon4",
+                          "content": "📝",
+                          "fontFamily": "Inter",
+                          "fontSize": 18,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "y5Z1O",
+                          "name": "cardTitle4",
+                          "fill": "#262626",
+                          "content": "操作记录",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "X7XrX",
+                      "name": "分隔线",
+                      "fill": "#E5E5E5",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bEYqt",
+                      "name": "日志项1",
+                      "width": "fill_container",
+                      "fill": "#F5F5F5",
+                      "cornerRadius": 4,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "27b5m",
+                          "name": "logTime1",
+                          "fill": "#8C8C8C",
+                          "content": "2026-04-09 14:30:25",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "3vDsk",
+                          "name": "logContent1",
+                          "fill": "#52C41A",
+                          "content": "充值成功，账户余额已增加",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hT9lR",
+                      "name": "日志项2",
+                      "width": "fill_container",
+                      "fill": "#F5F5F5",
+                      "cornerRadius": 4,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "2Rz3Q",
+                          "name": "logTime2",
+                          "fill": "#8C8C8C",
+                          "content": "2026-04-09 14:30:20",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I98BW",
+                          "name": "logContent2",
+                          "fill": "#595959",
+                          "content": "创建充值申请",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

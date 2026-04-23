@@ -3,7 +3,7 @@
 # =============================================================================
 
 # Stage 1: Build
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -38,8 +38,11 @@ COPY --from=builder /app/server .
 # Copy config
 COPY --from=builder /app/configs ./configs
 
-# Create log directory
-RUN mkdir -p /var/log/marketplace && chown -R appuser:appgroup /var/log/marketplace
+# Copy migrations
+COPY --from=builder /app/migrations ./migrations
+
+# Create log and upload directories
+RUN mkdir -p /var/log/marketplace /app/uploads /app/logs && chown -R appuser:appgroup /var/log/marketplace /app/uploads /app/logs
 
 # Switch to non-root user
 USER appuser

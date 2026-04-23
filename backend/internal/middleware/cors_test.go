@@ -1,0 +1,115 @@
+package middleware
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestCORS_OptionsPreflight(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	defer gin.SetMode(gin.ReleaseMode)
+
+	called := false
+	allowedOrigins := []string{"http://localhost:5173"}
+
+	r := gin.New()
+	r.Use(CORS(allowedOrigins))
+	r.OPTIONS("/test", func(c *gin.Context) {
+		called = true
+		c.JSON(http.StatusOK, nil)
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodOptions, "/test", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	r.ServeHTTP(w, req)
+
+	// OPTIONS should be intercepted by CORS middleware, not reach handler
+	assert.False(t, called, "handler should not be called for OPTIONS preflight")
+	assert.Equal(t, http.StatusNoContent, w.Code)
+
+	// Verify CORS headers
+	assert.Equal(t, "http://localhost:5173", w.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, "GET, POST, PUT, PATCH, DELETE, OPTIONS", w.Header().Get("Access-Control-Allow-Methods"))
+	assert.Equal(t, "Origin, Content-Type, Accept, Authorization, X-Requested-With", w.Header().Get("Access-Control-Allow-Headers"))
+	assert.Equal(t, "Content-Length, Content-Type", w.Header().Get("Access-Control-Expose-Headers"))
+	assert.Equal(t, "86400", w.Header().Get("Access-Control-Max-Age"))
+}
+
+func TestCORS_NormalGetRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	defer gin.SetMode(gin.ReleaseMode)
+
+	called := false
+	allowedOrigins := []string{"http://localhost:5173"}
+
+	r := gin.New()
+	r.Use(CORS(allowedOrigins))
+	r.GET("/test", func(c *gin.Context) {
+		called = true
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	r.ServeHTTP(w, req)
+
+	assert.True(t, called, "handler should have been called for GET request")
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verify CORS headers are still present on normal requests
+	assert.Equal(t, "http://localhost:5173", w.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, "GET, POST, PUT, PATCH, DELETE, OPTIONS", w.Header().Get("Access-Control-Allow-Methods"))
+}
+
+func TestCORS_PostRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	defer gin.SetMode(gin.ReleaseMode)
+
+	called := false
+	allowedOrigins := []string{"http://localhost:5173"}
+
+	r := gin.New()
+	r.Use(CORS(allowedOrigins))
+	r.POST("/test", func(c *gin.Context) {
+		called = true
+		c.JSON(http.StatusCreated, gin.H{"status": "created"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/test", nil)
+	req.Header.Set("Origin", "http://localhost:5173")
+	r.ServeHTTP(w, req)
+
+	assert.True(t, called, "handler should have been called for POST request")
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	assert.Equal(t, "http://localhost:5173", w.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, "true", w.Header().Get("Access-Control-Allow-Credentials"))
+}
+
+func TestCORS_DisallowedOrigin(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	defer gin.SetMode(gin.ReleaseMode)
+
+	allowedOrigins := []string{"http://localhost:5173"}
+
+	r := gin.New()
+	r.Use(CORS(allowedOrigins))
+	r.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, nil)
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Origin", "http://evil.com")
+	r.ServeHTTP(w, req)
+
+	// Disallowed origin should not get CORS headers
+	assert.Empty(t, w.Header().Get("Access-Control-Allow-Origin"))
+}

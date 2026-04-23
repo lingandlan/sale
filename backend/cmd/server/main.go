@@ -17,6 +17,7 @@ import (
 	"marketplace/backend/internal/router"
 	"marketplace/backend/internal/service"
 	"marketplace/backend/pkg/logger"
+	"marketplace/backend/pkg/mall"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -48,6 +49,13 @@ func main() {
 	}
 	log.Info("database connected")
 
+	// 3.1 初始化 GORM 数据库（用于充值模块）
+	gormDB, err := repository.NewGormDB(&cfg.Database)
+	if err != nil {
+		log.Fatal("connect gorm database failed", zap.Error(err))
+	}
+	log.Info("gorm database connected")
+
 	// 4. 初始化 Redis
 	redisClient, err := repository.NewRedis(&cfg.Redis)
 	if err != nil {
@@ -64,36 +72,44 @@ func main() {
 
 	// 6. 初始化 Repository
 	userRepo := repository.NewUserRepository(db)
+	rechargeRepo := repository.NewRechargeRepository(gormDB)
 
-	// 6. 初始化 Service
+	// 7. 初始化 WSY 商城客户端
+	wsyClient := mall.NewWSYClient(cfg.Mall)
+
+	// 8. 初始化 Service
 	authSvc := service.NewAuthService(&cfg.JWT, redisClient, userRepo)
 	userSvc := service.NewUserService(userRepo)
+	memberSvc := service.NewMemberService(wsyClient)
+	rechargeSvc := service.NewRechargeService(rechargeRepo, userRepo, memberSvc)
 
-	// 7. 初始化 Handler
+	// 9. 初始化 Handler
 	authHandler := handler.NewAuthHandler(authSvc, userSvc)
-	userHandler := handler.NewUserHandler(userSvc)
+	userHandler := handler.NewUserHandler(userSvc, memberSvc)
+	adminHandler := handler.NewAdminHandler(userSvc, casbinSvc)
+	rechargeHandler := handler.NewRechargeHandler(rechargeSvc, userRepo)
 
-	// 8. 初始化中间件
+	// 10. 初始化中间件
 	authMiddleware := middleware.NewAuthMiddleware(cfg.JWT.Secret)
 	rbacMiddleware := middleware.NewRBACMiddleware(casbinSvc)
 
-	// 9. 设置 Gin 模式
+	// 11. 设置 Gin 模式
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// 10. 创建 Gin 实例
+	// 12. 创建 Gin 实例
 	r := gin.New()
 
-	// 11. 注册中间件
+	// 13. 注册中间件
 	r.Use(middleware.Recovery())
 	r.Use(middleware.ZapLogger())
-	r.Use(middleware.CORS())
+	r.Use(middleware.CORS(cfg.CORS.AllowedOrigins))
 
-	// 13. 注册路由
-	router.SetupRouter(r, authHandler, userHandler, authMiddleware, rbacMiddleware)
+	// 14. 注册路由
+	router.SetupRouter(r, authHandler, userHandler, adminHandler, rechargeHandler, authMiddleware, rbacMiddleware, redisClient)
 
-	// 13. 创建 HTTP Server
+	// 15. 创建 HTTP Server
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler:        r,
@@ -102,19 +118,21 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	// 14. 启动服务器（ goroutine ）
+	// 16. 等待中断信号
+	quit := make(chan os.Signal, 1)
+
+	// 17. 启动服务器（goroutine）
 	go func() {
 		log.Info(fmt.Sprintf("server listening on :%d", cfg.Server.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("server failed", zap.Error(err))
+			log.Error("server failed", zap.Error(err))
+			quit <- syscall.SIGTERM
 		}
 	}()
 
-	// 15. 等待中断信号优雅关闭
-	quit := make(chan os.Signal, 1)
+	// 18. 等待中断信号优雅关闭
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-
 	log.Info("shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -124,10 +142,14 @@ func main() {
 		log.Fatal("server forced to shutdown", zap.Error(err))
 	}
 
-	// 16. 关闭数据库连接
+	// 17. 关闭数据库连接
 	db.Close()
 
-	// 17. 关闭 Redis 连接
+	if sqlGormDB, err := gormDB.DB(); err == nil && sqlGormDB != nil {
+		sqlGormDB.Close()
+	}
+
+	// 18. 关闭 Redis 连接
 	redisClient.Close()
 
 	log.Info("server exited")

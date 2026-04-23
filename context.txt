@@ -1,0 +1,157 @@
+# 太积堂充值与门店管理系统 - 项目上下文
+
+> 每次新对话开头直接引用此文件，快速了解项目全貌。
+
+## 项目概览
+
+B端管理后台（shop-pc）+ H5端（shop-h5）+ Go后端（backend），用于管理充值中心、门店卡、充值申请审批、用户管理等业务。
+
+## 技术栈
+
+- 后端: Go 1.22 + Gin + GORM + MySQL 5.6 + Redis + Casbin
+- 前端 PC: Vue 3 + TypeScript + Element Plus + Pinia + Axios
+- 前端 H5: UniApp（早期阶段）
+- 使用agent-brower 进行前端验证
+
+## 端口配置
+
+| Session | Backend | 前端 PC | 数据库 | Redis DB |
+|---------|---------|---------|--------|----------|
+| Main    | 8080    | 5175    | sale_dev  | 0 |
+| Alpha   | 8081    | 5178    | sale_dev  | 1 |
+| Beta    | 8082    | 5179    | sale_dev  | 2 |
+| Gamma   | 8083    | 5177    | sale_dev  | 3 |
+
+端口通过 `loadEnv` 读取 `.env.local`（gitignored），后端通过 `APP_SERVER_PORT` / `APP_REDIS_DB` 环境变量覆盖 config.yaml。
+
+## 各环境启动方式
+
+每个环境共用同一个 `start.sh`，端口从 `.env.worktree`（gitignored）读取，**合并时不再冲突**：
+
+| 环境 | 启动命令 | 目录 |
+|------|---------|------|
+| Main | `./start.sh` | 项目根目录 |
+| Alpha | `./start.sh` | `.claude/worktrees/alpha/` |
+| Beta | `./start.sh` | `.claude/worktrees/beta/` |
+
+每个目录下维护各自的 `.env.worktree`（不提交到 git）：
+
+```bash
+# Main（项目根目录）
+FRONTEND_PORT=5175
+BACKEND_PORT=8080
+REDIS_DB=0
+
+# Alpha（.claude/worktrees/alpha/）
+FRONTEND_PORT=5178
+BACKEND_PORT=8081
+REDIS_DB=1
+
+# Beta（.claude/worktrees/beta/）
+FRONTEND_PORT=5179
+BACKEND_PORT=8082
+REDIS_DB=2
+```
+
+脚本原理：
+- 读取 `.env.worktree`，不存在则用 Main 默认值（5175/8080/0）
+- 前端：写回 `.env.local`，`npx vite` 从中读取端口
+- 后端：`APP_SERVER_PORT=XXXX APP_REDIS_DB=X air` 通过环境变量覆盖 config.yaml
+- 启动前自动 `lsof -ti:PORT | xargs kill` 清理残留进程
+
+## 目录结构
+
+```
+sale/
+├── backend/
+│   ├── cmd/server/main.go          # 入口
+│   ├── internal/
+│   │   ├── config/                 # 配置加载
+│   │   ├── handler/                # HTTP处理器 (auth, recharge, user, admin)
+│   │   ├── middleware/             # 中间件 (auth, cors, rbac, logger, recovery)
+│   │   ├── model/                  # GORM模型 (user.go, recharge.go)
+│   │   ├── rbac/                   # Casbin权限
+│   │   ├── repository/             # 数据访问层
+│   │   ├── router/router.go        # 路由注册
+│   │   └── service/                # 业务逻辑层 + interfaces.go 接口定义
+│   ├── migrations/sql/             # 增量SQL（GORM model变更必须同步）
+│   └── configs/config.yaml         # 配置文件
+├── shop-pc/                        # B端管理后台
+│   └── src/
+│       ├── api/                    # Axios API (auth, card, center, dashboard, operator, recharge)
+│       ├── layouts/                # MainLayout + Header + Sidebar
+│       ├── router/index.ts         # 路由 + beforeEach守卫
+│       ├── stores/user.ts          # Pinia用户Store
+│       ├── views/
+│       │   ├── card/               # CardInventory, CardIssue, CardManage, CardVerify, CardDetail, CardStats
+│       │   ├── center/             # CenterManage
+│       │   ├── operator/           # OperatorManage
+│       │   ├── recharge/           # BRechargeApply, BRechargeList, BRechargeDetail, CRechargeEntry
+│       │   ├── recharge-record/    # RecordList, RecordDetail
+│       │   ├── user/               # UserManage
+│       │   └── system/             # SystemConfig
+│       └── utils/                  # request.ts (Axios封装), regionData.ts
+├── shop-h5/                        # C端H5 (UniApp, 早期)
+└── .claude/CLAUDE.md               # 开发规范（详细）
+```
+
+## 后端API路由 (/api/v1)
+
+| 模块 | 路由前缀 | 主要接口 |
+|------|---------|---------|
+| 认证 | /auth | login, logout, refresh |
+| 仪表盘 | /dashboard | statistics, todos, recharge-trends |
+| B端充值 | /recharge/b-apply, /recharge/b-approval | 创建申请, 列表, 详情, 审批 |
+| C端充值 | /recharge/c-entry | 创建, 列表(含日期筛选), search-member, 详情 |
+| 充值记录 | /recharge/records | 列表, 详情 |
+| 门店卡 | /card | verify, consume, list, detail, stats, batch-import, allocate, bind, freeze/unfreeze/void, inventory-stats |
+| 充值中心 | /center | CRUD + 详情(含余额) |
+| 操作员 | /operator | CRUD |
+| 用户 | /user | info, update, change-password |
+| 管理员 | /admin | users CRUD, reset-password, update-status |
+| 系统 | /system | config GET/PUT |
+
+## 关键开发规范
+
+1. GORM model 为唯一 schema 来源，变更必须同步增量 SQL 到 `backend/migrations/sql/`
+2. 禁止 `Save()` 做部分更新，必须用 `Updates(map[string]interface{})`
+3. Axios interceptor 已 unwrap response.data，代码用 `res.data`
+4. Vue SFC 回调中不能用 await，先存变量
+5. Element Plus el-dropdown trigger 用数组 `["hover"]`
+6. 启动: 各环境用 `./start.sh` 一键启动，端口配置在 `.env.worktree`（gitignored）
+7. Vite HMR 需要 `usePolling: true, interval: 1000`（Claude Code 编辑不触发 fsevents）
+
+## 测试账号
+
+- 主分支: 13800000000 / 123456
+- Alpha: 13900000001 / 123456
+
+## 前端页面验证（agent-browser）
+
+验证前端页面前，加载已保存的登录状态，跳过登录流程：
+
+```bash
+# 1. 加载登录态（每次验证前执行）
+agent-browser state load .claude/browser-auth-main.json
+
+# 2. 直接访问目标页面
+agent-browser open http://localhost:5175/<目标页面>
+```
+
+如果 token 过期（被跳转到登录页），重新登录并保存：
+
+```bash
+agent-browser snapshot -i                    # 填写手机号+密码
+agent-browser fill @e6 "13800000000"          # 手机号
+agent-browser fill @e7 "123456"               # 密码
+agent-browser click @e4                       # 登录
+agent-browser wait --load networkidle
+agent-browser state save .claude/browser-auth-main.json
+```
+
+## Git分支策略
+
+- `main` - 主分支
+- `design` - 开发分支（当前活跃）
+- `worktree-alpha/beta/opencode` - 各worktree的分支
+- commit message 格式: `<type>(<scope>): <description>` (有 hook 校验)

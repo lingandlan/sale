@@ -1,0 +1,671 @@
+<template>
+  <div class="crecharge-entry">
+    <div class="page-header">
+      <h1 class="page-title">C端充值录入</h1>
+    </div>
+
+    <div class="content-area">
+      <!-- 充值中心选择 -->
+      <div class="info-card">
+        <div class="card-header">
+          <span class="header-icon">🏢</span>
+          <h3 class="header-title">充值中心</h3>
+        </div>
+        <el-divider />
+        <div class="center-select-row">
+          <span class="search-label">选择充值中心</span>
+          <el-select
+            v-model="selectedCenterId"
+            placeholder="请选择充值中心"
+            style="flex: 1"
+            :disabled="!userStore.canSelectAllCenters"
+            @change="handleCenterChange"
+          >
+            <el-option
+              v-for="center in centerOptions"
+              :key="center.id"
+              :label="center.name"
+              :value="center.id"
+            />
+          </el-select>
+        </div>
+        <div v-if="selectedCenterId" class="center-balance-row">
+          <span class="info-label">中心积分余额</span>
+          <span class="center-balance-value">{{ storeBalance.toLocaleString() }} 积分</span>
+        </div>
+      </div>
+
+      <!-- 会员查询卡片 -->
+      <div class="info-card">
+        <div class="card-header">
+          <span class="header-icon">🔍</span>
+          <h3 class="header-title">会员信息查询</h3>
+        </div>
+        <el-divider />
+        <div class="search-row">
+          <div class="search-field">
+            <span class="search-label">手机号/卡号</span>
+            <el-input
+              v-model="searchQuery"
+              placeholder="请输入手机号或会员卡号"
+              style="flex: 1"
+              @keyup.enter="handleSearch"
+            />
+          </div>
+          <el-button type="primary" class="search-btn" @click="handleSearch">
+            查询
+          </el-button>
+        </div>
+
+        <div v-if="memberInfo" class="member-info-box">
+          <div class="info-row">
+            <span class="info-label">商城ID</span>
+            <span class="info-value">{{ memberInfo.id }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">手机号码</span>
+            <span class="info-value">{{ memberInfo.phone }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">当前积分</span>
+            <span class="info-value highlight">{{ memberInfo.balance.toLocaleString() }} 积分</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 充值信息卡片 -->
+      <div class="info-card">
+        <div class="card-header">
+          <span class="header-icon">💰</span>
+          <h3 class="header-title">充值信息</h3>
+        </div>
+        <el-divider />
+        <div class="amount-section">
+          <div class="amount-label">充值金额（元）</div>
+          <div class="amount-input-wrapper">
+            <span class="currency-symbol">¥</span>
+            <el-input-number
+              v-model="rechargeAmount"
+              :min="0"
+              :precision="2"
+              :step="100"
+              class="amount-input"
+              :disabled="!memberInfo"
+              @change="calculatePoints"
+            />
+          </div>
+          <div class="quick-amounts">
+            <el-button
+              v-for="amount in quickAmounts"
+              :key="amount"
+              class="quick-amount-btn"
+              :disabled="!memberInfo"
+              @click="setAmount(amount)"
+            >
+              {{ amount }}元
+            </el-button>
+          </div>
+        </div>
+
+        <div class="ratio-notice">
+          <span class="ratio-icon">ℹ️</span>
+          <span class="ratio-text">充值比例：1元 = 1积分</span>
+        </div>
+
+        <div class="points-calc-box">
+          <div class="calc-row">
+            <span class="calc-label">预计获得积分</span>
+            <span class="calc-value">{{ calculatedPoints.toLocaleString() }} 积分</span>
+          </div>
+          <el-divider style="margin: 12px 0" />
+          <div class="calc-row">
+            <span class="calc-label">充值后会员余额</span>
+            <span class="calc-value">{{ afterRechargeBalance.toLocaleString() }} 积分</span>
+          </div>
+        </div>
+
+        <div class="store-balance">
+          <span class="store-label">门店当前积分余额</span>
+          <span class="store-value">{{ storeBalance.toLocaleString() }} 积分</span>
+        </div>
+      </div>
+
+      <!-- 备注卡片 -->
+      <div class="info-card">
+        <div class="card-header">
+          <span class="header-icon">📝</span>
+          <h3 class="header-title">备注（可选）</h3>
+        </div>
+        <el-divider />
+        <el-input
+          v-model="remark"
+          type="textarea"
+          :rows="3"
+          placeholder="请输入备注信息（最多200字）"
+          maxlength="200"
+          show-word-limit
+        />
+      </div>
+    </div>
+
+    <!-- 操作栏 -->
+    <div class="action-bar">
+      <el-button class="cancel-btn" @click="handleCancel">取消</el-button>
+      <el-button type="primary" class="confirm-btn" :disabled="!canSubmit" @click="handleSubmit">
+        <span class="confirm-icon">✓</span>
+        确认充值
+      </el-button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { extractErrorMessage } from '@/utils/request'
+import { submitCRechargeEntry, getCenterDetail, searchMember } from '@/api/recharge'
+import { getCenterList } from '@/api/center'
+import { useUserStore } from '@/stores/user'
+
+interface MemberInfo {
+  id: string
+  phone: string
+  balance: number
+}
+
+interface CenterOption {
+  id: string
+  name: string
+}
+
+const userStore = useUserStore()
+
+const searchQuery = ref('')
+const memberInfo = ref<MemberInfo | null>(null)
+const rechargeAmount = ref<number>(0)
+const remark = ref('')
+const storeBalance = ref(0)
+const selectedCenterId = ref('')
+const selectedCenterName = ref('')
+const centerOptions = ref<CenterOption[]>([])
+
+// 加载充值中心列表
+const loadCenterOptions = async () => {
+  if (userStore.canSelectAllCenters) {
+    try {
+      const res = await getCenterList()
+      centerOptions.value = (res.data || []).map((c: any) => ({ id: c.id, name: c.name }))
+    } catch (err: any) {
+      ElMessage.error(extractErrorMessage(err, '加载充值中心列表失败'))
+      centerOptions.value = []
+    }
+  } else {
+    // 操作员/中心管理员 — 只有自己所属的中心
+    const cid = userStore.userCenterId
+    const cname = userStore.userCenterName
+    if (cid) {
+      centerOptions.value = [{ id: String(cid), name: cname || '' }]
+      selectedCenterId.value = String(cid)
+      selectedCenterName.value = cname || ''
+      loadStoreBalance()
+    }
+  }
+}
+
+// 选择充值中心后加载余额
+const handleCenterChange = (id: string) => {
+  const center = centerOptions.value.find((c: any) => c.id === id)
+  selectedCenterName.value = center?.name || ''
+  loadStoreBalance()
+}
+
+// 获取选中中心的余额
+const loadStoreBalance = async () => {
+  if (!selectedCenterId.value) {
+    storeBalance.value = 0
+    return
+  }
+  try {
+    const res = await getCenterDetail(selectedCenterId.value)
+    storeBalance.value = (res as any).data.balance ?? 0
+  } catch (err: any) {
+    ElMessage.error(extractErrorMessage(err, '加载中心余额失败'))
+    storeBalance.value = 0
+  }
+}
+
+onMounted(() => {
+  // 如果还没加载过用户信息（刷新页面场景），先加载
+  if (!userStore.userInfo) {
+    userStore.fetchUserInfo().then(() => loadCenterOptions())
+  } else {
+    loadCenterOptions()
+  }
+})
+
+const quickAmounts = [100, 500, 1000, 5000]
+
+const calculatedPoints = computed(() => Math.floor(rechargeAmount.value || 0))
+
+const afterRechargeBalance = computed(() => {
+  if (!memberInfo.value) return 0
+  return memberInfo.value.balance + calculatedPoints.value
+})
+
+const canSubmit = computed(() => {
+  return memberInfo.value && rechargeAmount.value > 0 && selectedCenterId.value
+})
+
+const handleSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    ElMessage.warning('请输入手机号或会员卡号')
+    return
+  }
+
+  try {
+    const res = await searchMember(searchQuery.value.trim())
+    if (res?.data) {
+      const d = res.data
+      memberInfo.value = {
+        id: d.userId,
+        phone: d.phone,
+        balance: d.balance || 0,
+      }
+      ElMessage.success('查询成功')
+    }
+  } catch (err: any) {
+    memberInfo.value = null
+    ElMessage.error(extractErrorMessage(err, '未找到该会员'))
+  }
+}
+
+const setAmount = (amount: number) => {
+  rechargeAmount.value = amount
+  calculatePoints()
+}
+
+const calculatePoints = () => {
+  // 充值比例：1元 = 1积分
+  // 已在 computed 中处理
+}
+
+const handleCancel = () => {
+  ElMessageBox.confirm('确认取消充值？已填写的信息将不会保存', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '继续填写',
+    type: 'warning'
+  }).then(() => {
+    resetForm()
+  }).catch(() => {
+    // 用户选择继续填写
+  })
+}
+
+const handleSubmit = async () => {
+  if (!canSubmit.value) return
+
+  try {
+    await ElMessageBox.confirm(
+      `确认充值 ¥${rechargeAmount.value.toLocaleString()} ？`,
+      '确认充值',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await submitCRechargeEntry({
+      memberId: memberInfo.value!.id,
+      memberName: memberInfo.value!.phone,
+      memberPhone: memberInfo.value!.phone,
+      centerId: selectedCenterId.value,
+      centerName: selectedCenterName.value,
+      amount: rechargeAmount.value,
+      paymentMethod: 'cash',
+      remark: remark.value || ''
+    })
+    ElMessage.success(`充值成功！已为会员充值 ${calculatedPoints.value.toLocaleString()} 积分`)
+    resetForm()
+  } catch (err: any) {
+    // 用户取消确认框
+    if (err === 'cancel' || err?.toString?.().includes('cancel')) return
+    ElMessage.error(extractErrorMessage(err, '充值失败，请稍后重试'))
+  }
+}
+
+const resetForm = () => {
+  searchQuery.value = ''
+  memberInfo.value = null
+  rechargeAmount.value = 0
+  remark.value = ''
+}
+</script>
+
+<style scoped>
+.crecharge-entry {
+  background-color: var(--color-bg);
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  background-color: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
+  padding: 16px 24px;
+}
+
+.page-title {
+  font-family: var(--font-family);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.content-area {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.info-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: 24px;
+}
+
+.card-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.header-icon {
+  font-size: 18px;
+}
+
+.header-title {
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 充值中心选择行 */
+.center-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 中心余额展示 */
+.center-balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+
+.center-balance-value {
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.highlight {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 搜索行 */
+.search-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+}
+
+.search-label {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.search-btn {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  height: 40px;
+}
+
+.member-info-box {
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-label {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.info-value {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.amount-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.amount-label {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.amount-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  height: 56px;
+  background-color: var(--color-bg-card);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+.currency-symbol {
+  font-family: var(--font-family);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.amount-input {
+  flex: 1;
+}
+
+.amount-input :deep(.el-input__inner) {
+  border: none;
+  padding: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.amount-input :deep(.el-input-number__decrease),
+.amount-input :deep(.el-input-number__increase) {
+  display: none;
+}
+
+.quick-amounts {
+  display: flex;
+  gap: 8px;
+}
+
+.quick-amount-btn {
+  flex: 1;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.quick-amount-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.ratio-notice {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background-color: var(--color-warning-bg);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-top: 16px;
+}
+
+.ratio-icon {
+  font-size: 16px;
+}
+
+.ratio-text {
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: #8C6000;
+}
+
+.points-calc-box {
+  background-color: #F0F9FF;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc-label {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.calc-value {
+  font-family: var(--font-family);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-info);
+}
+
+.store-balance {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 16px;
+}
+
+.store-label {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.store-value {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.action-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  margin: 0 24px;
+}
+
+.cancel-btn {
+  width: 140px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+}
+
+.confirm-btn {
+  width: 160px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.confirm-icon {
+  font-size: 18px;
+}
+
+.confirm-btn:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.confirm-btn:disabled {
+  background-color: var(--color-border);
+  border-color: var(--color-border);
+}
+</style>

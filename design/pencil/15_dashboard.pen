@@ -1,0 +1,974 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "type": "frame",
+      "id": "gF4E9",
+      "x": 0,
+      "y": 0,
+      "name": "首页仪表盘",
+      "width": 1200,
+      "fill": "#F5F5F5",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "tjddE",
+          "name": "欢迎区域",
+          "width": "fill_container",
+          "height": 80,
+          "fill": "#C00000",
+          "padding": [
+            16,
+            32
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "7z7NL",
+              "name": "欢迎左侧",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "IPEGq",
+                  "name": "welcomeTitle",
+                  "fill": "#FFFFFF",
+                  "content": "欢迎使用太积堂充值与门店管理系统",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "Ak5Zp",
+                  "name": "welcomeSubtitle",
+                  "fill": "#FFD700",
+                  "content": "高效管理充值业务，实时掌握运营数据",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "6Po1f",
+              "name": "欢迎右侧",
+              "layout": "vertical",
+              "gap": 4,
+              "alignItems": "end",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "r1ct0",
+                  "name": "currentTime",
+                  "fill": "#FFFFFF",
+                  "content": "2026年4月9日 星期四",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Winb5",
+                  "name": "currentUserInfo",
+                  "fill": "#FFFFFF",
+                  "content": "管理员：张三",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "7uAXC",
+          "name": "统计卡片区域",
+          "width": "fill_container",
+          "gap": 16,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "0Uvpm",
+              "name": "会员数卡片",
+              "width": 280,
+              "height": 120,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Y6hDX",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "QuTfP",
+                      "name": "stat1Icon",
+                      "content": "👥",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iZm3d",
+                      "name": "stat1Trend",
+                      "fill": "#52C41A",
+                      "content": "↑ 12%",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Y7nWi",
+                  "name": "stat1Value",
+                  "fill": "#262626",
+                  "content": "1,234",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "YB8X7",
+                  "name": "stat1Label",
+                  "fill": "#8C8C8C",
+                  "content": "总会员数",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hwW79",
+              "name": "今日充值卡片",
+              "width": 280,
+              "height": 120,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "0CZFx",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Q0UiW",
+                      "name": "stat2Icon",
+                      "content": "💰",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "47TKU",
+                      "name": "stat2Trend",
+                      "fill": "#52C41A",
+                      "content": "↑ 8%",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "nrreX",
+                  "name": "stat2Value",
+                  "fill": "#C00000",
+                  "content": "¥ 56,780",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "pz1Gp",
+                  "name": "stat2Label",
+                  "fill": "#8C8C8C",
+                  "content": "今日充值金额",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "5g0TX",
+              "name": "今日核销卡片",
+              "width": 280,
+              "height": 120,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "fLi2a",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WA7v4",
+                      "name": "stat3Icon",
+                      "content": "🎫",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xfc4A",
+                      "name": "stat3Trend",
+                      "fill": "#52C41A",
+                      "content": "↑ 15%",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "LJTOx",
+                  "name": "stat3Value",
+                  "fill": "#52C41A",
+                  "content": "¥ 23,450",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "NaSkp",
+                  "name": "stat3Label",
+                  "fill": "#8C8C8C",
+                  "content": "今日核销金额",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "yvjCW",
+              "name": "活跃中心卡片",
+              "width": 280,
+              "height": 120,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "6kvoF",
+                  "name": "卡片头部",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AcLys",
+                      "name": "stat4Icon",
+                      "content": "🏢",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "GD3zz",
+                      "name": "stat4Trend",
+                      "fill": "#52C41A",
+                      "content": "↑ 3%",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "sHXXu",
+                  "name": "stat4Value",
+                  "fill": "#1677FF",
+                  "content": "5",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "fHrYW",
+                  "name": "stat4Label",
+                  "fill": "#8C8C8C",
+                  "content": "活跃中心数",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "IH3VX",
+          "name": "快捷操作区域",
+          "width": "fill_container",
+          "gap": 16,
+          "padding": [
+            0,
+            24,
+            24,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "0I2AW",
+              "name": "快捷操作卡片",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "S7BRZ",
+                  "name": "快捷操作标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "f1998",
+                      "name": "quickActionsTitle",
+                      "fill": "#262626",
+                      "content": "⚡ 快捷操作",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "BTvjp",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "iJxAQ",
+                  "name": "快捷操作网格",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ZT3rU",
+                      "name": "C端充值",
+                      "width": 140,
+                      "height": 100,
+                      "fill": "#FFF7E6",
+                      "cornerRadius": 8,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#FFD700"
+                      },
+                      "gap": 12,
+                      "padding": 16,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "RDkkr",
+                          "name": "quickAction1Icon",
+                          "content": "💵",
+                          "fontFamily": "Inter",
+                          "fontSize": 32,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "41obk",
+                          "name": "quickAction1Text",
+                          "fill": "#262626",
+                          "content": "C端充值",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "9MghS",
+                      "name": "门店卡核销",
+                      "width": 140,
+                      "height": 100,
+                      "fill": "#E6F7FF",
+                      "cornerRadius": 8,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#1677FF"
+                      },
+                      "gap": 12,
+                      "padding": 16,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QCB56",
+                          "name": "quickAction2Icon",
+                          "content": "🎫",
+                          "fontFamily": "Inter",
+                          "fontSize": 32,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "sBIpE",
+                          "name": "quickAction2Text",
+                          "fill": "#262626",
+                          "content": "门店卡核销",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uzVDc",
+                      "name": "门店卡发放",
+                      "width": 140,
+                      "height": 100,
+                      "fill": "#F6FFED",
+                      "cornerRadius": 8,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#52C41A"
+                      },
+                      "gap": 12,
+                      "padding": 16,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "1BO4z",
+                          "name": "quickAction3Icon",
+                          "content": "🎁",
+                          "fontFamily": "Inter",
+                          "fontSize": 32,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "kB3Vb",
+                          "name": "quickAction3Text",
+                          "fill": "#262626",
+                          "content": "门店卡发放",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tQbgR",
+                      "name": "充值申请",
+                      "width": 140,
+                      "height": 100,
+                      "fill": "#FFF1F0",
+                      "cornerRadius": 8,
+                      "stroke": {
+                        "thickness": 2,
+                        "fill": "#FF4D4F"
+                      },
+                      "gap": 12,
+                      "padding": 16,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "r2iUm",
+                          "name": "quickAction4Icon",
+                          "content": "📝",
+                          "fontFamily": "Inter",
+                          "fontSize": 32,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "klxKj",
+                          "name": "quickAction4Text",
+                          "fill": "#262626",
+                          "content": "充值申请",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "l4TMk",
+          "name": "待办事项区域",
+          "width": "fill_container",
+          "gap": 16,
+          "padding": [
+            0,
+            24,
+            24,
+            24
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "bUOCy",
+              "name": "待办事项卡片",
+              "width": 400,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "N8Ar8",
+                  "name": "待办标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AZphJ",
+                      "name": "todoTitle",
+                      "fill": "#262626",
+                      "content": "📋 待办事项",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "4AhtQ",
+                      "name": "todoMore",
+                      "fill": "#1677FF",
+                      "content": "查看更多 >",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "1OUPz",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "PLzWR",
+                  "name": "待办项1",
+                  "width": "fill_container",
+                  "fill": "#FFF7E6",
+                  "cornerRadius": 4,
+                  "gap": 12,
+                  "padding": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vPlh8",
+                      "name": "todo1Icon",
+                      "content": "⏰",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CljPL",
+                      "name": "待办内容",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xQiK5",
+                          "name": "todo1Title",
+                          "fill": "#262626",
+                          "content": "待审批充值申请",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "kdLZj",
+                          "name": "todo1Desc",
+                          "fill": "#8C8C8C",
+                          "content": "3笔申请等待审批",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DdPE3",
+                  "name": "待办项2",
+                  "width": "fill_container",
+                  "fill": "#FFF1F0",
+                  "cornerRadius": 4,
+                  "gap": 12,
+                  "padding": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "umvZP",
+                      "name": "todo2Icon",
+                      "content": "⚠️",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qjaAC",
+                      "name": "待办内容",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Z5Gwm",
+                          "name": "todo2Title",
+                          "fill": "#262626",
+                          "content": "即将过期的门店卡",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "DU3AE",
+                          "name": "todo2Desc",
+                          "fill": "#8C8C8C",
+                          "content": "12张门店卡7天内过期",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cwjV3",
+              "name": "图表卡片",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Ghkjl",
+                  "name": "图表标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Kn2Jq",
+                      "name": "chartTitle",
+                      "fill": "#262626",
+                      "content": "📈 充值趋势（最近7天）",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "3Brn6",
+                  "name": "分隔线",
+                  "fill": "#E5E5E5",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "GiJlp",
+                  "name": "图表区域",
+                  "width": "fill_container",
+                  "height": 200,
+                  "gap": 16,
+                  "padding": [
+                    24,
+                    0,
+                    0,
+                    0
+                  ],
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "kOZSR",
+                      "name": "柱状图1",
+                      "fill": "#C00000",
+                      "width": 80,
+                      "height": 120
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "cckFM",
+                      "name": "柱状图2",
+                      "fill": "#C00000",
+                      "width": 80,
+                      "height": 90
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "jx0Cv",
+                      "name": "柱状图3",
+                      "fill": "#C00000",
+                      "width": 80,
+                      "height": 150
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "FNU72",
+                      "name": "柱状图4",
+                      "fill": "#C00000",
+                      "width": 80,
+                      "height": 180
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "sRPCH",
+                      "name": "柱状图5",
+                      "fill": "#C00000",
+                      "width": 80,
+                      "height": 140
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "vrpX3",
+                      "name": "柱状图6",
+                      "fill": "#C00000",
+                      "width": 80,
+                      "height": 160
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 4,
+                      "id": "HFMzC",
+                      "name": "柱状图7",
+                      "fill": "#FFD700",
+                      "width": 80,
+                      "height": 200
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nl96c",
+                  "name": "图表标签",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zuBeI",
+                      "name": "chartLabel1",
+                      "fill": "#8C8C8C",
+                      "content": "4/3",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iXBJQ",
+                      "name": "chartLabel2",
+                      "fill": "#8C8C8C",
+                      "content": "4/4",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PAYcH",
+                      "name": "chartLabel3",
+                      "fill": "#8C8C8C",
+                      "content": "4/5",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "JYYtg",
+                      "name": "chartLabel4",
+                      "fill": "#8C8C8C",
+                      "content": "4/6",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xxo5p",
+                      "name": "chartLabel5",
+                      "fill": "#8C8C8C",
+                      "content": "4/7",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PReS2",
+                      "name": "chartLabel6",
+                      "fill": "#8C8C8C",
+                      "content": "4/8",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "t41Wc",
+                      "name": "chartLabel7",
+                      "fill": "#C00000",
+                      "content": "4/9",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

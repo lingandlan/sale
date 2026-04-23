@@ -1,5 +1,5 @@
 # =============================================================================
-# Marketplace API - Makefile
+# 太积堂充值与门店管理系统 - Makefile
 # =============================================================================
 
 .PHONY: help
@@ -52,8 +52,11 @@ fix: ## Auto-fix code style issues
 # Coverage threshold (percentage)
 COVERAGE_MIN ?= 50
 
-test: ## Run unit tests
-	go test -v -race -coverprofile=coverage.txt ./...
+test: ## Run unit tests (skip integration tests)
+	go test -v -race -short ./...
+
+test-all: ## Run all tests including integration tests
+	go test -v -race -short=false ./...
 
 test-coverage: test ## Run tests with coverage report
 	@echo "Coverage report:"
@@ -70,29 +73,53 @@ test-threshold: ## Run tests with coverage threshold check
 		exit 1; \
 	fi
 
-integration-test: compose-up ## Run integration tests (requires docker-compose)
-	go clean -testcache
-	go test -v ./tests/integration/...
+# =============================================================================
+# Integration Tests
+# =============================================================================
+
+TEST_DSN ?= root:root123@tcp(localhost:3307)/test_db?parseTime=true&charset=utf8mb4
+
+integration-test-up: ## Start integration test database
+	cd tests/integration && docker-compose up -d
+
+integration-test-down: ## Stop integration test database
+	cd tests/integration && docker-compose down
+
+integration-test: integration-test-up ## Run integration tests
+	@echo "Waiting for database to be ready..."
+	@sleep 10
+	TEST_DSN=$(TEST_DSN) go test -v -tags=integration ./tests/integration/...
+	@echo "Stopping test database..."
+	cd tests/integration && docker-compose down
+
+integration-test-clean: ## Clean integration test database
+	docker exec sale-mysql-test mysql -uroot -proot123 -e "DROP DATABASE IF EXISTS test_db; CREATE DATABASE test_db;"
 
 # =============================================================================
 # Database Migration
 # =============================================================================
 
-migrate-create: ## Create a new migration: make migrate-create name=create_users
-	@if [ -z "$(name)" ]; then \
-		echo "Usage: make migrate-create name=your_migration_name"; \
-		exit 1; \
-	fi
-	goose -dir migrations mysql "$(MYSQL_DSN)" create $(name) sql
+migrate: ## Run GORM AutoMigrate (creates/updates all tables)
+	go run ./migrations/
 
-migrate-up: ## Run migrations
-	goose -dir migrations mysql "$(MYSQL_DSN)" up
+migrate-sql: ## Run incremental SQL migrations (tracks in schema_migrations table)
+	go run ./cmd/migrate/
 
-migrate-down: ## Rollback last migration
-	goose -dir migrations mysql "$(MYSQL_DSN)" down
+migrate-status: ## Show migration status (executed vs pending)
+	@echo "=== Migration files ==="
+	@ls -1 migrations/sql/*.sql 2>/dev/null || echo "No migration files"
+	@echo "=== Executed ==="
+	@docker exec sale-mysql mysql -u$(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) -e "SELECT * FROM schema_migrations ORDER BY version;" 2>/dev/null || echo "schema_migrations table not found, run 'make migrate-sql' first"
 
-migrate-status: ## Show migration status
-	goose -dir migrations mysql "$(MYSQL_DSN)" status
+migrate-seed: ## Run migration with seed data (same as migrate, seed is included)
+	go run ./migrations/
+
+migrate-reset: ## Reset database: drop old tables and re-migrate
+	@echo "Dropping all application tables..."
+	@docker-compose exec -T mysql mysql -u$(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) -e "\
+		DROP TABLE IF EXISTS card_transactions, store_cards, c_recharges, recharge_applications, \
+		recharge_operators, recharge_centers, users, casbin_rule;"
+	go run ./migrations/
 
 # =============================================================================
 # Docker
@@ -111,10 +138,10 @@ compose-logs: ## View docker-compose logs
 	docker-compose logs -f
 
 docker-build: ## Build Docker image
-	docker build -t marketplace-api:latest .
+	docker build -t sale-backend:latest .
 
 docker-run: ## Run Docker container
-	docker run -p 8080:8080 --env-file .env marketplace-api:latest
+	docker run -p 8080:8080 --env-file .env sale-backend:latest
 
 # =============================================================================
 # CI/CD
@@ -139,7 +166,6 @@ ci-lint: ## CI lint step
 tools: ## Install required tools
 	@echo "Installing tools..."
 	go install github.com/cosmtrek/air@latest
-	go install github.com/pressly/goose/v3/cmd/goose@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/google/addlicense@latest
 	go install github.com/swaggo/swag/cmd/swag@latest
@@ -164,6 +190,6 @@ swag: ## Generate Swagger docs
 	swag init -g cmd/server/main.go -o docs/swagger
 
 license: ## Add license header to files
-	addlicense -c "Marketplace" -y $$(date +%Y) .
+	addlicense -c "太积堂" -y $$(date +%Y) .
 
 .DEFAULT_GOAL := help

@@ -1,0 +1,29 @@
+.idea/
+tmp/
+.claude/worktrees/
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage.txt
+coverage/
+
+# Build artifacts
+backend/main
+backend/tmp/
+backend/uploads/*
+
+# OS files
+.DS_Store
+# Local env overrides (worktree-specific ports)
+*.env.local
+
+# Local Claude settings
+.claude/settings.local.json
+
+# Apifox submodule dirty state
+apifox-mcp
+!.gitkeep
+.env.worktree

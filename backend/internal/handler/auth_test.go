@@ -20,8 +20,8 @@ type MockAuthService struct {
 	mock.Mock
 }
 
-func (m *MockAuthService) Login(ctx context.Context, username, password string) (*model.LoginResponse, error) {
-	args := m.Called(ctx, username, password)
+func (m *MockAuthService) Login(ctx context.Context, phone, password string) (*model.LoginResponse, error) {
+	args := m.Called(ctx, phone, password)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -76,11 +76,11 @@ func TestAuthHandler_Login(t *testing.T) {
 		expectedResp := &model.LoginResponse{
 			AccessToken:  "access-token",
 			RefreshToken: "refresh-token",
-			User:         &model.User{ID: 1, Username: "testuser"},
+			ExpiresIn:    3600,
 		}
-		mockAuthSvc.On("Login", ctx, "testuser", "password123").Return(expectedResp, nil).Once()
+		mockAuthSvc.On("Login", ctx, "13800138000", "password123").Return(expectedResp, nil).Once()
 
-		body := map[string]interface{}{"username": "testuser", "password": "password123"}
+		body := map[string]interface{}{"phone": "13800138000", "password": "password123"}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/auth/login", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -127,13 +127,15 @@ func TestAuthHandler_Register(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("success", func(t *testing.T) {
-		newUser := &model.User{ID: 1, Username: "newuser", Email: "new@test.com"}
+		newUser := &model.User{ID: 1, Phone: "13800138000", Name: "New User", Role: model.RoleOperator}
 		mockUserSvc.On("Create", ctx, mock.AnythingOfType("*model.CreateUserRequest")).Return(newUser, nil).Once()
 
 		body := map[string]interface{}{
-			"username": "newuser",
+			"username": "testuser",
+			"phone":    "13800138000",
 			"password": "password123",
-			"email":    "new@test.com",
+			"name":     "New User",
+			"role":     "operator",
 		}
 		jsonBody, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", "/auth/register", bytes.NewBuffer(jsonBody))

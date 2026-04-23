@@ -2,11 +2,14 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"marketplace/backend/internal/middleware"
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/service"
 	apperrors "marketplace/backend/pkg/errors"
+	"marketplace/backend/pkg/errmsg"
+	"marketplace/backend/pkg/logger"
 	"marketplace/backend/pkg/response"
 )
 
@@ -32,15 +35,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	result, err := h.authSvc.Login(c.Request.Context(), req.Username, req.Password)
+	result, err := h.authSvc.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
+		logger.Warn("login failed", zap.String("phone", req.Phone), zap.Error(err))
 		switch err {
 		case apperrors.ErrNotFound:
-			response.Unauthorized(c, "用户名或密码错误")
+			response.Unauthorized(c, errmsg.Get("auth.login_failed"))
+		case apperrors.ErrPasswordIncorrect:
+			response.Unauthorized(c, errmsg.Get("auth.login_failed"))
 		case apperrors.ErrUserDisabled:
-			response.Forbidden(c, "用户已被禁用")
+			response.Forbidden(c, errmsg.Get("auth.user_disabled"))
 		default:
-			response.InternalError(c, "登录失败")
+			response.InternalError(c, errmsg.Get("auth.login_failed"))
 		}
 		return
 	}
@@ -58,7 +64,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	accessToken, refreshToken, err := h.authSvc.RefreshToken(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		response.Unauthorized(c, "token 无效或已过期")
+		response.Unauthorized(c, errmsg.Get("auth.token_invalid"))
 		return
 	}
 
@@ -73,7 +79,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
 	if err := h.authSvc.Logout(c.Request.Context(), userID); err != nil {
-		response.InternalError(c, "登出失败")
+		response.InternalError(c, errmsg.Get("auth.logout_failed"))
 		return
 	}
 
@@ -90,7 +96,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user, err := h.userSvc.Create(c.Request.Context(), &req)
 	if err != nil {
-		response.InternalError(c, "注册失败")
+		response.InternalError(c, errmsg.Get("auth.register_failed"))
 		return
 	}
 

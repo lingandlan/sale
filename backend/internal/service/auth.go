@@ -17,9 +17,9 @@ import (
 
 // Claims JWT Claims
 type Claims struct {
-	UserID   int64  `json:"user_id"`
-	Username string `json:"username"`
-	Role     int    `json:"role"`
+	UserID int64  `json:"user_id"`
+	Phone  string `json:"phone"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -46,9 +46,9 @@ func NewAuthService(cfg *config.JWTConfig, redisClient *redis.Client, userRepo r
 // GenerateToken 生成 Access Token
 func (s *AuthService) GenerateToken(user *model.User) (string, error) {
 	claims := Claims{
-		UserID:   user.ID,
-		Username: user.Username,
-		Role:     user.Role,
+		UserID: user.ID,
+		Phone:  user.Phone,
+		Role:   user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.expireHours)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -63,9 +63,9 @@ func (s *AuthService) GenerateToken(user *model.User) (string, error) {
 // GenerateRefreshToken 生成 Refresh Token
 func (s *AuthService) GenerateRefreshToken(user *model.User) (string, error) {
 	claims := Claims{
-		UserID:   user.ID,
-		Username: user.Username,
-		Role:     user.Role,
+		UserID: user.ID,
+		Phone:  user.Phone,
+		Role:   user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshExpireHours)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -113,9 +113,9 @@ func (s *AuthService) RevokeRefreshToken(ctx context.Context, userID int64) erro
 }
 
 // Login 用户登录
-func (s *AuthService) Login(ctx context.Context, username, password string) (*model.LoginResponse, error) {
+func (s *AuthService) Login(ctx context.Context, phone, password string) (*model.LoginResponse, error) {
 	// 获取用户
-	user, err := s.userRepo.GetByUsername(ctx, username)
+	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
 		return nil, apperrors.ErrNotFound
 	}
@@ -146,10 +146,13 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (*mo
 		return nil, fmt.Errorf("store refresh token failed: %w", err)
 	}
 
+	// 更新登录时间
+	_ = s.userRepo.UpdateLoginInfo(ctx, user.ID, "")
+
 	return &model.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User:         user,
+		ExpiresIn:    int(s.expireHours.Seconds()),
 	}, nil
 }
 

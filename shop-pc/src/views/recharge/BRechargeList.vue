@@ -1,0 +1,482 @@
+<template>
+  <div class="brecharge-list">
+    <div class="page-header">
+      <h1 class="page-title">B端充值审批列表</h1>
+    </div>
+
+    <div class="tabs-container">
+      <div
+        class="tab-item"
+        :class="{ active: activeTab === 'pending' }"
+        @click="handleTabChange('pending')"
+      >
+        待审批
+      </div>
+      <div
+        class="tab-item"
+        :class="{ active: activeTab === 'approved' }"
+        @click="handleTabChange('approved')"
+      >
+        已审批
+      </div>
+    </div>
+
+    <div class="filter-card">
+      <div class="filter-item">
+        <span class="filter-label">申请日期</span>
+        <el-date-picker
+          v-model="filterDate"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          size="default"
+          style="width: 240px"
+        />
+      </div>
+      <div class="filter-item">
+        <span class="filter-label">充值中心</span>
+        <el-select
+          v-model="filterCenter"
+          placeholder="全部充值中心"
+          style="width: 200px"
+        >
+          <el-option label="全部充值中心" value="" />
+          <el-option
+            v-for="center in centers"
+            :key="center.id"
+            :label="center.name"
+            :value="center.id"
+          />
+        </el-select>
+      </div>
+      <el-button type="primary" class="search-btn" @click="handleSearch">
+        查询
+      </el-button>
+    </div>
+
+    <div class="list-card">
+      <el-table
+        ref="tableRef"
+        :data="tableData"
+        style="width: 100%"
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="selection" width="60" align="center" />
+        <el-table-column prop="centerName" label="充值中心" min-width="140" />
+        <el-table-column label="充值金额" min-width="120" align="right">
+          <template #default="{ row }">
+            ¥{{ (row.amount ?? 0).toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column label="预计积分" min-width="120" align="right">
+          <template #default="{ row }">
+            {{ (row.points ?? 0).toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="applicantName" label="申请人" width="100" align="center" />
+        <el-table-column label="申请时间" min-width="170" align="center">
+          <template #default="{ row }">
+            {{ formatTime(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)" size="small">
+              {{ getStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="160" align="center">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <el-button
+                type="primary"
+                size="small"
+                link
+                @click="handleViewDetail(row)"
+              >
+                查看详情
+              </el-button>
+              <el-button
+                v-if="row.status === 'pending'"
+                type="success"
+                size="small"
+                @click="handleApprove(row)"
+              >
+                通过
+              </el-button>
+              <el-button
+                v-if="row.status === 'pending'"
+                type="danger"
+                size="small"
+                @click="handleReject(row)"
+              >
+                拒绝
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <div v-if="selectedRows.length > 0" class="batch-operation-bar">
+      <span class="selected-info">已选择 {{ selectedRows.length }} 项</span>
+      <el-button type="success" @click="handleBatchApprove">批量通过</el-button>
+      <el-button type="danger" @click="handleBatchReject">批量拒绝</el-button>
+    </div>
+
+    <div class="pagination-row">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getBRechargeApprovalList, approvalAction, getCenterList } from '@/api/recharge'
+import type { BRechargeApprovalItem } from '@/api/recharge'
+
+const router = useRouter()
+
+interface Center {
+  id: string
+  name: string
+}
+
+const centers = ref<Center[]>([])
+
+const loadCenters = async () => {
+  try {
+    const res = await getCenterList()
+    if (res?.data) {
+      centers.value = res.data.map((c: any) => ({ id: c.id, name: c.name }))
+    }
+  } catch {}
+}
+
+const activeTab = ref<'pending' | 'approved'>('pending')
+const filterDate = ref<[Date, Date] | null>(null)
+const filterCenter = ref('')
+const selectedRows = ref<BRechargeApprovalItem[]>([])
+
+const tableData = ref<BRechargeApprovalItem[]>([])
+
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
+
+const getStatusType = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'warning'
+    case 'approved':
+      return 'success'
+    case 'rejected':
+      return 'danger'
+    default:
+      return 'info'
+  }
+}
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return '待审批'
+    case 'approved':
+      return '已通过'
+    case 'rejected':
+      return '已拒绝'
+    default:
+      return '未知'
+  }
+}
+
+const formatTime = (iso: string) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const loadData = async () => {
+  try {
+    const res = await getBRechargeApprovalList({
+      status: activeTab.value === 'pending' ? 'pending' : 'approved,rejected',
+      centerId: filterCenter.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value
+    })
+    if (res?.data) {
+      tableData.value = res.data.list || []
+      total.value = res.data.total || 0
+    }
+  } catch (error) {
+    // fallback to empty data
+  }
+}
+
+const handleTabChange = (tab: 'pending' | 'approved') => {
+  activeTab.value = tab
+  currentPage.value = 1
+  loadData()
+}
+
+const handleSearch = () => {
+  currentPage.value = 1
+  loadData()
+}
+
+const handleSelectionChange = (selection: BRechargeApprovalItem[]) => {
+  selectedRows.value = selection
+}
+
+const handleApprove = async (row: BRechargeApprovalItem) => {
+  try {
+    await ElMessageBox.confirm('确认通过该充值申请？', '审批确认', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      type: 'success'
+    })
+    await approvalAction({ id: row.id, action: 'approve' })
+    loadData()
+    ElMessage.success('已通过')
+  } catch {
+    // 用户取消
+  }
+}
+
+const handleReject = async (row: BRechargeApprovalItem) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入拒绝原因', '拒绝申请', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputPattern: /.+/,
+      inputErrorMessage: '请输入拒绝原因'
+    })
+    await approvalAction({ id: row.id, action: 'reject', remark: value })
+    loadData()
+    ElMessage.success('已拒绝')
+  } catch {
+    // 用户取消
+  }
+}
+
+const handleViewDetail = (row: BRechargeApprovalItem) => {
+  router.push(`/recharge/b-approval/${row.id}`)
+}
+
+const handleBatchApprove = async () => {
+  try {
+    await ElMessageBox.confirm(
+      `确认批量通过 ${selectedRows.value.length} 条充值申请？`,
+      '批量审批确认',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'success'
+      }
+    )
+    const failed: string[] = []
+    for (const row of selectedRows.value) {
+      try {
+        await approvalAction({ id: row.id, action: 'approve' })
+      } catch (err) {
+        failed.push(row.centerName || row.id)
+      }
+    }
+    selectedRows.value = []
+    loadData()
+    if (failed.length > 0) {
+      ElMessage.warning(`${failed.length} 条审批失败：${failed.join(', ')}`)
+    } else {
+      ElMessage.success('批量通过成功')
+    }
+  } catch {
+    // 用户取消
+  }
+}
+
+const handleBatchReject = async () => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入拒绝原因', '批量拒绝申请', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputPattern: /.+/,
+      inputErrorMessage: '请输入拒绝原因'
+    })
+    const failed: string[] = []
+    for (const row of selectedRows.value) {
+      try {
+        await approvalAction({ id: row.id, action: 'reject', remark: value })
+      } catch (err) {
+        failed.push(row.centerName || row.id)
+      }
+    }
+    selectedRows.value = []
+    loadData()
+    if (failed.length > 0) {
+      ElMessage.warning(`${failed.length} 条拒绝失败：${failed.join(', ')}`)
+    } else {
+      ElMessage.success('批量拒绝成功')
+    }
+  } catch {
+    // 用户取消
+  }
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  loadData()
+}
+
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  loadData()
+}
+
+onMounted(() => {
+  loadCenters()
+  loadData()
+})
+</script>
+
+<style scoped>
+.brecharge-list {
+  padding: 24px;
+  background-color: var(--color-bg);
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-title {
+  font-family: var(--font-family);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.tab-item {
+  width: 100px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tab-item.active {
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
+}
+
+.tab-item:hover:not(.active) {
+  background-color: var(--color-bg);
+}
+
+.filter-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  border: 1px solid var(--color-border);
+}
+
+.filter-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-label {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.search-btn {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  height: 40px;
+}
+
+.search-btn:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.list-card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  padding: 24px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.batch-operation-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  height: 56px;
+}
+
+.selected-info {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+</style>

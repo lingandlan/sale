@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sale-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_SERVER_PORT=8080
+      - APP_REDIS_DB=0
+      - APP_DATABASE_HOST=db
+      - APP_REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-logs:/var/log/marketplace
+
+  frontend:
+    build:
+      context: ./shop-pc
+      dockerfile: Dockerfile
+    container_name: sale-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: mysql:8.0
+    container_name: sale-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: sale123
+      MYSQL_DATABASE: sale_dev
+      MYSQL_USER: sale
+      MYSQL_PASSWORD: sale123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  redis:
+    image: redis:7-alpine
+    container_name: sale-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql-data:
+  backend-uploads:
+  backend-logs:

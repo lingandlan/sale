@@ -4,6 +4,20 @@
 import { refreshTokenApi } from '@/api/user'
 
 /**
+ * 设置 Token
+ */
+export function setToken(token: string) {
+  uni.setStorageSync('token', token)
+}
+
+/**
+ * 设置 Refresh Token
+ */
+export function setRefreshToken(refreshToken: string) {
+  uni.setStorageSync('refresh_token', refreshToken)
+}
+
+/**
  * 获取 Token
  */
 export function getToken(): string | null {

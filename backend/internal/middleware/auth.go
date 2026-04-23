@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
+	"marketplace/backend/internal/service"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
@@ -19,21 +21,13 @@ func NewAuthMiddleware(jwtSecret string) *AuthMiddleware {
 	return &AuthMiddleware{jwtSecret: []byte(jwtSecret)}
 }
 
-// Claims JWT Claims
-type Claims struct {
-	UserID   int64  `json:"user_id"`
-	Username string `json:"username"`
-	Role     int    `json:"role"`
-	jwt.RegisteredClaims
-}
-
 // Auth 认证中间件
 func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取 Authorization Header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.Unauthorized(c, "missing token")
+			response.Unauthorized(c, errmsg.Get("auth.token_missing"))
 			c.Abort()
 			return
 		}
@@ -41,28 +35,28 @@ func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 		// 解析 Bearer Token
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			response.Unauthorized(c, "invalid token format")
+			response.Unauthorized(c, errmsg.Get("auth.token_format_error"))
 			c.Abort()
 			return
 		}
 
 		tokenString := parts[1]
 
-		// 解析 Token
-		claims := &Claims{}
+		// 解析 Token（使用service.Claims结构）
+		claims := &service.Claims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return m.jwtSecret, nil
 		})
 
 		if err != nil || !token.Valid {
-			response.Unauthorized(c, "invalid token")
+			response.Unauthorized(c, errmsg.Get("auth.token_invalid"))
 			c.Abort()
 			return
 		}
 
 		// 存入 Context
 		c.Set("user_id", claims.UserID)
-		c.Set("username", claims.Username)
+		c.Set("phone", claims.Phone)
 		c.Set("role", claims.Role)
 
 		c.Next()
@@ -70,16 +64,21 @@ func (m *AuthMiddleware) Auth() gin.HandlerFunc {
 }
 
 // RequireRole 角色鉴权中间件
-func RequireRole(roles ...int) gin.HandlerFunc {
+func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		roleVal, exists := c.Get("role")
 		if !exists {
-			response.Forbidden(c, "forbidden")
+			response.Forbidden(c, errmsg.Get("common.forbidden"))
 			c.Abort()
 			return
 		}
 
-		role := roleVal.(int)
+		role, ok := roleVal.(string)
+		if !ok {
+			response.Forbidden(c, errmsg.Get("common.forbidden"))
+			c.Abort()
+			return
+		}
 		for _, r := range roles {
 			if role == r {
 				c.Next()
@@ -87,25 +86,46 @@ func RequireRole(roles ...int) gin.HandlerFunc {
 			}
 		}
 
-		response.Forbidden(c, "insufficient permission")
+		response.Forbidden(c, errmsg.Get("common.forbidden"))
 		c.Abort()
 	}
 }
 
 // GetUserID 获取当前用户 ID
 func GetUserID(c *gin.Context) int64 {
-	userID, _ := c.Get("user_id")
-	return userID.(int64)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		return 0
+	}
+	val, ok := userID.(int64)
+	if !ok {
+		return 0
+	}
+	return val
 }
 
-// GetUsername 获取当前用户名
-func GetUsername(c *gin.Context) string {
-	username, _ := c.Get("username")
-	return username.(string)
+// GetPhone 获取当前用户手机号
+func GetPhone(c *gin.Context) string {
+	phone, exists := c.Get("phone")
+	if !exists {
+		return ""
+	}
+	val, ok := phone.(string)
+	if !ok {
+		return ""
+	}
+	return val
 }
 
 // GetRole 获取当前用户角色
-func GetRole(c *gin.Context) int {
-	role, _ := c.Get("role")
-	return role.(int)
+func GetRole(c *gin.Context) string {
+	role, exists := c.Get("role")
+	if !exists {
+		return ""
+	}
+	val, ok := role.(string)
+	if !ok {
+		return ""
+	}
+	return val
 }

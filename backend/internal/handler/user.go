@@ -4,21 +4,24 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 
 	"marketplace/backend/internal/middleware"
 	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/service"
+	"marketplace/backend/pkg/errmsg"
 	"marketplace/backend/pkg/response"
 )
 
 // UserHandler 用户处理器
 type UserHandler struct {
-	userSvc service.UserServiceInterface
+	userSvc    service.UserServiceInterface
+	memberSvc  service.MemberServiceInterface
 }
 
 // NewUserHandler 创建 UserHandler
-func NewUserHandler(userSvc service.UserServiceInterface) *UserHandler {
-	return &UserHandler{userSvc: userSvc}
+func NewUserHandler(userSvc service.UserServiceInterface, memberSvc service.MemberServiceInterface) *UserHandler {
+	return &UserHandler{userSvc: userSvc, memberSvc: memberSvc}
 }
 
 // GetUserInfo 获取当前用户信息
@@ -27,7 +30,7 @@ func (h *UserHandler) GetUserInfo(c *gin.Context) {
 
 	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
 	if err != nil {
-		response.NotFound(c, "用户不存在")
+		response.NotFound(c, errmsg.Get("user.not_found"))
 		return
 	}
 
@@ -46,7 +49,7 @@ func (h *UserHandler) UpdateUserInfo(c *gin.Context) {
 
 	user, err := h.userSvc.Update(c.Request.Context(), userID, &req)
 	if err != nil {
-		response.InternalError(c, "更新失败")
+		response.InternalError(c, errmsg.Get("user.update_failed"))
 		return
 	}
 
@@ -58,13 +61,13 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		response.ParamsError(c, "invalid user id")
+		response.ParamsError(c, errmsg.Get("user.id_format_error"))
 		return
 	}
 
 	user, err := h.userSvc.GetByID(c.Request.Context(), id)
 	if err != nil {
-		response.NotFound(c, "用户不存在")
+		response.NotFound(c, errmsg.Get("user.not_found"))
 		return
 	}
 
@@ -85,7 +88,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 	users, total, err := h.userSvc.List(c.Request.Context(), page, pageSize)
 	if err != nil {
-		response.InternalError(c, "获取列表失败")
+		response.InternalError(c, errmsg.Get("user.list_failed"))
 		return
 	}
 
@@ -95,4 +98,59 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		Page:     page,
 		PageSize: pageSize,
 	})
+}
+
+// ChangePassword 修改密码
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req model.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.ParamsError(c, err.Error())
+		return
+	}
+
+	// 验证旧密码（需要先获取用户）
+	user, err := h.userSvc.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		response.NotFound(c, errmsg.Get("user.not_found"))
+		return
+	}
+
+	// 验证旧密码
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		response.Error(c, 401, "旧密码错误")
+		return
+	}
+
+	// 更新密码
+	hashedPassword, err := service.HashPassword(req.NewPassword)
+	if err != nil {
+		response.InternalError(c, errmsg.Get("user.password_encrypt"))
+		return
+	}
+
+	if err := h.userSvc.UpdatePassword(c.Request.Context(), user.ID, hashedPassword); err != nil {
+		response.InternalError(c, errmsg.Get("user.password_change"))
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// SearchMember 根据手机号查询商城会员信息
+func (h *UserHandler) SearchMember(c *gin.Context) {
+	phone := c.Query("phone")
+	if phone == "" {
+		response.ParamsError(c, "手机号不能为空")
+		return
+	}
+
+	member, err := h.memberSvc.SearchByPhone(phone)
+	if err != nil {
+		response.NotFound(c, err.Error())
+		return
+	}
+
+	response.Success(c, member)
 }
