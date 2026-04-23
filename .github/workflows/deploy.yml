@@ -106,7 +106,7 @@ jobs:
             COMPOSE_EOF
 
             # Login to GHCR on server and pull images
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
