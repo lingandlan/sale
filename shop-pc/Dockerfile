@@ -12,7 +12,7 @@ RUN npm run build
 # 阶段2: Nginx 托管
 FROM nginx:alpine
 
-COPY dist/ /usr/share/nginx/html/
+COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

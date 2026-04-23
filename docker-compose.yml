@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     build:
@@ -12,6 +10,8 @@ services:
     environment:
       - APP_SERVER_PORT=8080
       - APP_REDIS_DB=0
+      - APP_DATABASE_HOST=db
+      - APP_REDIS_HOST=redis
     depends_on:
       - db
       - redis
@@ -31,7 +31,7 @@ services:
       - backend
 
   db:
-    image: mysql:5.6
+    image: mysql:8.0
     container_name: sale-mysql
     restart: unless-stopped
     environment:

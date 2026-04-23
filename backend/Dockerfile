@@ -42,7 +42,7 @@ COPY --from=builder /app/configs ./configs
 COPY --from=builder /app/migrations ./migrations
 
 # Create log and upload directories
-RUN mkdir -p /var/log/marketplace /app/uploads && chown -R appuser:appgroup /var/log/marketplace /app/uploads
+RUN mkdir -p /var/log/marketplace /app/uploads /app/logs && chown -R appuser:appgroup /var/log/marketplace /app/uploads /app/logs
 
 # Switch to non-root user
 USER appuser
