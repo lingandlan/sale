@@ -12,6 +12,11 @@ services:
       - APP_REDIS_DB=0
       - APP_DATABASE_HOST=db
       - APP_REDIS_HOST=redis
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=sale
+      - DB_PASSWORD=sale123
+      - DB_NAME=sale_dev
     depends_on:
       - db
       - redis
