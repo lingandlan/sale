@@ -12,6 +12,9 @@ RUN apk add --no-cache git
 
 # Copy go mod files
 COPY go.mod go.sum ./
+
+# Use China Go module proxy
+ENV GOPROXY=https://goproxy.cn,direct
 RUN go mod download
 
 # Copy source code
