@@ -47,7 +47,7 @@ jobs:
             mkdir -p ${{ secrets.DEPLOY_PATH }}
             cd ${{ secrets.DEPLOY_PATH }}
 
-            # Write docker-compose.prod.yml
+            # Write docker-compose.yml
             cat > docker-compose.yml << 'COMPOSE_EOF'
             services:
               backend:
