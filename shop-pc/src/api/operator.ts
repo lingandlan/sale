@@ -7,7 +7,7 @@ export interface OperatorItem {
   name: string
   phone: string
   password?: string
-  center_id: string
+  centerId: string
   role: string
   status: string
   created_at?: string

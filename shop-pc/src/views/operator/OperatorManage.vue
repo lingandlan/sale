@@ -263,7 +263,7 @@ const handleSaveOperator = async () => {
     const payload: any = {
       name: opForm.realName,
       phone: opForm.phone,
-      center_id: opForm.centerId,
+      centerId: opForm.centerId,
       role: opForm.role,
       password: '123456'
     }

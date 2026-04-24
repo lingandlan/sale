@@ -624,7 +624,7 @@ type CenterCardStatsItem struct {
 
 // GetCenterCardStats 按充值中心分组统计
 func (r *RechargeRepository) GetCenterCardStats(centerID string) ([]CenterCardStatsItem, error) {
-	var results []CenterCardStatsItem
+	results := make([]CenterCardStatsItem, 0)
 	query := r.db.Model(&model.StoreCard{}).
 		Select("rc.name as center_name, COUNT(*) as total_cards, "+
 			"SUM(CASE WHEN sc.status = 2 THEN 1 ELSE 0 END) as issued_cards, "+
@@ -632,7 +632,7 @@ func (r *RechargeRepository) GetCenterCardStats(centerID string) ([]CenterCardSt
 			"SUM(CASE WHEN sc.status = 4 THEN 1 ELSE 0 END) as frozen_cards, "+
 			"SUM(CASE WHEN sc.status = 5 THEN 1 ELSE 0 END) as expired_cards, "+
 			"COALESCE(SUM(CASE WHEN sc.status IN (2,3,4) THEN sc.balance ELSE 0 END), 0) as total_balance").
-		Joins("JOIN recharge_centers rc ON rc.id = sc.recharge_center_id").
+		Joins("JOIN recharge_centers rc ON rc.id COLLATE utf8mb4_unicode_ci = sc.recharge_center_id").
 		Table("store_cards sc").
 		Where("sc.recharge_center_id IS NOT NULL AND sc.recharge_center_id != ''")
 
