@@ -144,13 +144,11 @@ describe('Login.vue', () => {
         }
       })
 
-      // @ts-expect-error vm property access in test
+      // 设置表单数据
       wrapper.vm.phone = '13800138000'
-      // @ts-expect-error vm property access in test
       wrapper.vm.password = 'Test123456'
 
       // 直接调用组件方法
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleLogin()
 
       expect(ElMessage.success).toHaveBeenCalledWith('登录成功')
@@ -168,12 +166,9 @@ describe('Login.vue', () => {
         }
       })
 
-      // @ts-expect-error vm property access in test
       wrapper.vm.phone = ''
-      // @ts-expect-error vm property access in test
       wrapper.vm.password = 'Test123456'
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleLogin()
 
       expect(ElMessage.warning).toHaveBeenCalledWith('请输入手机号')
@@ -190,12 +185,9 @@ describe('Login.vue', () => {
         }
       })
 
-      // @ts-expect-error vm property access in test
       wrapper.vm.phone = '13800138000'
-      // @ts-expect-error vm property access in test
       wrapper.vm.password = ''
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleLogin()
 
       expect(ElMessage.warning).toHaveBeenCalledWith('请输入密码')
@@ -214,7 +206,6 @@ describe('Login.vue', () => {
         }
       })
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleForgot()
 
       expect(ElMessage.info).toHaveBeenCalledWith('忘记密码功能开发中')

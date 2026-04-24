@@ -14,15 +14,15 @@ export interface OperatorItem {
 }
 
 export function getOperatorList() {
-  return request.get('/operator')
+  return request.get<{ data: OperatorItem[] }>('/operator')
 }
 
 export function createOperator(data: Partial<OperatorItem>) {
-  return request.post('/operator', data)
+  return request.post<{ data: OperatorItem }>('/operator', data)
 }
 
 export function updateOperator(id: string, data: Partial<OperatorItem>) {
-  return request.put(`/operator/${id}`, data)
+  return request.put<{ data: OperatorItem }>(`/operator/${id}`, data)
 }
 
 export function deleteOperator(id: string) {

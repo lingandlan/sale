@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { verifyCard, consumeCard, getCardList, getCardDetail, getCardStats } from '../card'
+import { verifyCard, consumeCard, getCardList, issueCard, getCardDetail, toggleCardStatus, getCardStats } from '../card'
 import request from '@/utils/request'
 
 vi.mock('@/utils/request')
@@ -32,7 +32,7 @@ describe('Card API', () => {
     const mockResponse = { code: 0, data: { list: [], total: 0 } }
     vi.mocked(request).get!.mockResolvedValue(mockResponse)
 
-    const params = { status: 1, page: 1, pageSize: 10 }
+    const params = { status: 'active', page: 1, pageSize: 10 }
     await getCardList(params)
     expect(request.get).toHaveBeenCalledWith('/card/list', { params })
   })
@@ -42,7 +42,7 @@ describe('Card API', () => {
     vi.mocked(request).post!.mockResolvedValue(mockResponse)
 
     const data = { holderName: '李四', holderPhone: '13800001111', amount: 5000 }
-    const result = await request.post('/card/issue', data)
+    const result = await issueCard(data)
     expect(request.post).toHaveBeenCalledWith('/card/issue', data)
     expect(result).toEqual(mockResponse)
   })
@@ -60,7 +60,7 @@ describe('Card API', () => {
     const mockResponse = { code: 0, data: { success: true } }
     vi.mocked(request).post!.mockResolvedValue(mockResponse)
 
-    const result = await request.post('/card/TJ26001/status', { status: 'inactive' })
+    const result = await toggleCardStatus('TJ26001', 'inactive')
     expect(request.post).toHaveBeenCalledWith('/card/TJ26001/status', { status: 'inactive' })
     expect(result).toEqual(mockResponse)
   })

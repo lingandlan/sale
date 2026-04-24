@@ -118,7 +118,7 @@ import StatCard from '../components/StatCard.vue'
 import QuickAction from '../components/QuickAction.vue'
 import RechargeChart from '../components/RechargeChart.vue'
 import { getStatistics, getTodos, getRechargeTrends } from '../api/dashboard'
-import type { Statistics as StatisticsType } from '../types/dashboard'
+import type { Statistics as StatisticsType, Todos, RechargeTrend } from '../types/dashboard'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()

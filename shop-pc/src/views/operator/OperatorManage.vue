@@ -166,8 +166,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getOperatorList, createOperator, updateOperator, type OperatorItem } from '@/api/operator'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getOperatorList, createOperator, updateOperator, deleteOperator, type OperatorItem } from '@/api/operator'
 import { getCenterList, type CenterItem } from '@/api/center'
 
 const activeTab = ref('store')

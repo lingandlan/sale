@@ -161,6 +161,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import { submitCRechargeEntry, getCenterDetail, searchMember } from '@/api/recharge'
@@ -178,6 +179,7 @@ interface CenterOption {
   name: string
 }
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const searchQuery = ref('')
@@ -194,7 +196,7 @@ const loadCenterOptions = async () => {
   if (userStore.canSelectAllCenters) {
     try {
       const res = await getCenterList()
-      centerOptions.value = (res.data || []).map((c: any) => ({ id: c.id, name: c.name }))
+      centerOptions.value = (res.data || []).map(c => ({ id: c.id, name: c.name }))
     } catch (err: any) {
       ElMessage.error(extractErrorMessage(err, '加载充值中心列表失败'))
       centerOptions.value = []
@@ -214,7 +216,7 @@ const loadCenterOptions = async () => {
 
 // 选择充值中心后加载余额
 const handleCenterChange = (id: string) => {
-  const center = centerOptions.value.find((c: any) => c.id === id)
+  const center = centerOptions.value.find(c => c.id === id)
   selectedCenterName.value = center?.name || ''
   loadStoreBalance()
 }
@@ -227,7 +229,7 @@ const loadStoreBalance = async () => {
   }
   try {
     const res = await getCenterDetail(selectedCenterId.value)
-    storeBalance.value = (res as any).data.balance ?? 0
+    storeBalance.value = res.data.balance ?? 0
   } catch (err: any) {
     ElMessage.error(extractErrorMessage(err, '加载中心余额失败'))
     storeBalance.value = 0

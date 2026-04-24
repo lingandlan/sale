@@ -12,7 +12,6 @@ import (
 	"marketplace/backend/internal/config"
 	"marketplace/backend/internal/handler"
 	"marketplace/backend/internal/middleware"
-	"marketplace/backend/internal/model"
 	"marketplace/backend/internal/rbac"
 	"marketplace/backend/internal/repository"
 	"marketplace/backend/internal/router"
@@ -56,41 +55,6 @@ func main() {
 		log.Fatal("connect gorm database failed", zap.Error(err))
 	}
 	log.Info("gorm database connected")
-
-	// 3.2 AutoMigrate + 种子数据
-	if err := gormDB.AutoMigrate(
-		&model.User{},
-		&model.RechargeApplication{},
-		&model.CRecharge{},
-		&model.StoreCard{},
-		&model.CardIssueRecord{},
-		&model.CardTransaction{},
-		&model.RechargeCenter{},
-		&model.RechargeOperator{},
-		&model.CenterMonthlyConsumption{},
-	); err != nil {
-		log.Fatal("auto migrate failed", zap.Error(err))
-	}
-	log.Info("database migrated")
-
-	// 3.3 种子数据：超管账号
-	var userCount int64
-	gormDB.Model(&model.User{}).Count(&userCount)
-	if userCount == 0 {
-		admin := &model.User{
-			Username: "admin",
-			Phone:    "13800000000",
-			Password: "$2a$10$vXPjbfC511sMp3zdk1uFzOfxRWmtsZXnNIX7buP4C9Aq6In5YhV5S",
-			Name:     "超级管理员",
-			Role:     model.RoleSuperAdmin,
-			Status:   model.UserStatusNormal,
-		}
-		if err := gormDB.Create(admin).Error; err != nil {
-			log.Error("create super admin failed", zap.Error(err))
-		} else {
-			log.Info("super admin created: 13800000000 / 123456")
-		}
-	}
 
 	// 4. 初始化 Redis
 	redisClient, err := repository.NewRedis(&cfg.Redis)

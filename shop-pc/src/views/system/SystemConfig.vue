@@ -215,7 +215,7 @@ const logConfig = ref({
   archiveEnabled: true
 })
 
-const handleSave = (_category: string) => {
+const handleSave = (category: string) => {
   ElMessage.success('设置已保存')
 }
 </script>
