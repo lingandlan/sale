@@ -86,11 +86,14 @@ type CORSConfig struct {
 
 // envOverrides 环境变量覆盖映射（显式环境变量名 → viper key）
 var envOverrides = map[string]string{
-	"JWT_SECRET":     "jwt.secret",
-	"DB_PASSWORD":    "database.password",
-	"REDIS_PASSWORD": "redis.password",
-	"MALL_APP_ID":    "mall.app_id",
-	"MALL_APP_SECRET": "mall.app_secret",
+	"JWT_SECRET":          "jwt.secret",
+	"DB_PASSWORD":         "database.password",
+	"REDIS_PASSWORD":      "redis.password",
+	"MALL_APP_ID":         "mall.app_id",
+	"MALL_APP_SECRET":     "mall.app_secret",
+	"MALL_CUSTOMER_ID":    "mall.customer_id",
+	"MALL_BASE_URL":       "mall.base_url",
+	"CORS_ALLOWED_ORIGINS": "cors.allowed_origins",
 }
 
 // placeholderValues 需要警告的占位符值
@@ -122,6 +125,15 @@ func Load(path string) (*Config, error) {
 	cfg := &Config{}
 	if err := viper.Unmarshal(cfg); err != nil {
 		return nil, err
+	}
+
+	// CORS_ALLOWED_ORIGINS: 逗号分隔字符串 → []string
+	if raw := os.Getenv("CORS_ALLOWED_ORIGINS"); raw != "" {
+		origins := strings.Split(raw, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+		cfg.CORS.AllowedOrigins = origins
 	}
 
 	// 检查占位符值

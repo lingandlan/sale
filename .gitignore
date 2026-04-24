@@ -19,6 +19,7 @@ backend/uploads/*
 .DS_Store
 # Local env overrides (worktree-specific ports)
 *.env.local
+.env
 
 # Local Claude settings
 .claude/settings.local.json
