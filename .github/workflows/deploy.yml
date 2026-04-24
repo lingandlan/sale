@@ -4,25 +4,116 @@ on:
   push:
     branches: [main]
 
+permissions:
+  packages: write
+
 jobs:
   deploy:
-    name: Deploy to Server
+    name: Build & Deploy
     runs-on: ubuntu-latest
     if: github.repository == 'lingandlan/sale'
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build & Deploy via SSH
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/backend:latest
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./shop-pc
+          push: true
+          tags: ghcr.io/${{ github.repository }}/frontend:latest
+
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 30m
           script: |
+            mkdir -p ${{ secrets.DEPLOY_PATH }}
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
-            docker compose build --no-cache
+
+            # Write docker-compose.yml
+            cat > docker-compose.yml << 'COMPOSE_EOF'
+            services:
+              backend:
+                image: ghcr.io/lingandlan/sale/backend:latest
+                container_name: sale-backend
+                restart: unless-stopped
+                ports:
+                  - "8080:8080"
+                environment:
+                  - APP_SERVER_PORT=8080
+                  - APP_REDIS_DB=0
+                  - APP_DATABASE_HOST=db
+                  - APP_REDIS_HOST=redis
+                  - DB_HOST=db
+                  - DB_PORT=3306
+                  - DB_USER=sale
+                  - DB_PASSWORD=sale123
+                  - DB_NAME=sale_dev
+                depends_on:
+                  - db
+                  - redis
+                volumes:
+                  - backend-uploads:/app/uploads
+                  - backend-logs:/var/log/marketplace
+
+              frontend:
+                image: ghcr.io/lingandlan/sale/frontend:latest
+                container_name: sale-frontend
+                restart: unless-stopped
+                ports:
+                  - "80:80"
+                depends_on:
+                  - backend
+
+              db:
+                image: mysql:8.0
+                container_name: sale-mysql
+                restart: unless-stopped
+                environment:
+                  MYSQL_ROOT_PASSWORD: sale123
+                  MYSQL_DATABASE: sale_dev
+                  MYSQL_USER: sale
+                  MYSQL_PASSWORD: sale123
+                ports:
+                  - "3306:3306"
+                volumes:
+                  - mysql-data:/var/lib/mysql
+                command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+              redis:
+                image: redis:7-alpine
+                container_name: sale-redis
+                restart: unless-stopped
+                ports:
+                  - "6379:6379"
+
+            volumes:
+              mysql-data:
+              backend-uploads:
+              backend-logs:
+            COMPOSE_EOF
+
+            # Login to GHCR on server and pull images
+            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
             echo "Deploy completed at $(date)"

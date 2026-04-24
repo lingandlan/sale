@@ -13,5 +13,5 @@ stages:
             cd /opt/sale
             git pull
             docker compose build backend frontend
-            docker compose up -d --no-deps --force-recreate backend frontend
+            docker compose --env-file .env up -d --no-deps --force-recreate backend frontend
           executeUser: "root"
