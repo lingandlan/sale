@@ -1,0 +1,17 @@
+stages:
+  deploy:
+    name: "部署"
+    jobs:
+      vm_deploy_job:
+        name: "主机部署"
+        component: "VMDeploy"
+        with:
+          downloadArtifact: false
+          useEncode: true
+          machineGroup: "SD5MpWgrJqyluLpk"
+          run: |
+            cd /opt/sale
+            git pull
+            docker compose build backend frontend
+            docker compose up -d --no-deps --force-recreate backend frontend
+          executeUser: "root"

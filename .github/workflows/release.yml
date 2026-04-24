@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: github.repository == 'lingandlan/sale'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # 获取上一个 tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges "${PREV_TAG}..HEAD")
+          fi
+
+          # 按类型分组
+          FEAT=$(echo "$COMMITS" | grep -iE "^- (feat|新增)" || true)
+          FIX=$(echo "$COMMITS" | grep -iE "^- (fix|修复)" || true)
+          STYLE=$(echo "$COMMITS" | grep -iE "^- (style|样式)" || true)
+          REFACTOR=$(echo "$COMMITS" | grep -iE "^- (refactor|重构)" || true)
+          CHORE=$(echo "$COMMITS" | grep -iE "^- (chore|合并)" || true)
+          OTHER=$(echo "$COMMITS" | grep -viE "^- (feat|新增|fix|修复|style|样式|refactor|重构|chore|合并)" || true)
+
+          {
+            echo "body<<EOF"
+            [ -n "$FEAT" ] && { echo "### Features"; echo "$FEAT"; echo ""; }
+            [ -n "$FIX" ] && { echo "### Bug Fixes"; echo "$FIX"; echo ""; }
+            [ -n "$STYLE" ] && { echo "### Style"; echo "$STYLE"; echo ""; }
+            [ -n "$REFACTOR" ] && { echo "### Refactor"; echo "$REFACTOR"; echo ""; }
+            [ -n "$OTHER" ] && { echo "### Other"; echo "$OTHER"; echo ""; }
+            [ -n "$CHORE" ] && { echo "### Chores"; echo "$CHORE"; echo ""; }
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: false

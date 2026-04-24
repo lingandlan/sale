@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+node_modules
+*.log
+coverage
+dist
+tmp
+*.md
+.env*
+openspec
