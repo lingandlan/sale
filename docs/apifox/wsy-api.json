@@ -1,0 +1,517 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "WSY商城第三方API",
+    "version": "1.0.0",
+    "description": "WSY（星云轩）商城第三方接口文档\n\n- Base URL: https://cloud.xingyunxuan.cn/\n- Token入口: wsy_pub/third_api/index.php?m=third_application_authorization&a=get_access_token\n- 业务入口: wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function\n- 请求方式: POST (application/x-www-form-urlencoded)\n\n## 公共参数（所有业务接口必传）\n\n| 参数名 | 类型 | 说明 |\n|--------|------|------|\n| access_token | string | 通过 get_access_token 获取 |\n| act | string | 接口标识 |\n| customer_id_lock | string | 商户标识 |"
+  },
+  "servers": [
+    {
+      "url": "https://cloud.xingyunxuan.cn",
+      "description": "WSY商城生产环境"
+    }
+  ],
+  "tags": [
+    { "name": "WSY-认证", "description": "Token认证相关" },
+    { "name": "WSY-用户", "description": "用户信息相关" },
+    { "name": "WSY-积分", "description": "积分操作相关" },
+    { "name": "WSY-零钱", "description": "零钱操作相关（待确认）" }
+  ],
+  "paths": {
+    "/wsy_pub/third_api/index.php": {
+      "post": {
+        "tags": ["WSY-认证"],
+        "summary": "获取access_token",
+        "description": "通过APPID和APPSecret获取access_token，有效期7200秒（2小时）。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=get_access_token`",
+        "operationId": "wsy_get_access_token",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "description": "模块名",
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "description": "动作名",
+            "schema": { "type": "string", "default": "get_access_token" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["appid", "appsecret", "customer_id_lock"],
+                "properties": {
+                  "appid": {
+                    "type": "string",
+                    "description": "API授权APPID",
+                    "example": "gy3dbd36ec92d80868"
+                  },
+                  "appsecret": {
+                    "type": "string",
+                    "description": "API授权APPSecret",
+                    "example": "c81ddb0edad1da2650f0c6a0e17a0a31"
+                  },
+                  "customer_id_lock": {
+                    "type": "string",
+                    "description": "商户标识",
+                    "example": "ef74aU1ZXBg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "success" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "access_token": { "type": "string", "description": "访问令牌", "example": "f3e10a14bb0583f9..." },
+                        "expires_in": { "type": "string", "description": "有效期（秒）", "example": "7200" }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "success",
+                  "data": {
+                    "access_token": "f3e10a14bb0583f9a1b2c3d4e5f6a7b8",
+                    "expires_in": "7200"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wsy_pub/third_api/index.php/phone_get_user_info": {
+      "post": {
+        "tags": ["WSY-用户"],
+        "summary": "手机号获取用户信息",
+        "description": "通过手机号查询WSY商城用户信息，获取user_id。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function`\nact: `10000_phone_get_user_info`",
+        "operationId": "wsy_phone_get_user_info",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "description": "模块名",
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "description": "动作名",
+            "schema": { "type": "string", "default": "third_function" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["access_token", "act", "customer_id_lock", "country_code", "phone"],
+                "properties": {
+                  "access_token": { "type": "string", "description": "访问令牌", "example": "f3e10a14bb0583f9..." },
+                  "act": { "type": "string", "description": "接口标识", "enum": ["10000_phone_get_user_info"], "default": "10000_phone_get_user_info" },
+                  "customer_id_lock": { "type": "string", "description": "商户标识", "example": "ef74aU1ZXBg" },
+                  "country_code": { "type": "string", "description": "国际区号", "example": "+86" },
+                  "phone": { "type": "string", "description": "手机号", "example": "17615860006" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "获取成功" },
+                    "user_info": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": { "type": "string", "description": "WSY用户ID", "example": "965298296" }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "获取成功",
+                  "user_info": {
+                    "user_id": "965298296"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wsy_pub/third_api/index.php/integral_user_integral": {
+      "post": {
+        "tags": ["WSY-积分"],
+        "summary": "查询积分余额",
+        "description": "查询指定用户的积分余额。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function`\nact: `10000_integral_user_integral`",
+        "operationId": "wsy_integral_user_integral",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_function" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["access_token", "act", "customer_id_lock", "user_id"],
+                "properties": {
+                  "access_token": { "type": "string", "description": "访问令牌", "example": "f3e10a14bb0583f9..." },
+                  "act": { "type": "string", "enum": ["10000_integral_user_integral"], "default": "10000_integral_user_integral" },
+                  "customer_id_lock": { "type": "string", "example": "ef74aU1ZXBg" },
+                  "user_id": { "type": "integer", "description": "用户ID", "example": 965298296 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "获取成功" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": { "type": "string", "example": "965298296" },
+                        "integral": { "type": "string", "description": "积分余额", "example": "50292.47" }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "获取成功",
+                  "data": {
+                    "user_id": "965298296",
+                    "integral": "50292.47"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wsy_pub/third_api/index.php/integral_add": {
+      "post": {
+        "tags": ["WSY-积分"],
+        "summary": "添加积分",
+        "description": "为指定用户增加积分。充值场景使用 change_type=recharge。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function`\nact: `10000_integral_add`\n\n**change_type 枚举值:**\n| 值 | 说明 |\n|----|------|\n| recharge | 后台充值 |\n| daily_bonus | 签到 |\n| follow | 关注公众号 |\n| bind | 绑定手机 |\n| first_order | 完成首单奖励 |\n| integral_consume | 积分消费 |\n| refund | 消费退款 |\n| invalid | 积分失效 |\n| promotion_reward | 推广收益 |\n| performance_reward | 绩效收益 |\n| consumer_reward | 消费奖励 |\n| freeze | 冻结积分 |\n| unfreeze | 解冻积分 |\n| integral_reward | 积分赠送 |",
+        "operationId": "wsy_integral_add",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_function" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["access_token", "act", "customer_id_lock", "user_id", "integral", "change_type", "batchcode"],
+                "properties": {
+                  "access_token": { "type": "string", "description": "访问令牌" },
+                  "act": { "type": "string", "enum": ["10000_integral_add"], "default": "10000_integral_add" },
+                  "customer_id_lock": { "type": "string", "description": "商户标识", "example": "ef74aU1ZXBg" },
+                  "user_id": { "type": "integer", "description": "用户编号", "example": 965298296 },
+                  "integral": { "type": "number", "description": "变动积分（正数）", "example": 100 },
+                  "change_type": {
+                    "type": "string",
+                    "description": "变动类型",
+                    "enum": ["recharge", "daily_bonus", "follow", "bind", "first_order", "integral_consume", "refund", "invalid", "promotion_reward", "performance_reward", "consumer_reward", "freeze", "unfreeze", "integral_reward"],
+                    "example": "recharge"
+                  },
+                  "batchcode": { "type": "integer", "description": "订单号/交易号（前10位必须为时间戳，最大30位）", "example": 171330000012345678901 },
+                  "order_user_id": { "type": "integer", "description": "下单用户（可选）" },
+                  "remark": { "type": "string", "description": "备注（可选）", "example": "充值中心充值" },
+                  "union_id": { "type": "string", "description": "唯一编号，防重复（重复返回 errcode=100100，可选）", "maxLength": 32 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "success" },
+                    "after_integral": { "type": "string", "description": "变动后积分", "example": "50492.47" }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "success",
+                  "after_integral": "50492.47"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wsy_pub/third_api/index.php/integral_reduce": {
+      "post": {
+        "tags": ["WSY-积分"],
+        "summary": "扣除积分",
+        "description": "扣除指定用户的积分。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function`\nact: `10000_integral_reduce`",
+        "operationId": "wsy_integral_reduce",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_function" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["access_token", "act", "customer_id_lock", "user_id", "integral", "batchcode"],
+                "properties": {
+                  "access_token": { "type": "string", "description": "访问令牌" },
+                  "act": { "type": "string", "enum": ["10000_integral_reduce"], "default": "10000_integral_reduce" },
+                  "customer_id_lock": { "type": "string", "description": "商户标识", "example": "ef74aU1ZXBg" },
+                  "user_id": { "type": "integer", "description": "用户编号", "example": 965298296 },
+                  "integral": { "type": "number", "description": "变动积分（正数）", "example": 50 },
+                  "change_type": { "type": "string", "description": "变动类型（可选）" },
+                  "batchcode": { "type": "integer", "description": "订单号/交易号", "example": 171330000012345678901 },
+                  "union_id": { "type": "string", "description": "唯一编号，防重复（可选）", "maxLength": 32 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "success" },
+                    "after_integral": { "type": "string", "description": "变动后积分", "example": "50392.47" }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "success",
+                  "after_integral": "50392.47"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wsy_pub/third_api/index.php/user_reg": {
+      "post": {
+        "tags": ["WSY-用户"],
+        "summary": "用户注册",
+        "description": "在WSY商城注册新用户。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function`\nact: `10000_user_reg`",
+        "operationId": "wsy_user_reg",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_function" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["access_token", "act", "customer_id_lock", "country_code", "phone", "password", "utype", "from_type"],
+                "properties": {
+                  "access_token": { "type": "string", "description": "访问令牌" },
+                  "act": { "type": "string", "enum": ["10000_user_reg"], "default": "10000_user_reg" },
+                  "customer_id_lock": { "type": "string", "description": "商户标识", "example": "ef74aU1ZXBg" },
+                  "country_code": { "type": "string", "description": "国际区号", "example": "+86" },
+                  "phone": { "type": "string", "description": "手机号", "example": "17615860006" },
+                  "password": { "type": "string", "description": "密码" },
+                  "utype": { "type": "integer", "description": "注册类型：1微信 2小程序 3APP", "enum": [1, 2, 3], "example": 3 },
+                  "from_type": { "type": "integer", "description": "来源：1主动关注 2朋友圈 3二维码 4网页 5APP", "enum": [1, 2, 3, 4, 5], "example": 4 },
+                  "name": { "type": "string", "description": "真实姓名（可选）" },
+                  "headimgurl": { "type": "string", "description": "头像URL（可选）" },
+                  "parent_id": { "type": "string", "description": "上级ID（可选）" },
+                  "parent_phone": { "type": "string", "description": "上级手机号（可选）" },
+                  "unionid": { "type": "string", "description": "开放平台唯一标识（可选）" },
+                  "openid": { "type": "string", "description": "公众号/小程序唯一标识（可选）" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "注册成功" }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "注册成功"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wsy_pub/third_api/index.php/phone_turn_id": {
+      "post": {
+        "tags": ["WSY-用户"],
+        "summary": "手机号转用户ID",
+        "description": "通过手机号获取WSY商城用户ID，替代直接传user_id参数的场景。\n\n实际请求URL: `/wsy_pub/third_api/index.php?m=third_application_authorization&a=third_function`\n业务参数通过 third_api_turn_type 指定转换类型",
+        "operationId": "wsy_phone_turn_id",
+        "parameters": [
+          {
+            "name": "m",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_application_authorization" }
+          },
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "default": "third_function" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["access_token", "customer_id_lock", "third_api_turn_type", "phone", "country_code"],
+                "properties": {
+                  "access_token": { "type": "string", "description": "访问令牌" },
+                  "customer_id_lock": { "type": "string", "description": "商户标识", "example": "ef74aU1ZXBg" },
+                  "third_api_turn_type": { "type": "string", "description": "转换类型", "enum": ["phone_turn_id"], "default": "phone_turn_id" },
+                  "phone": { "type": "integer", "description": "手机号", "example": 17615860006 },
+                  "country_code": { "type": "string", "description": "国际区号", "example": "+86" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": { "type": "integer", "example": 0 },
+                    "errmsg": { "type": "string", "example": "获取成功" },
+                    "user_id": { "type": "string", "description": "用户ID", "example": "965298296" }
+                  }
+                },
+                "example": {
+                  "errcode": 0,
+                  "errmsg": "获取成功",
+                  "user_id": "965298296"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {}
+  }
+}

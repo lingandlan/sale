@@ -49,17 +49,17 @@ export interface AdminUserUpdateData {
 
 // 获取用户列表
 export function getAdminUsers(params: AdminUserListParams) {
-  return request.get('/admin/users', { params })
+  return request.get<{ data: AdminUserListResponse }>('/admin/users', { params })
 }
 
 // 创建用户
 export function createAdminUser(data: AdminUserCreateData) {
-  return request.post('/admin/users', data)
+  return request.post<{ data: AdminUserItem }>('/admin/users', data)
 }
 
 // 更新用户
 export function updateAdminUser(id: number, data: AdminUserUpdateData) {
-  return request.put(`/admin/users/${id}`, data)
+  return request.put<{ data: AdminUserItem }>(`/admin/users/${id}`, data)
 }
 
 // 重置用户密码

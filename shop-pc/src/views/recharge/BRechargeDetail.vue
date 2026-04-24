@@ -184,7 +184,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import { getBRechargeApprovalDetail, approvalAction } from '@/api/recharge'
 

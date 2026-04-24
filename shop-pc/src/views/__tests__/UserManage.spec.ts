@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { ElMessage as _ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import UserManage from '../user/UserManage.vue'
-import { getAdminUsers } from '@/api/admin'
+import { getAdminUsers, createAdminUser, updateAdminUser, toggleUserStatus, resetUserPassword } from '@/api/admin'
 
 // Mock vue-router
 const mockPush = vi.fn()
@@ -105,14 +105,10 @@ describe('UserManage.vue', () => {
     it('handleAdd 应该打开抽屉并设置"新建用户"标题', async () => {
       const wrapper = mount(UserManage, globalStubs)
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleAdd()
 
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.drawerTitle).toBe('新建用户')
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.drawerVisible).toBe(true)
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.formData.id).toBeNull()
     })
 
@@ -130,37 +126,26 @@ describe('UserManage.vue', () => {
         lastLogin: '2026-01-01'
       }
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleEdit(testRow)
 
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.drawerTitle).toBe('编辑用户')
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.drawerVisible).toBe(true)
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.formData.id).toBe(1)
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.formData.username).toBe('testuser')
     })
 
     it('handleResetFilter 应该清空所有筛选字段', async () => {
       const wrapper = mount(UserManage, globalStubs)
 
-      // @ts-expect-error vm property access in test
+      // 设置筛选值
       wrapper.vm.filters.keyword = 'test'
-      // @ts-expect-error vm property access in test
       wrapper.vm.filters.role = 'operator'
-      // @ts-expect-error vm property access in test
       wrapper.vm.filters.status = 'active'
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleResetFilter()
 
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.filters.keyword).toBe('')
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.filters.role).toBe('')
-      // @ts-expect-error vm property access in test
       expect(wrapper.vm.filters.status).toBe('')
     })
 
@@ -171,7 +156,6 @@ describe('UserManage.vue', () => {
       vi.clearAllMocks()
       vi.mocked(getAdminUsers).mockResolvedValue({ data: { items: [], total: 0, page: 1, page_size: 10 } } as any)
 
-      // @ts-expect-error vm property access in test
       await wrapper.vm.handleSearch()
 
       expect(getAdminUsers).toHaveBeenCalledTimes(1)

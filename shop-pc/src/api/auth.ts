@@ -30,5 +30,5 @@ export interface UserInfo {
 }
 
 export const getUserInfo = () => {
-  return request.get('/user/info')
+  return request.get<{ data: UserInfo }>('/user/info')
 }

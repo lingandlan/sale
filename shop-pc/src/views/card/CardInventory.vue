@@ -95,6 +95,7 @@ const centers = ref<{ id: string; name: string }[]>([])
 // 批量入库
 const showImportDialog = ref(false)
 const importLoading = ref(false)
+const uploadRef = ref()
 const uploadFile = ref<File | null>(null)
 
 function handleFileChange(file: UploadFile) {

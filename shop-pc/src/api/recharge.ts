@@ -161,17 +161,17 @@ export async function uploadFile(file: File) {
 
 // 提交B端充值申请
 export function submitBRechargeApply(data: BRechargeApplyData) {
-  return request.post('/recharge/b-apply', data)
+  return request.post<{ data: BRechargeApplyResponse }>('/recharge/b-apply', data)
 }
 
 // 获取充值审批列表
 export function getBRechargeApprovalList(params: BRechargeApprovalListParams) {
-  return request.get('/recharge/b-approval', { params })
+  return request.get<{ data: BRechargeApprovalListResponse }>('/recharge/b-approval', { params })
 }
 
 // 获取充值审批详情
 export function getBRechargeApprovalDetail(id: string) {
-  return request.get(`/recharge/b-approval/${id}`)
+  return request.get<{ data: BRechargeApprovalDetail }>(`/recharge/b-approval/${id}`)
 }
 
 // 审批操作
@@ -181,7 +181,7 @@ export function approvalAction(data: ApprovalActionData) {
 
 // C端充值录入
 export function submitCRechargeEntry(data: CRechargeEntryData) {
-  return request.post('/recharge/c-entry', data)
+  return request.post<{ data: CRechargeEntryResponse }>('/recharge/c-entry', data)
 }
 
 // 会员查询
@@ -195,7 +195,7 @@ export interface MemberInfo {
 }
 
 export function searchMember(phone: string) {
-  return request.get('/recharge/c-entry/search-member', { params: { phone } })
+  return request.get<{ data: MemberInfo }>('/recharge/c-entry/search-member', { params: { phone } })
 }
 
 // 获取充值中心列表
@@ -207,7 +207,7 @@ export interface CenterItem {
 }
 
 export function getCenterList() {
-  return request.get('/center')
+  return request.get<{ data: CenterItem[] }>('/center')
 }
 
 // 获取充值中心详情（含余额）
@@ -217,12 +217,12 @@ export function getCenterDetail(id: string) {
 
 // 获取充值记录列表
 export function getRechargeRecordList(params: RechargeRecordListParams) {
-  return request.get('/recharge/records', { params })
+  return request.get<{ data: RechargeRecordListResponse }>('/recharge/records', { params })
 }
 
 // 获取充值记录详情
 export function getRechargeRecordDetail(id: string) {
-  return request.get(`/recharge/records/${id}`)
+  return request.get<{ data: RechargeRecordDetail }>(`/recharge/records/${id}`)
 }
 
 // 获取充值中心上月消费
@@ -233,7 +233,7 @@ export interface LastMonthConsumption {
 }
 
 export function getCenterLastMonthConsumption(centerId: string) {
-  return request.get(`/center/${centerId}/last-month-consumption`)
+  return request.get<{ data: LastMonthConsumption }>(`/center/${centerId}/last-month-consumption`)
 }
 
 // 录入月度消费
@@ -257,5 +257,5 @@ export interface MonthlyConsumptionRecord {
 }
 
 export function listMonthlyConsumption(month?: string) {
-  return request.get('/center-monthly-consumption', { params: { month } })
+  return request.get<{ data: MonthlyConsumptionRecord[] }>('/center-monthly-consumption', { params: { month } })
 }

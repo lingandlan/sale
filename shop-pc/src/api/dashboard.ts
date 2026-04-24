@@ -45,15 +45,15 @@ export interface ChartDataPoint {
 
 // 获取统计数据
 export function getStatistics() {
-  return request.get('/dashboard/statistics')
+  return request.get<{ data: Statistics }>('/dashboard/statistics')
 }
 
 // 获取待办事项
 export function getTodos() {
-  return request.get('/dashboard/todos')
+  return request.get<{ data: Todos }>('/dashboard/todos')
 }
 
 // 获取充值趋势
 export function getRechargeTrends(days: number = 7) {
-  return request.get(`/dashboard/recharge-trends?days=${days}`)
+  return request.get<{ data: RechargeTrend }>(`/dashboard/recharge-trends?days=${days}`)
 }

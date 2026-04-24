@@ -1,0 +1,27 @@
+# 生产环境后端 Dockerfile - 只 COPY 预编译二进制，无需 Go 环境
+FROM alpine:3.19
+
+WORKDIR /app
+
+RUN apk --no-cache add ca-certificates tzdata && \
+    addgroup -g 1000 appgroup && \
+    adduser -u 1000 -G appgroup -s /bin/sh -D appuser
+
+COPY server .
+COPY migrate .
+COPY entrypoint.sh .
+COPY configs/ ./configs/
+COPY migrations/ ./migrations/
+
+RUN chmod +x entrypoint.sh && \
+    mkdir -p /var/log/marketplace /app/uploads /app/logs && \
+    chown -R appuser:appgroup /var/log/marketplace /app/uploads /app/logs
+
+USER appuser
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["./entrypoint.sh"]

@@ -141,11 +141,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBRechargeApprovalList, approvalAction, getCenterList } from '@/api/recharge'
 import type { BRechargeApprovalItem } from '@/api/recharge'
+import { extractErrorMessage } from '@/utils/request'
 
 const router = useRouter()
 
@@ -176,6 +177,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
 const getStatusType = (status: string) => {
   switch (status) {
