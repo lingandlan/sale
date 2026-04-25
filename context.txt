@@ -151,7 +151,8 @@ agent-browser state save .claude/browser-auth-main.json
 
 ## Git分支策略
 
-- `main` - 主分支
-- `design` - 开发分支（当前活跃）
-- `worktree-alpha/beta/opencode` - 各worktree的分支
+- `main` / `master` - 主分支（Codeup 生产）
+- `dev` - 开发分支（当前活跃，主 session 在此开发）
+- `design` - 历史开发分支（已归档）
+- `worktree-alpha/beta/opencode` - 各 worktree 的分支
 - commit message 格式: `<type>(<scope>): <description>` (有 hook 校验)
