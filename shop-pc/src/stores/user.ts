@@ -10,6 +10,7 @@ const RolePermissions: Record<string, string[]> = {
   hq_admin: [
     'dashboard', 'recharge:b', 'recharge:c', 'recharge:records',
     'card:inventory', 'card:issue', 'card:verify', 'card:manage', 'card:stats',
+    'center:manage', 'operator:manage', 'user:manage',
   ],
   finance: ['dashboard', 'recharge:records', 'card:stats'],
   center_admin: [
