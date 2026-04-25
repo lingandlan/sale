@@ -15,13 +15,6 @@
     <!-- 统计卡片区域 -->
     <div class="stats-section">
       <StatCard
-        icon="User"
-        :value="statistics.memberCount"
-        label="总会员数"
-        :trend="statistics.memberTrend"
-        color="var(--color-info)"
-      />
-      <StatCard
         icon="Wallet"
         :value="statistics.todayRecharge"
         label="今日充值金额"
@@ -40,6 +33,7 @@
         color="var(--color-success)"
       />
       <StatCard
+        v-if="isHeadquarters"
         icon="OfficeBuilding"
         :value="statistics.activeCenters"
         label="活跃中心数"
@@ -57,7 +51,7 @@
         <el-divider />
         <div class="quick-actions-grid">
           <QuickAction
-            v-for="action in quickActions"
+            v-for="action in filteredQuickActions"
             :key="action.route"
             :icon="action.icon"
             :text="action.text"
@@ -71,7 +65,7 @@
 
     <!-- 底部区域：待办事项 + 图表 -->
     <div class="bottom-section">
-      <div class="todo-section">
+      <div v-if="isHeadquarters" class="todo-section">
         <div class="section-card todo-card">
           <div class="section-header">
             <h3 class="section-title">待办事项</h3>
@@ -122,6 +116,7 @@ import type { Statistics as StatisticsType, Todos, RechargeTrend } from '../type
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+const isHeadquarters = computed(() => userStore.canSelectAllCenters)
 const userName = computed(() => {
   const name = userStore.displayName
   const roleMap: Record<string, string> = {
@@ -139,8 +134,6 @@ let isUnmounted = false
 
 // 统计数据
 const statistics = ref<StatisticsType>({
-  memberCount: 0,
-  memberTrend: '—',
   todayRecharge: 0,
   rechargeTrend: '—',
   todayConsumption: 0,
@@ -186,6 +179,11 @@ const quickActions = ref([
     border: 'var(--color-danger)'
   }
 ])
+
+const filteredQuickActions = computed(() => {
+  if (isHeadquarters.value) return quickActions.value
+  return quickActions.value.filter(a => a.route !== '/recharge/b-apply')
+})
 
 // 加载数据
 const loadDashboardData = async () => {
