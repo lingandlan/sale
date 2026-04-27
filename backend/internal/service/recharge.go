@@ -1011,8 +1011,6 @@ func (s *RechargeService) GetDashboardStatistics(role, centerID string) (map[str
 	yesterdayConsumption, _ := s.rechargeRepo.GetYesterdayConsumptionTotal(centerID)
 
 	return map[string]interface{}{
-		"memberCount":       0,
-		"memberTrend":       "—",
 		"todayRecharge":     todayRecharge,
 		"rechargeTrend":     calcTrend(todayRecharge, yesterdayRecharge),
 		"todayConsumption":  todayConsumption,
