@@ -86,11 +86,26 @@ type CORSConfig struct {
 
 // envOverrides 环境变量覆盖映射（显式环境变量名 → viper key）
 var envOverrides = map[string]string{
-	"JWT_SECRET":     "jwt.secret",
-	"DB_PASSWORD":    "database.password",
-	"REDIS_PASSWORD": "redis.password",
-	"MALL_APP_ID":    "mall.app_id",
-	"MALL_APP_SECRET": "mall.app_secret",
+	"APP_DATABASE_HOST":     "database.host",
+	"APP_DATABASE_PORT":     "database.port",
+	"APP_DATABASE_USER":     "database.user",
+	"APP_DATABASE_NAME":     "database.name",
+	"APP_REDIS_HOST":        "redis.host",
+	"APP_REDIS_PORT":        "redis.port",
+	"APP_REDIS_DB":          "redis.db",
+	"APP_REDIS_PASSWORD":    "redis.password",
+	"APP_CORS_ORIGINS":      "cors.allowed_origins",
+	"APP_SERVER_PORT":       "server.port",
+	"APP_SERVER_MODE":       "server.mode",
+	"APP_LOG_MODE":          "log.mode",
+	"APP_LOG_LEVEL":         "log.level",
+	"JWT_SECRET":            "jwt.secret",
+	"DB_PASSWORD":           "database.password",
+	"REDIS_PASSWORD":        "redis.password",
+	"MALL_APP_ID":           "mall.app_id",
+	"MALL_APP_SECRET":       "mall.app_secret",
+	"MALL_BASE_URL":         "mall.base_url",
+	"MALL_CUSTOMER_ID":      "mall.customer_id",
 }
 
 // placeholderValues 需要警告的占位符值
@@ -129,6 +144,16 @@ func Load(path string) (*Config, error) {
 		if viper.GetString(viperKey) == placeholder {
 			log.Printf("[WARN] 配置 %s 使用的是默认占位符值，请在生产环境中通过环境变量 %s 设置真实值",
 				viperKey, getKeyByValue(envOverrides, viperKey))
+		}
+	}
+
+	// 解析 CORS allowed_origins（支持逗号分隔字符串）
+	if corsStr := os.Getenv("APP_CORS_ORIGINS"); corsStr != "" {
+		for _, origin := range strings.Split(corsStr, ",") {
+			origin = strings.TrimSpace(origin)
+			if origin != "" {
+				cfg.CORS.AllowedOrigins = append(cfg.CORS.AllowedOrigins, origin)
+			}
 		}
 	}
 
