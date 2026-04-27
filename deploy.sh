@@ -27,6 +27,10 @@ if [ "$MODE" = "full" ]; then
     sleep 2
   done
 
+  # 构建应用镜像
+  echo "构建应用镜像..."
+  docker compose build backend frontend
+
   # 启动应用
   docker compose -f docker-compose.prod.yml --env-file .env up -d --no-deps backend frontend
   echo "=== 首次部署完成 ==="
