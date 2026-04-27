@@ -1,17 +1,75 @@
 stages:
+  build:
+    name: "构建"
+    jobs:
+      build_frontend:
+        name: "构建前端镜像"
+        runs-on: ubuntu-latest
+        steps:
+          - checkout: {}
+          - name: 设置 Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: '20'
+          - name: 安装依赖
+            run: |
+              cd shop-pc
+              npm install
+          - name: 构建前端
+            run: |
+              cd shop-pc
+              npm run build
+          - name: 构建 Docker 镜像
+            run: |
+              docker build -t sale-frontend:latest -f shop-pc/Dockerfile.prod-frontend shop-pc
+          - name: 保存镜像为 tar
+            run: |
+              docker save sale-frontend:latest | gzip > frontend-image.tar.gz
+          - name: 上传镜像 Artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: frontend-image
+              path: frontend-image.tar.gz
+
+      build_backend:
+        name: "构建后端镜像"
+        runs-on: ubuntu-latest
+        steps:
+          - checkout: {}
+          - name: 构建 Docker 镜像
+            run: |
+              docker build -t sale-backend:latest -f backend/Dockerfile.prod-backend backend
+          - name: 保存镜像为 tar
+            run: |
+              docker save sale-backend:latest | gzip > backend-image.tar.gz
+          - name: 上传镜像 Artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: backend-image
+              path: backend-image.tar.gz
+
   deploy:
     name: "部署"
+    needs: [build]
     jobs:
       vm_deploy_job:
         name: "主机部署"
         component: "VMDeploy"
         with:
-          downloadArtifact: false
+          downloadArtifact: true
           useEncode: true
           machineGroup: "SD5MpWgrJqyluLpk"
           run: |
             cd /opt/sale
             git pull
-            docker compose build backend frontend
+            # 加载前端镜像
+            if [ -f frontend-image.tar.gz ]; then
+              docker load < frontend-image.tar.gz
+            fi
+            # 加载后端镜像
+            if [ -f backend-image.tar.gz ]; then
+              docker load < backend-image.tar.gz
+            fi
+            # 启动容器
             docker compose --env-file .env up -d --no-deps --force-recreate backend frontend
           executeUser: "root"
