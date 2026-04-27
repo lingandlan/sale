@@ -189,7 +189,7 @@ const loadData = async () => {
       page_size: pagination.size
     })
     if (res?.data) {
-      const items = res.data.items || []
+      const items = res.data.data.items || []
       tableData.value = items.map((u: any) => ({
         id: u.id,
         username: u.username,
@@ -201,7 +201,7 @@ const loadData = async () => {
         status: u.status === 1 ? 'active' : 'disabled',
         lastLogin: u.last_login_at || '-'
       }))
-      pagination.total = res.data.total || 0
+      pagination.total = res.data.data.total || 0
     }
   } catch (err: any) {
     ElMessage.error(extractErrorMessage(err, '加载用户列表失败'))
@@ -245,7 +245,7 @@ const handleSaveUser = async () => {
         name: formData.realName,
         phone: formData.phone,
         role: formData.role,
-        center_id: formData.centerId || undefined
+        center_id: formData.centerId ? Number(formData.centerId) : undefined
       })
     } else {
       await createAdminUser({
@@ -253,7 +253,7 @@ const handleSaveUser = async () => {
         phone: formData.phone,
         name: formData.realName,
         role: formData.role,
-        center_id: formData.centerId || undefined,
+        center_id: formData.centerId ? Number(formData.centerId) : undefined,
         password: formData.password || '123456'
       })
     }

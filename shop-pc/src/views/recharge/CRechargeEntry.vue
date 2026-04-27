@@ -267,7 +267,7 @@ const handleSearch = async () => {
   try {
     const res = await searchMember(searchQuery.value.trim())
     if (res?.data) {
-      const d = res.data
+      const d = res.data.data
       memberInfo.value = {
         id: d.userId,
         phone: d.phone,
