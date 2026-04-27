@@ -240,7 +240,7 @@ docker compose -f docker-compose.prod.yml restart frontend
 ```bash
 #!/bin/bash
 BACKUP_DIR="/opt/sale/backups"
-DB_NAME="sale_dev"
+DB_NAME="sale_prod"
 DB_USER="sale"
 DB_PASS="<你的数据库密码>"
 RETAIN_DAYS=7
@@ -277,10 +277,10 @@ crontab -e
 
 ```bash
 # 解压备份文件
-gunzip /opt/sale/backups/sale_dev_20260424_030000.sql.gz
+gunzip /opt/sale/backups/sale_prod_20260424_030000.sql.gz
 
 # 恢复到数据库
-docker exec -i sale-mysql mysql -u sale -p<密码> sale_dev < /opt/sale/backups/sale_dev_20260424_030000.sql
+docker exec -i sale-mysql mysql -u sale -p<密码> sale_prod < /opt/sale/backups/sale_prod_20260424_030000.sql
 ```
 
 ---

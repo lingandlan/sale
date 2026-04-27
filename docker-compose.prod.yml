@@ -17,7 +17,7 @@ services:
       - APP_DATABASE_HOST=db
       - APP_DATABASE_PORT=3306
       - APP_DATABASE_USER=sale
-      - APP_DATABASE_NAME=sale_dev
+      - APP_DATABASE_NAME=sale_prod
       - APP_DATABASE_PASSWORD=${DB_PASSWORD}
       - APP_REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET}
@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-sale_dev}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sale_prod}
       MYSQL_USER: ${MYSQL_USER:-sale}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
