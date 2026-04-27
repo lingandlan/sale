@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 
 	"marketplace/backend/internal/config"
 	"marketplace/backend/internal/model"
@@ -17,6 +19,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
 	}
+
+	// 连接数据库（GORM）
+	if host := os.Getenv("APP_DATABASE_HOST"); host != "" {
+		cfg.Database.Host = host
+	}
+	if port := os.Getenv("APP_DATABASE_PORT"); port != "" {
+		if p, err := strconv.Atoi(port); err == nil {
+			cfg.Database.Port = p
+		}
+	}
+	if user := os.Getenv("APP_DATABASE_USER"); user != "" {
+		cfg.Database.User = user
+	}
+	if name := os.Getenv("APP_DATABASE_NAME"); name != "" {
+		cfg.Database.Name = name
+	}
+
+	fmt.Printf("[DEBUG] migrate 使用数据库: host=%s port=%d user=%s db=%s\n",
+		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Name)
 
 	// 连接数据库（GORM）
 	db, err := repository.NewGormDB(&cfg.Database)
