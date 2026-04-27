@@ -143,13 +143,14 @@ describe('Login.vue', () => {
           }
         }
       })
+      const vm = wrapper.vm as any
 
       // 设置表单数据
-      wrapper.vm.phone = '13800138000'
-      wrapper.vm.password = 'Test123456'
+      vm.phone = '13800138000'
+      vm.password = 'Test123456'
 
       // 直接调用组件方法
-      await wrapper.vm.handleLogin()
+      await vm.handleLogin()
 
       expect(ElMessage.success).toHaveBeenCalledWith('登录成功')
       expect(mockPush).toHaveBeenCalledWith('/dashboard')
@@ -165,11 +166,12 @@ describe('Login.vue', () => {
           }
         }
       })
+      const vm = wrapper.vm as any
 
-      wrapper.vm.phone = ''
-      wrapper.vm.password = 'Test123456'
+      vm.phone = ''
+      vm.password = 'Test123456'
 
-      await wrapper.vm.handleLogin()
+      await vm.handleLogin()
 
       expect(ElMessage.warning).toHaveBeenCalledWith('请输入手机号')
     })
@@ -184,11 +186,12 @@ describe('Login.vue', () => {
           }
         }
       })
+      const vm = wrapper.vm as any
 
-      wrapper.vm.phone = '13800138000'
-      wrapper.vm.password = ''
+      vm.phone = '13800138000'
+      vm.password = ''
 
-      await wrapper.vm.handleLogin()
+      await vm.handleLogin()
 
       expect(ElMessage.warning).toHaveBeenCalledWith('请输入密码')
     })
@@ -205,8 +208,9 @@ describe('Login.vue', () => {
           }
         }
       })
+      const vm = wrapper.vm as any
 
-      await wrapper.vm.handleForgot()
+      await vm.handleForgot()
 
       expect(ElMessage.info).toHaveBeenCalledWith('忘记密码功能开发中')
     })

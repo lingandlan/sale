@@ -12,11 +12,7 @@ export interface LoginResponse {
 }
 
 export const login = (data: LoginParams) => {
-  return request({
-    url: '/auth/login',
-    method: 'POST',
-    data
-  })
+  return request.post<LoginResponse>('/auth/login', data)
 }
 
 export interface UserInfo {
@@ -30,5 +26,5 @@ export interface UserInfo {
 }
 
 export const getUserInfo = () => {
-  return request.get<{ data: UserInfo }>('/user/info')
+  return request.get<UserInfo>('/user/info')
 }

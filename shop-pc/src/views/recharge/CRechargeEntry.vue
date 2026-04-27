@@ -161,7 +161,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { extractErrorMessage } from '@/utils/request'
 import { submitCRechargeEntry, getCenterDetail, searchMember } from '@/api/recharge'
@@ -179,7 +178,6 @@ interface CenterOption {
   name: string
 }
 
-const router = useRouter()
 const userStore = useUserStore()
 
 const searchQuery = ref('')
@@ -267,7 +265,7 @@ const handleSearch = async () => {
   try {
     const res = await searchMember(searchQuery.value.trim())
     if (res?.data) {
-      const d = res.data.data
+      const d = res.data
       memberInfo.value = {
         id: d.userId,
         phone: d.phone,

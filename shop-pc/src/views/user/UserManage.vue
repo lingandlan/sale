@@ -189,7 +189,7 @@ const loadData = async () => {
       page_size: pagination.size
     })
     if (res?.data) {
-      const items = res.data.data.items || []
+      const items = res.data.items || []
       tableData.value = items.map((u: any) => ({
         id: u.id,
         username: u.username,
@@ -201,7 +201,7 @@ const loadData = async () => {
         status: u.status === 1 ? 'active' : 'disabled',
         lastLogin: u.last_login_at || '-'
       }))
-      pagination.total = res.data.data.total || 0
+      pagination.total = res.data.total || 0
     }
   } catch (err: any) {
     ElMessage.error(extractErrorMessage(err, '加载用户列表失败'))

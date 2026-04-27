@@ -96,6 +96,7 @@ const centers = ref<{ id: string; name: string }[]>([])
 const showImportDialog = ref(false)
 const importLoading = ref(false)
 const uploadRef = ref()
+void uploadRef
 const uploadFile = ref<File | null>(null)
 
 function handleFileChange(file: UploadFile) {

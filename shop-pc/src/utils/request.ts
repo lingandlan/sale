@@ -1,6 +1,24 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
+
+// 响应拦截器 unwrap 了 response.data，实际返回 { code, data, message }
+export interface ApiResponse<T = any> {
+  code: number
+  data: T
+  message?: string
+}
+
+// 类型覆盖：拦截器返回 ApiResponse<T> 而非 AxiosResponse<T>
+export interface TypedAxiosInstance {
+  <T = any>(config: AxiosRequestConfig): Promise<ApiResponse<T>>
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>>
+  interceptors: AxiosInstance['interceptors']
+  defaults: AxiosInstance['defaults']
+}
 
 const isMock = import.meta.env.VITE_USE_MOCK === 'true'
 
@@ -220,7 +238,7 @@ function clearAuthAndRedirect() {
   window.location.href = '/login'
 }
 
-export default service
+export default service as TypedAxiosInstance
 
 // extractErrorMessage 统一从错误对象中提取可展示的错误信息
 export function extractErrorMessage(err: any, fallback = '操作失败'): string {

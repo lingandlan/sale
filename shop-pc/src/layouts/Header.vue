@@ -28,9 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { User, Expand, Fold } from '@element-plus/icons-vue'
+import { User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 interface Props {

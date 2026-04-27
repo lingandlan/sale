@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { ElMessage } from 'element-plus'
 import UserManage from '../user/UserManage.vue'
-import { getAdminUsers, createAdminUser, updateAdminUser, toggleUserStatus, resetUserPassword } from '@/api/admin'
+import { getAdminUsers } from '@/api/admin'
 
 // Mock vue-router
 const mockPush = vi.fn()
@@ -104,16 +103,18 @@ describe('UserManage.vue', () => {
   describe('交互功能', () => {
     it('handleAdd 应该打开抽屉并设置"新建用户"标题', async () => {
       const wrapper = mount(UserManage, globalStubs)
+      const vm = wrapper.vm as any
 
-      await wrapper.vm.handleAdd()
+      await vm.handleAdd()
 
-      expect(wrapper.vm.drawerTitle).toBe('新建用户')
-      expect(wrapper.vm.drawerVisible).toBe(true)
-      expect(wrapper.vm.formData.id).toBeNull()
+      expect(vm.drawerTitle).toBe('新建用户')
+      expect(vm.drawerVisible).toBe(true)
+      expect(vm.formData.id).toBeNull()
     })
 
     it('handleEdit 应该打开抽屉并设置"编辑用户"标题', async () => {
       const wrapper = mount(UserManage, globalStubs)
+      const vm = wrapper.vm as any
 
       const testRow = {
         id: 1,
@@ -126,37 +127,39 @@ describe('UserManage.vue', () => {
         lastLogin: '2026-01-01'
       }
 
-      await wrapper.vm.handleEdit(testRow)
+      await vm.handleEdit(testRow)
 
-      expect(wrapper.vm.drawerTitle).toBe('编辑用户')
-      expect(wrapper.vm.drawerVisible).toBe(true)
-      expect(wrapper.vm.formData.id).toBe(1)
-      expect(wrapper.vm.formData.username).toBe('testuser')
+      expect(vm.drawerTitle).toBe('编辑用户')
+      expect(vm.drawerVisible).toBe(true)
+      expect(vm.formData.id).toBe(1)
+      expect(vm.formData.username).toBe('testuser')
     })
 
     it('handleResetFilter 应该清空所有筛选字段', async () => {
       const wrapper = mount(UserManage, globalStubs)
+      const vm = wrapper.vm as any
 
       // 设置筛选值
-      wrapper.vm.filters.keyword = 'test'
-      wrapper.vm.filters.role = 'operator'
-      wrapper.vm.filters.status = 'active'
+      vm.filters.keyword = 'test'
+      vm.filters.role = 'operator'
+      vm.filters.status = 'active'
 
-      await wrapper.vm.handleResetFilter()
+      await vm.handleResetFilter()
 
-      expect(wrapper.vm.filters.keyword).toBe('')
-      expect(wrapper.vm.filters.role).toBe('')
-      expect(wrapper.vm.filters.status).toBe('')
+      expect(vm.filters.keyword).toBe('')
+      expect(vm.filters.role).toBe('')
+      expect(vm.filters.status).toBe('')
     })
 
     it('handleSearch 应该调用 loadData', async () => {
       const wrapper = mount(UserManage, globalStubs)
+      const vm = wrapper.vm as any
 
       // loadData 已在 onMounted 中被调用过一次，清除调用记录
       vi.clearAllMocks()
       vi.mocked(getAdminUsers).mockResolvedValue({ data: { items: [], total: 0, page: 1, page_size: 10 } } as any)
 
-      await wrapper.vm.handleSearch()
+      await vm.handleSearch()
 
       expect(getAdminUsers).toHaveBeenCalledTimes(1)
     })

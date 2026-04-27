@@ -49,30 +49,30 @@ export interface AdminUserUpdateData {
 
 // 获取用户列表
 export function getAdminUsers(params: AdminUserListParams) {
-  return request.get<{ data: AdminUserListResponse }>('/admin/users', { params })
+  return request.get<AdminUserListResponse>('/admin/users', { params })
 }
 
 // 创建用户
 export function createAdminUser(data: AdminUserCreateData) {
-  return request.post<{ data: AdminUserItem }>('/admin/users', data)
+  return request.post<AdminUserItem>('/admin/users', data)
 }
 
 // 更新用户
 export function updateAdminUser(id: number, data: AdminUserUpdateData) {
-  return request.put<{ data: AdminUserItem }>(`/admin/users/${id}`, data)
+  return request.put<AdminUserItem>(`/admin/users/${id}`, data)
 }
 
 // 重置用户密码
 export function resetUserPassword(id: number, newPassword: string) {
-  return request.post<{ data: { success: boolean } }>(`/admin/users/${id}/reset-password`, { new_password: newPassword })
+  return request.post<{ success: boolean }>(`/admin/users/${id}/reset-password`, { new_password: newPassword })
 }
 
 // 启用/禁用用户
 export function toggleUserStatus(id: number, status: number) {
-  return request.put<{ data: { success: boolean } }>(`/admin/users/${id}/status`, { status })
+  return request.put<{ success: boolean }>(`/admin/users/${id}/status`, { status })
 }
 
 // 删除用户
 export function deleteAdminUser(id: number) {
-  return request.delete<{ data: { success: boolean } }>(`/admin/users/${id}`)
+  return request.delete<{ success: boolean }>(`/admin/users/${id}`)
 }

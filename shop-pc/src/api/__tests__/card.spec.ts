@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { verifyCard, consumeCard, getCardList, issueCard, getCardDetail, toggleCardStatus, getCardStats } from '../card'
+import { verifyCard, consumeCard, getCardList, getCardDetail, freezeCard, getCardStats } from '../card'
 import request from '@/utils/request'
 
 vi.mock('@/utils/request')
@@ -32,19 +32,9 @@ describe('Card API', () => {
     const mockResponse = { code: 0, data: { list: [], total: 0 } }
     vi.mocked(request).get!.mockResolvedValue(mockResponse)
 
-    const params = { status: 'active', page: 1, pageSize: 10 }
+    const params = { status: 1, page: 1, pageSize: 10 }
     await getCardList(params)
     expect(request.get).toHaveBeenCalledWith('/card/list', { params })
-  })
-
-  it('issueCard应该发送POST请求到/card/issue', async () => {
-    const mockResponse = { code: 0, data: { cardNo: 'TJ26001', holder: '李四', balance: 5000 } }
-    vi.mocked(request).post!.mockResolvedValue(mockResponse)
-
-    const data = { holderName: '李四', holderPhone: '13800001111', amount: 5000 }
-    const result = await issueCard(data)
-    expect(request.post).toHaveBeenCalledWith('/card/issue', data)
-    expect(result).toEqual(mockResponse)
   })
 
   it('getCardDetail应该发送GET请求到/card/detail/:cardNo', async () => {
@@ -56,12 +46,12 @@ describe('Card API', () => {
     expect(result).toEqual(mockResponse)
   })
 
-  it('toggleCardStatus应该发送POST请求到/card/:cardNo/status', async () => {
+  it('freezeCard应该发送POST请求到/card/:cardNo/freeze', async () => {
     const mockResponse = { code: 0, data: { success: true } }
     vi.mocked(request).post!.mockResolvedValue(mockResponse)
 
-    const result = await toggleCardStatus('TJ26001', 'inactive')
-    expect(request.post).toHaveBeenCalledWith('/card/TJ26001/status', { status: 'inactive' })
+    const result = await freezeCard('TJ26001')
+    expect(request.post).toHaveBeenCalledWith('/card/TJ26001/freeze')
     expect(result).toEqual(mockResponse)
   })
 
