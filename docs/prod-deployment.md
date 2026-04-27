@@ -88,12 +88,14 @@ sudo mkdir -p /opt/sale/ssl
 
 # 上传证书（在本地执行）
 scp <下载的证书文件>.pem root@<服务器IP>:/opt/sale/ssl/cert.pem
-scp <下载的密钥文件>.key root@<服务器IP>:/opt/sale/ssl/key.pem
+scp <下载的密钥文件>.key root@<服务器IP>:/opt/sale/ssl/cert.key
 
 # 在服务器上设置权限
 sudo chmod 644 /opt/sale/ssl/cert.pem
-sudo chmod 600 /opt/sale/ssl/key.pem
+sudo chmod 600 /opt/sale/ssl/cert.key
 ```
+
+> **注意**：证书文件名必须为 `cert.pem` 和 `cert.key`，与 nginx.conf 中的配置对应。
 
 ---
 
@@ -149,7 +151,7 @@ openssl rand -hex 32
 脚本会自动：
 1. 启动 MySQL 和 Redis 容器
 2. 等待 MySQL 就绪（最多 60 秒）
-3. 构建并启动 backend 和 frontend 容器
+3. 构建并启动 backend 和 frontend 容器（**使用 docker-compose.prod.yml**，确保 SSL 卷挂载生效）
 4. backend 容器启动时自动执行数据库 migration 和超管初始化
 
 ### 5.4 确认服务状态
@@ -185,8 +187,15 @@ docker compose -f docker-compose.prod.yml ps
 ```bash
 cd /opt/sale
 git pull
-./deploy.sh app
+
+# 强制重新构建（避免缓存导致配置不更新）
+docker compose -f docker-compose.prod.yml build --no-cache frontend backend
+
+# 重启前后端容器
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend frontend
 ```
+
+> **重要**：生产环境**必须使用 `-f docker-compose.prod.yml`**，不要使用默认的 `docker-compose.yml`（后者没有 SSL 证书卷挂载，会导致前端容器无法启动）。
 
 `deploy.sh app` 只重建 backend 和 frontend 容器，**不影响数据库和 Redis**。
 
@@ -208,6 +217,8 @@ docker exec -it sale-backend sh
 
 ### 7.3 重启单个服务
 
+> **重要**：所有 `docker compose` 命令必须加 `-f docker-compose.prod.yml`，否则不会挂载 SSL 证书，前端无法启动。
+
 ```bash
 # 只重启后端
 docker compose -f docker-compose.prod.yml restart backend
@@ -215,6 +226,8 @@ docker compose -f docker-compose.prod.yml restart backend
 # 只重启前端（如更新了 nginx 配置）
 docker compose -f docker-compose.prod.yml restart frontend
 ```
+
+> 如果前端仍然无法启动，先确认卷挂载是否生效：`docker inspect sale-frontend --format '{{json .Mounts}}'`
 
 ---
 
@@ -288,14 +301,14 @@ git log --oneline -10
 git checkout <commit-hash>
 
 # 重新构建并部署
-docker compose build backend frontend
-docker compose -f docker-compose.prod.yml --env-file .env up -d --no-deps --force-recreate backend frontend
+docker compose -f docker-compose.prod.yml build --no-cache backend frontend
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend frontend
 
 # 验证回滚成功后，将 HEAD 指回最新（可选）
 git checkout master
 ```
 
-> **注意**: 回滚只影响应用代码，不会回退数据库。如果 migration 已执行，数据库 schema 不会自动回退。
+> **注意**: 回滚只影响应用代码，不会回退数据库。如果 migration 已执行，数据库 schema 不会自动回退。构建时建议加 `--no-cache` 避免缓存导致旧配置不生效。
 
 ---
 
@@ -313,7 +326,7 @@ git checkout master
 ```bash
 # 上传新证书
 scp <新证书>.pem root@<服务器IP>:/opt/sale/ssl/cert.pem
-scp <新密钥>.key root@<服务器IP>:/opt/sale/ssl/key.pem
+scp <新密钥>.key root@<服务器IP>:/opt/sale/ssl/cert.key
 
 # 重启前端容器加载新证书
 cd /opt/sale
