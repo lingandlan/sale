@@ -90,6 +90,7 @@ var envOverrides = map[string]string{
 	"APP_DATABASE_PORT":     "database.port",
 	"APP_DATABASE_USER":     "database.user",
 	"APP_DATABASE_NAME":     "database.name",
+	"APP_DATABASE_PASSWORD": "database.password",
 	"APP_REDIS_HOST":        "redis.host",
 	"APP_REDIS_PORT":        "redis.port",
 	"APP_REDIS_DB":          "redis.db",

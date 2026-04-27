@@ -14,7 +14,7 @@ stages:
               npm run build
           - name: 构建 Docker 镜像
             run: |
-              docker build -t sale-frontend:latest -f Dockerfile.prod-frontend shop-pc/
+              docker build -t sale-frontend:latest -f Dockerfile.prod-frontend .
           - name: 保存镜像
             run: |
               docker save sale-frontend:latest | gzip > frontend-image.tar.gz

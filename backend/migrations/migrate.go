@@ -35,6 +35,9 @@ func main() {
 	if name := os.Getenv("APP_DATABASE_NAME"); name != "" {
 		cfg.Database.Name = name
 	}
+	if pass := os.Getenv("APP_DATABASE_PASSWORD"); pass != "" {
+		cfg.Database.Password = pass
+	}
 
 	fmt.Printf("[DEBUG] migrate 使用数据库: host=%s port=%d user=%s db=%s\n",
 		cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Name)
