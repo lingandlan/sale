@@ -1,11 +1,8 @@
-# 生产环境 Docker Compose - 本地构建镜像（服务器需安装 Go + Node.js）
-# 如果服务器无构建工具，改用 CI 构建 + docker save/load 方案
+# 生产环境 Docker Compose - 使用 CI 构建的预构建镜像
+# 镜像由 Codeup Flow 构建，制品传输到服务器后加载
 
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: ../Dockerfile.prod-backend
     image: sale-backend:latest
     container_name: sale-backend
     restart: unless-stopped
@@ -34,9 +31,6 @@ services:
       - backend-logs:/var/log/marketplace
 
   frontend:
-    build:
-      context: .
-      dockerfile: ./Dockerfile.prod-frontend
     image: sale-frontend:latest
     container_name: sale-frontend
     restart: unless-stopped

@@ -9,9 +9,9 @@ RUN apk --no-cache add ca-certificates tzdata && \
 
 COPY server .
 COPY migrate .
-COPY entrypoint.sh .
-COPY configs/ ./configs/
-COPY migrations/ ./migrations/
+COPY backend/entrypoint.sh .
+COPY backend/configs/ ./configs/
+COPY backend/migrations/ ./migrations/
 
 RUN chmod +x entrypoint.sh && \
     mkdir -p /var/log/marketplace /app/uploads /app/logs && \
