@@ -11,13 +11,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// config 从环境变量读取，与 config.yaml 保持一致
+// config 从环境变量读取，与 docker-compose.prod.yml 中的 APP_DATABASE_* 保持一致
 var (
-	dbHost     = envOrDefault("DB_HOST", "localhost")
-	dbPort     = envOrDefault("DB_PORT", "3306")
-	dbUser     = envOrDefault("DB_USER", "sale")
-	dbPassword = envOrDefault("DB_PASSWORD", "sale123")
-	dbName     = envOrDefault("DB_NAME", "sale_dev")
+	dbHost     = envOrDefault("DATABASE_HOST", "localhost")
+	dbPort     = envOrDefault("DATABASE_PORT", "3306")
+	dbUser     = envOrDefault("DATABASE_USER", "sale")
+	dbPassword = envOrDefault("DATABASE_PASSWORD", "sale123")
+	dbName     = envOrDefault("DATABASE_NAME", "sale_dev")
 	sqlDir     = "migrations/sql"
 )
 
