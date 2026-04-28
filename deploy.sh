@@ -14,8 +14,8 @@ MODE=${1:-app}
 build_backend() {
   echo "=== 编译后端 ==="
   cd backend
-  CGO_ENABLED=0 GOOS=linux go build -o ../server ./cmd/server
-  CGO_ENABLED=0 GOOS=linux go build -o ../migrate ./cmd/migrate
+  GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 GOOS=linux go build -o ../server ./cmd/server
+  GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 GOOS=linux go build -o ../migrate ./cmd/migrate
   cd ..
   echo "编译完成: server, migrate"
 }
@@ -24,7 +24,7 @@ build_backend() {
 build_frontend() {
   echo "=== 构建前端 ==="
   cd shop-pc
-  npm install --prefer-offline
+  npm install --prefer-offline --registry=https://registry.npmmirror.com
   npm run build
   cd ..
   echo "前端构建完成"
