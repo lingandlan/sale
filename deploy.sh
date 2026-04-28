@@ -2,13 +2,47 @@
 # 太积堂部署脚本
 # 用法: ./deploy.sh [full|app]
 #   full - 首次部署，启动所有服务（db/redis/backend/frontend）
-#   app  - 日常更新，只重建 backend 和 frontend（默认）
+#   app  - 日常更新，拉代码 + 编译 + 重建 backend/frontend（默认）
 
 set -e
 
 cd /opt/sale
 
 MODE=${1:-app}
+
+# 编译 Go 二进制
+build_backend() {
+  echo "=== 编译后端 ==="
+  cd backend
+  CGO_ENABLED=0 GOOS=linux go build -o ../server ./cmd/server
+  CGO_ENABLED=0 GOOS=linux go build -o ../migrate ./cmd/migrate
+  cd ..
+  echo "编译完成: server, migrate"
+}
+
+# 构建前端
+build_frontend() {
+  echo "=== 构建前端 ==="
+  cd shop-pc
+  npm install --prefer-offline
+  npm run build
+  cd ..
+  echo "前端构建完成"
+}
+
+# 构建 Docker 镜像并启动服务
+deploy_app() {
+  # 构建后端镜像
+  echo "构建后端镜像..."
+  docker build -f Dockerfile.prod-backend -t sale-backend:latest .
+
+  # 构建前端镜像
+  echo "构建前端镜像..."
+  docker build -f Dockerfile.prod-frontend -t sale-frontend:latest .
+
+  # 重启服务
+  docker compose -f docker-compose.prod.yml --env-file .env up -d --no-deps --force-recreate backend frontend
+}
 
 if [ "$MODE" = "full" ]; then
   echo "=== 首次部署：启动所有服务 ==="
@@ -27,16 +61,16 @@ if [ "$MODE" = "full" ]; then
     sleep 2
   done
 
-  # 构建应用镜像
-  echo "构建应用镜像..."
-  docker compose build backend frontend
+  # 拉代码 + 编译 + 部署
+  git pull
+  build_backend
+  build_frontend
+  deploy_app
 
-  # 启动应用
-  docker compose -f docker-compose.prod.yml --env-file .env up -d --no-deps backend frontend
   echo "=== 首次部署完成 ==="
 
 elif [ "$MODE" = "app" ]; then
-  echo "=== 日常更新：重建应用服务 ==="
+  echo "=== 日常更新 ==="
 
   # 检查基础设施是否运行
   if ! docker ps --format '{{.Names}}' | grep -q 'sale-mysql'; then
@@ -44,29 +78,17 @@ elif [ "$MODE" = "app" ]; then
     exit 1
   fi
 
-  # 加载新镜像（如果有）
-  if [ -d artifacts ]; then
-    echo "加载构建产物..."
-    # 后端
-    if [ -f artifacts/backend.tar.gz ]; then
-      tar xzf artifacts/backend.tar.gz -C artifacts/ 2>/dev/null || true
-      docker build -f Dockerfile.prod-backend -t sale-backend:latest artifacts/backend/ 2>/dev/null || true
-    fi
-    # 前端
-    if [ -f artifacts/frontend.tar.gz ]; then
-      tar xzf artifacts/frontend.tar.gz -C artifacts/ 2>/dev/null || true
-      docker build -f Dockerfile.prod-frontend -t sale-frontend:latest artifacts/frontend/ 2>/dev/null || true
-    fi
-  fi
+  # 拉代码 + 编译 + 部署
+  git pull
+  build_backend
+  deploy_app
 
-  # 按服务重建
-  docker compose -f docker-compose.prod.yml --env-file .env up -d --no-deps --force-recreate backend frontend
   echo "=== 日常更新完成 ==="
 
 else
   echo "用法: $0 [full|app]"
-  echo "  full - 首次部署，启动所有服务"
-  echo "  app  - 日常更新，只重建 backend/frontend"
+  echo "  full - 首次部署，启动所有服务（含前端构建）"
+  echo "  app  - 日常更新，拉代码 + 编译后端 + 重启"
   exit 1
 fi
 
